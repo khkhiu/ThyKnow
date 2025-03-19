@@ -1,4 +1,6 @@
 import * as functions from 'firebase-functions';
+import { onSchedule, ScheduleOptions } from 'firebase-functions/v2/scheduler';
+import { ScheduledEvent } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { Telegraf } from 'telegraf';
@@ -41,27 +43,26 @@ export const botWebhook = functions.https.onRequest(async (req, res) => {
 });
 
 // Scheduled function to send weekly prompts (Mondays at 9 AM Singapore time)
-export const sendWeeklyPrompts = functions.pubsub
-  .schedule(`0 ${WEEKLY_PROMPT.HOUR} * * ${WEEKLY_PROMPT.DAY}`) // Every Monday at 9 AM
-  .timeZone(TIMEZONE)
-  .onRun(async (context) => {
-    try {
-      console.log('Starting weekly prompt job');
-      
-      // Get all users
-      const users = await userService.getAllUsers();
-      console.log(`Sending prompts to ${users.length} users`);
-      
-      const sendPromises = users.map(user => 
-        botHandlers.sendWeeklyPromptToUser(user.id, bot)
-      );
-      
-      await Promise.all(sendPromises);
-      console.log('Completed weekly prompt job');
-      
-      return null;
-    } catch (error) {
-      console.error('Error in weekly prompt job:', error);
-      return null;
-    }
-  });
+const scheduleOptions: ScheduleOptions = {
+  schedule: `0 ${WEEKLY_PROMPT.HOUR} * * ${WEEKLY_PROMPT.DAY}`,
+  timeZone: TIMEZONE
+};
+
+export const sendWeeklyPrompts = onSchedule(scheduleOptions, async (event: ScheduledEvent): Promise<void> => {
+  try {
+    console.log('Starting weekly prompt job');
+    
+    // Get all users
+    const users = await userService.getAllUsers();
+    console.log(`Sending prompts to ${users.length} users`);
+    
+    const sendPromises = users.map(user => 
+      botHandlers.sendWeeklyPromptToUser(user.id, bot)
+    );
+    
+    await Promise.all(sendPromises);
+    console.log('Completed weekly prompt job');
+  } catch (error) {
+    console.error('Error in weekly prompt job:', error);
+  }
+});
