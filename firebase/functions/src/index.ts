@@ -1,19 +1,67 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+import * as functions from 'firebase-functions';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { Telegraf } from 'telegraf';
+import PromptService from './services/prompt-service';
+import UserService from './services/user-service';
+import BotHandlers from './handlers/bot-handlers';
+import { TIMEZONE, WEEKLY_PROMPT } from './constants';
 
-import {onRequest} from "firebase-functions/v2/https";
-import * as logger from "firebase-functions/logger";
+// Initialize Firebase
+initializeApp();
+const db = getFirestore();
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+// Initialize services
+const userService = new UserService(db);
+const promptService = new PromptService(db);
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Initialize Telegram bot
+const bot = new Telegraf(functions.config().telegram.token);
+const botHandlers = new BotHandlers(userService, promptService);
+
+// Set up bot commands
+bot.start(botHandlers.start);
+bot.command('prompt', botHandlers.sendPrompt);
+bot.command('history', botHandlers.showHistory);
+bot.command('timezone', botHandlers.showTimezone);
+bot.command('help', botHandlers.showHelp);
+
+// Handle text messages (for journal responses)
+bot.on('text', botHandlers.handleResponse);
+
+// Set up cloud function for webhook
+export const botWebhook = functions.https.onRequest(async (req, res) => {
+  try {
+    await bot.handleUpdate(req.body);
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Error in webhook handler:', error);
+    res.status(500).send('Error');
+  }
+});
+
+// Scheduled function to send weekly prompts (Mondays at 9 AM Singapore time)
+export const sendWeeklyPrompts = functions.pubsub
+  .schedule(`0 ${WEEKLY_PROMPT.HOUR} * * ${WEEKLY_PROMPT.DAY}`) // Every Monday at 9 AM
+  .timeZone(TIMEZONE)
+  .onRun(async (context) => {
+    try {
+      console.log('Starting weekly prompt job');
+      
+      // Get all users
+      const users = await userService.getAllUsers();
+      console.log(`Sending prompts to ${users.length} users`);
+      
+      const sendPromises = users.map(user => 
+        botHandlers.sendWeeklyPromptToUser(user.id, bot)
+      );
+      
+      await Promise.all(sendPromises);
+      console.log('Completed weekly prompt job');
+      
+      return null;
+    } catch (error) {
+      console.error('Error in weekly prompt job:', error);
+      return null;
+    }
+  });
