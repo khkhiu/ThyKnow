@@ -46,11 +46,11 @@ async function setupWebhook(): Promise<void> {
   try {
     // Determine values with this priority: CLI args > .env > Firebase config > default
     const projectId = options.project || 
-                      process.env.FIREBASE_PROJECT_ID || 
+                      process.env.PROJECT_ID || 
                       JSON.parse(process.env.FIREBASE_CONFIG || '{}').project?.id;
     
     const region = options.region || 
-                   process.env.FIREBASE_REGION || 
+                   process.env.REGION || 
                    'us-central1';
     
     const functionName = options.function || 
