@@ -2,7 +2,8 @@ import { Context } from 'telegraf';
 import moment from 'moment-timezone';
 import UserService from '../services/user-service';
 import PromptService from '../services/prompt-service';
-import { JournalEntry, LastPrompt, PromptType } from '../types';
+//import { JournalEntry, LastPrompt, PromptType } from '../types';
+import { JournalEntry, LastPrompt} from '../types';
 import { FEEDBACK, MESSAGES, TIMEZONE } from '../constants';
 
 export class BotHandlers {
