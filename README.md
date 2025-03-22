@@ -1,171 +1,102 @@
-# ThyKnow Telegram Bot
+# Telegram Bot Quickstart Guide
 
-This repository contains a Telegram bot for personal journaling, helping users enhance self-awareness and build connections through weekly reflection prompts.
+This guide will help you quickly set up and verify your Telegram bot is working correctly.
 
-## Project Structure
+## Setup
 
-This project contains two implementations of the same bot:
+1. **Create an environment file**
 
-1. **Python Version** - Located in the `telegram_bot` directory
-2. **TypeScript/Firebase Version** - Located in the `firebase` directory
+   ```bash
+   cp .env.example .env
+   ```
 
-## Running with Docker
+   Edit the `.env` file and add your Telegram bot token:
+   ```
+   BOT_TOKEN=your_telegram_bot_token_here
+   TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+   ```
 
-You can run both implementations using Docker Compose:
+2. **Start the services**
 
-### 1. Set up environment variables
+   ```bash
+   docker-compose down
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
 
-Create a `.env` file in the root directory:
+3. **Make the test script executable**
 
-```bash
-# Copy the example file
-cp .env.example .env
+   ```bash
+   chmod +x test-bot.sh
+   ```
 
-# Edit with your Telegram Bot Token
-# Note: BOT_TOKEN is for Python version, TELEGRAM_BOT_TOKEN is for Firebase version
-```
+## Testing
 
-### 2. Run with Docker Compose
+1. **Run the verification script**
 
-```bash
-# Start both services
-docker-compose up -d
+   ```bash
+   ./test-bot.sh
+   ```
 
-# Start only the Python version
-docker-compose up -d telegram-bot
+   This will check if:
+   - The containers are running
+   - Your bot token is valid
+   - The webhook status (for Firebase functions)
+   - Show recent logs
 
-# Start only the Firebase version
-docker-compose up -d firebase
-```
+2. **Test in Telegram**
 
-### 3. Check the logs
-
-```bash
-# View logs from both services
-docker-compose logs -f
-
-# View logs from a specific service
-docker-compose logs -f telegram-bot
-docker-compose logs -f firebase
-```
-
-### 4. Stop the services
-
-```bash
-docker-compose down
-```
-
-## Running Individually Without Docker
-
-### Python Version
-
-1. Create a virtual environment:
-
-```bash
-cd telegram_bot
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Configure environment:
-
-```bash
-# Create .env file
-cp .env.example .env
-# Edit .env with your Telegram bot token
-```
-
-4. Run the bot:
-
-```bash
-python main.py
-```
-
-### Firebase Version
-
-1. Install dependencies:
-
-```bash
-cd firebase/functions
-npm install
-```
-
-2. Configure Firebase:
-
-```bash
-# Login to Firebase
-firebase login
-
-# Set up Firebase configuration
-firebase functions:config:set telegram.token="your_telegram_bot_token"
-
-# Get local config
-firebase functions:config:get > .runtimeconfig.json
-```
-
-3. Run the Firebase emulator:
-
-```bash
-npm run serve
-```
-
-## Cloud Deployment
-
-### Python Version - Cloud Run
-
-To deploy the Python version to Cloud Run:
-
-```bash
-cd telegram_bot
-export PROJECT_ID=your-google-cloud-project-id
-export BOT_TOKEN=your-telegram-bot-token
-chmod +x cloud-run-deploy.sh
-./cloud-run-deploy.sh
-```
-
-### Firebase Version
-
-To deploy the Firebase version to Cloud Run:
-
-```bash
-cd firebase/functions
-export PROJECT_ID=your-google-cloud-project-id
-export TELEGRAM_BOT_TOKEN=your-telegram-bot-token
-chmod +x cloud-run-deploy.sh
-./cloud-run-deploy.sh
-```
-
-Or to deploy as Firebase Functions:
-
-```bash
-cd firebase/functions
-npm run build
-firebase deploy --only functions
-
-# Set up webhook
-npm run setup-webhook
-```
+   - Open Telegram and find your bot by the username shown in the test script
+   - Send the `/start` command
+   - Try the `/prompt`, `/history`, and `/help` commands
+   - If the bot responds to these commands, it's working correctly!
 
 ## Troubleshooting
 
-### Cloud Run Deployment Issues
+### Python Bot Issues
 
-If you encounter "Container Healthcheck failed" errors on Cloud Run:
+If the Python bot isn't responding:
 
-1. Make sure the container listens on the port specified by the `PORT` environment variable
-2. Both Dockerfiles are configured to handle health checks automatically
-3. Try increasing the health check timeout in the Cloud Run configuration
+1. Check the logs:
+   ```bash
+   docker logs telegram-journal-bot
+   ```
 
-### Firebase Functions Issues
+2. Restart the container:
+   ```bash
+   docker-compose restart telegram-bot
+   ```
 
-For Firebase functions deployment issues:
+3. Make sure your bot token is correct
 
-1. Check that you've correctly set up the Telegram bot token in Firebase config
-2. Ensure your Firebase project has billing enabled for outbound networking
-3. Review the functions logs for specific error messages
+### Firebase Issues
+
+If the Firebase functions aren't working:
+
+1. Check the logs:
+   ```bash
+   docker logs firebase-functions
+   ```
+
+2. Rebuild the container:
+   ```bash
+   docker-compose build --no-cache firebase
+   docker-compose up -d firebase
+   ```
+
+## Container Management
+
+- **Stop all containers**
+  ```bash
+  docker-compose down
+  ```
+
+- **View logs**
+  ```bash
+  docker-compose logs -f
+  ```
+
+- **Restart a specific container**
+  ```bash
+  docker-compose restart telegram-bot
+  ```

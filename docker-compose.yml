@@ -28,10 +28,12 @@ services:
     volumes:
       - ./firebase/functions/src:/app/src
       - ./firebase/functions/lib:/app/lib
+      - ./firebase/.firebaserc:/app/.firebaserc:ro
+      - ./firebase/firebase.json:/firebase.json:ro
       - ./firebase/functions/.runtimeconfig.json:/app/.runtimeconfig.json:ro
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - PORT=8080
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json
     ports:
       - "8080:8080"
-    command: npm run serve
