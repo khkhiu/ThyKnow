@@ -36,3 +36,5 @@ ENV/
 # Logs
 *.log
 firebase/functions/.runtimeconfig.json
+firebase.json
+.firebaserc

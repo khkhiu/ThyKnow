@@ -27,5 +27,8 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - PORT=8080
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Health check port
       - "8879:8879"  # Firebase Functions port
+      - "5001:5001"  # Functions emulator
+      - "4000:4000"  # Emulator UI
+      - "8688:8688"  # Direct emulator port
