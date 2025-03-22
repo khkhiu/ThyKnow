@@ -1,9 +1,11 @@
+version: '3.8'
+
 services:
   # Python Telegram Bot
   telegram-bot:
     build:
       context: ./telegram_bot
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
     container_name: telegram-journal-bot
     volumes:
       - ./telegram_bot/data:/app/data
@@ -21,7 +23,7 @@ services:
   firebase:
     build:
       context: ./firebase/functions
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
     container_name: firebase-functions
     volumes:
       - ./firebase/functions/src:/app/src
