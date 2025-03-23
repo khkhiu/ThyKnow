@@ -1,0 +1,34 @@
+services:
+  # Python Telegram Bot
+  telegram-bot:
+    build:
+      context: ./telegram_bot
+      dockerfile: ./Dockerfile
+    container_name: telegram-journal-bot
+    volumes:
+      - ./telegram_bot/data:/app/data
+      - ./telegram_bot/logs:/app/logs
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - USERS_FILE=data/users.json
+      - CHECK_INTERVAL=3600
+      - PROMPT_HOUR=9
+      - PROMPT_DAY=0
+      - MAX_HISTORY=5
+    restart: unless-stopped
+
+  # Firebase Functions
+  firebase:
+    build:
+      context: ./firebase/functions
+      dockerfile: ./Dockerfile
+    container_name: firebase-functions
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - PORT=8080
+    ports:
+      - "8080:8080"  # Health check port
+      - "8879:8879"  # Firebase Functions port
+      - "5001:5001"  # Functions emulator
+      - "4000:4000"  # Emulator UI
+      - "8688:8688"  # Direct emulator port
