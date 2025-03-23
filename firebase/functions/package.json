@@ -11,7 +11,8 @@
     "logs": "firebase functions:log",
     "lint": "eslint --ext .js,.ts .",
     "lint:fix": "eslint --ext .js,.ts . --fix",
-    "setup-webhook": "ts-node scripts/setup-webhook.ts"
+    "setup-webhook": "ts-node scripts/setup-webhook.ts",
+    "dev": "cross-env NODE_ENV=development npm run build && node lib/index.js"
   },
   "engines": {
     "node": "20"
@@ -33,6 +34,7 @@
     "@typescript-eslint/parser": "^5.12.0",
     "axios": "^1.6.5",
     "dotenv": "^16.4.7",
+    "cross-env": "^7.0.3",
     "eslint": "^8.9.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-import": "^2.25.4",
