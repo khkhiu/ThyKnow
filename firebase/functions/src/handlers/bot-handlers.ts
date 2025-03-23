@@ -1,9 +1,9 @@
 import { Context } from 'telegraf';
 import moment from 'moment-timezone';
+import { Timestamp } from 'firebase-admin/firestore';
 import UserService from '../services/user-service';
 import PromptService from '../services/prompt-service';
-//import { JournalEntry, LastPrompt, PromptType } from '../types';
-import { JournalEntry, LastPrompt} from '../types';
+import { JournalEntry, LastPrompt } from '../types';
 import { FEEDBACK, MESSAGES, TIMEZONE } from '../constants';
 
 export class BotHandlers {
@@ -24,8 +24,21 @@ export class BotHandlers {
         return;
       }
       
-      // Create user if not exists
-      await this.userService.createOrUpdateUser(userId);
+      // Check if user exists first
+      const existingUser = await this.userService.getUser(userId);
+      
+      if (!existingUser) {
+        // Create a new user with initial required fields
+        await this.userService.createOrUpdateUser(userId, {
+          id: userId,
+          createdAt: Timestamp.now(),
+          promptCount: 0
+        });
+        
+        console.log(`Created new user with ID: ${userId}`);
+      } else {
+        console.log(`User ${userId} already exists`);
+      }
       
       // Send welcome message
       await ctx.reply(MESSAGES.WELCOME);
@@ -34,7 +47,6 @@ export class BotHandlers {
       await ctx.reply(MESSAGES.ERROR);
     }
   }
-
   sendPrompt = async (ctx: Context): Promise<void> => {
     try {
       const userId = ctx.from?.id.toString();

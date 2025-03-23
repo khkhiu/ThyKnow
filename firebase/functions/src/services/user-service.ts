@@ -24,17 +24,18 @@ class UserService {
     const userDoc = await userRef.get();
     
     if (!userDoc.exists) {
-      // Create new user
+      // Create new user with required fields
       await userRef.set({
         id: userId,
         createdAt: Timestamp.now(),
         promptCount: 0,
         ...data
       });
-    } else {
-      // Update existing user
+    } else if (Object.keys(data).length > 0) {
+      // Only update if there's data to update
       await userRef.update(data);
     }
+    // If document exists but no data to update, do nothing
   }
 
   async saveLastPrompt(userId: string, prompt: Prompt): Promise<void> {
