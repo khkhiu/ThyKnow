@@ -1,3 +1,5 @@
+// firebase/functions/src/types/index.ts
+
 import { Timestamp } from 'firebase-admin/firestore';
 
 export type PromptType = 'self_awareness' | 'connections';
@@ -8,11 +10,21 @@ export interface LastPrompt {
   timestamp: Timestamp;
 }
 
+// New interface for user schedule preferences
+export interface SchedulePreference {
+  enabled: boolean;           // Whether weekly prompts are enabled
+  day: number;                // Day of week (0-6, Sunday-Saturday)
+  hour: number;               // Hour (0-23)
+  timezone: string;           // User's timezone (default: 'Asia/Singapore')
+}
+
 export interface User {
   id: string;
   createdAt: Timestamp;
   promptCount: number;
   lastPrompt?: LastPrompt;
+  // Add schedule preferences
+  schedulePreference: SchedulePreference;
 }
 
 export interface JournalEntry {

@@ -1,3 +1,5 @@
+// firebase/functions/src/constants/index.ts
+
 import { PromptsCollection } from '../types';
 
 export const TIMEZONE = 'Asia/Singapore';
@@ -28,7 +30,10 @@ export const COMMAND_DESCRIPTIONS = {
   PROMPT: "Get a new reflection prompt",
   HISTORY: "View your recent journal entries",
   HELP: "Show available commands and usage",
-  TIMEZONE: "Check prompt timings"
+  TIMEZONE: "Check prompt timings",
+  SCHEDULE: "Set up your weekly prompt schedule",
+  TOGGLE_PROMPTS: "Enable or disable weekly prompts",
+  MY_SCHEDULE: "View your current schedule settings"
 };
 
 export const MESSAGES = {
@@ -40,8 +45,9 @@ export const MESSAGES = {
     "Commands:\n" +
     "/prompt - Get a new reflection prompt\n" +
     "/history - View your recent journal entries\n" +
-    "/timezone - Check prompt timings\n" +
-    "/help - shows all available commands\n\n" +
+    "/schedule - Set up your weekly prompt schedule\n" +
+    "/mySchedule - View your current schedule\n" +
+    "/help - Shows all available commands\n\n" +
     "Let's start your journaling journey! Use /prompt to get your first question.",
   
   HELP:
@@ -49,17 +55,20 @@ export const MESSAGES = {
     "• /start - Initialize the bot and get started\n" +
     "• /prompt - Get a new reflection prompt\n" +
     "• /history - View your recent journal entries\n" +
+    "• /schedule - Set up your weekly prompt schedule\n" +
+    "• /mySchedule - View your current schedule\n" +
+    "• /toggle_prompts - Enable or disable weekly prompts\n" +
     "• /help - Show this help message\n\n" +
     "📝 How to use:\n" +
     "1. Use /start to begin\n" +
-    "2. Get prompts with /prompt\n" +
-    "3. View your entries with /history\n\n" +
-    "✨ The bot will also send you weekly prompts " +
-    "every Monday at 9 AM in Singapore timezone.",
+    "2. Set your preferred schedule with /schedule\n" +
+    "3. Get prompts with /prompt or wait for weekly prompts\n" +
+    "4. View your entries with /history\n\n" +
+    "✨ The bot will send you weekly prompts based on your schedule preference.",
   
   TIMEZONE:
     "This bot operates on Singapore timezone (Asia/Singapore) for all users.\n" +
-    "Weekly prompts will be sent according to Singapore time.",
+    "You can set your preferred day and time to receive prompts using the /schedule command.",
   
   NO_HISTORY:
     "You haven't made any journal entries yet. Use /prompt to start!",
@@ -72,7 +81,11 @@ export const MESSAGES = {
   
   SAVE_ERROR:
     "Sorry, there was an error saving your response. " +
-    "Please try using /prompt to start again."
+    "Please try using /prompt to start again.",
+    
+  SCHEDULE_WELCOME:
+    "📅 Let's set up your weekly prompt schedule.\n\n" +
+    "What day of the week would you like to receive prompts?"
 };
 
 export const FEEDBACK = {

@@ -1,3 +1,5 @@
+// firebase/functions/src/handlers/bot-handlers.ts
+
 import { Context } from 'telegraf';
 import moment from 'moment-timezone';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -40,13 +42,14 @@ export class BotHandlers {
         console.log(`User ${userId} already exists`);
       }
       
-      // Send welcome message
+      // Send welcome message with updated commands
       await ctx.reply(MESSAGES.WELCOME);
     } catch (error) {
       console.error('Error in start command:', error);
       await ctx.reply(MESSAGES.ERROR);
     }
   }
+
   sendPrompt = async (ctx: Context): Promise<void> => {
     try {
       const userId = ctx.from?.id.toString();
@@ -138,10 +141,12 @@ export class BotHandlers {
   }
 
   showTimezone = async (ctx: Context): Promise<void> => {
+    // Updated timezone message that mentions schedule capability
     await ctx.reply(MESSAGES.TIMEZONE);
   }
 
   showHelp = async (ctx: Context): Promise<void> => {
+    // Updated help message with scheduling commands
     await ctx.reply(MESSAGES.HELP);
   }
 
@@ -191,6 +196,20 @@ export class BotHandlers {
 
   sendWeeklyPromptToUser = async (userId: string, bot: any): Promise<void> => {
     try {
+      // Check if the user exists and has enabled weekly prompts
+      const user = await this.userService.getUser(userId);
+      
+      if (!user) {
+        console.log(`User ${userId} not found, skipping prompt`);
+        return;
+      }
+      
+      // Check if weekly prompts are enabled for this user
+      if (user.schedulePreference && !user.schedulePreference.enabled) {
+        console.log(`User ${userId} has disabled weekly prompts, skipping`);
+        return;
+      }
+      
       // Get next prompt for user
       const prompt = await this.promptService.getNextPromptForUser(userId);
       
@@ -203,7 +222,8 @@ export class BotHandlers {
       
       const message = 
         `🌟 Weekly Reflection Time! ${categoryEmoji} ${categoryName}\n\n${prompt.text}\n\n` +
-        "Take a moment to pause and reflect on this question.";
+        "Take a moment to pause and reflect on this question.\n\n" +
+        "Reply with your thoughts when you're ready.";
         
       // Send message
       await bot.telegram.sendMessage(userId, message);
