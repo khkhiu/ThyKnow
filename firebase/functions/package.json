@@ -14,7 +14,7 @@
     "setup-webhook": "ts-node scripts/setup-webhook.ts"
   },
   "engines": {
-    "node": "20"
+    "node": "18"
   },
   "main": "lib/index.js",
   "dependencies": {
