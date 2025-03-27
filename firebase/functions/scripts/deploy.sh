@@ -30,10 +30,9 @@ echo "=== ThyKnow Bot Deployment ==="
 echo "Project ID: $PROJECT_ID"
 echo "Region: $REGION"
 
-# Step 1: Set up secrets for Functions V2
-echo "Setting up secrets for Firebase Functions V2..."
-chmod +x scripts/setup-secrets.sh
-./scripts/setup-secrets.sh
+# Step 1: Set Firebase configuration (using the older config method)
+echo "Setting Firebase configuration..."
+firebase functions:config:set telegram.token="$TELEGRAM_BOT_TOKEN" --project $PROJECT_ID
 
 # Step 2: Build the project
 echo "Building TypeScript code..."
@@ -63,6 +62,6 @@ export SCHEDULE_NAME="$SCHEDULE_NAME"
 
 echo "=== Deployment Complete ==="
 echo "Manual test commands:"
-echo "- Test webhook: curl https://botWebhook-$REGION-$PROJECT_ID.run.app"
+echo "- Test webhook: curl https://botwebhook-$REGION-$PROJECT_ID.run.app"
 echo "- Run scheduler manually: gcloud scheduler jobs run ${SCHEDULE_NAME:-weekly-journal-prompts} --project $PROJECT_ID --location $REGION"
 echo "- View logs: firebase functions:log --project $PROJECT_ID"
