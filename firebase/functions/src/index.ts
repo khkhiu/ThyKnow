@@ -1,6 +1,7 @@
 // firebase/functions/src/index.ts
 
 import * as functions from 'firebase-functions';
+import { defineSecret } from 'firebase-functions/params';
 import { onRequest } from 'firebase-functions/v2/https';
 import { onMessagePublished } from 'firebase-functions/v2/pubsub';
 import { initializeApp } from 'firebase-admin/app';
@@ -9,6 +10,10 @@ import { Telegraf } from 'telegraf';
 import PromptService from './services/prompt-service';
 import UserService from './services/user-service';
 import BotHandlers from './handlers/bot-handlers';
+import { startHealthCheckServer } from './health-server';
+
+// Start the health check server for Cloud Run
+startHealthCheckServer();
 
 // Initialize Firebase
 initializeApp();
@@ -18,8 +23,19 @@ const db = getFirestore();
 const userService = new UserService(db);
 const promptService = new PromptService(db);
 
-// Initialize Telegram bot with token from environment
-const bot = new Telegraf(functions.config().telegram.token);
+// Define secret for Telegram bot token (V2 way of handling secrets)
+const telegramBotToken = defineSecret('TELEGRAM_BOT_TOKEN');
+
+// Initialize Telegram bot
+// For local development/testing, fallback to using functions.config()
+let botToken = '';
+try {
+  botToken = process.env.TELEGRAM_BOT_TOKEN || functions.config().telegram?.token || '';
+} catch (error) {
+  console.warn('Using fallback for bot token');
+}
+
+const bot = new Telegraf(botToken);
 const botHandlers = new BotHandlers(userService, promptService);
 
 // Set up bot commands
@@ -37,14 +53,25 @@ export const botWebhook = onRequest(
   {
     region: 'us-central1',
     cors: true,
-    // This is critical for Cloud Run V2
+    // Cloud Run V2 settings
     concurrency: 80,
     minInstances: 0,
-    // The function shouldn't timeout quickly
+    maxInstances: 10,
+    // Extended timeout and memory
     timeoutSeconds: 60,
+    memory: '256MiB',
+    // Secrets configuration
+    secrets: [telegramBotToken]
   }, 
   async (req, res) => {
     try {
+      // For health checks
+      if (req.path === '/health' || (req.path === '/' && req.method === 'GET')) {
+        res.status(200).send({ status: 'healthy' });
+        return;
+      }
+
+      // Process Telegram webhook
       await bot.handleUpdate(req.body);
       res.status(200).send('OK');
     } catch (error) {
@@ -61,8 +88,11 @@ export const weeklyPromptPubSub = onMessagePublished(
     region: 'us-central1',
     // Cloud Run V2 settings
     concurrency: 1, // Limit concurrent executions to prevent duplicate sends
+    memory: '256MiB',
     retry: true, // Enable retries
     timeoutSeconds: 540, // 9 minutes
+    // Secrets configuration
+    secrets: [telegramBotToken]
   },
   async (event) => {
     try {
@@ -92,10 +122,19 @@ export const manualTriggerWeeklyPrompts = onRequest(
     cors: true, 
     // Cloud Run V2 settings
     concurrency: 1,
+    memory: '256MiB',
     timeoutSeconds: 540, // 9 minutes
+    // Secrets configuration
+    secrets: [telegramBotToken]
   }, 
   async (req, res) => {
     try {
+      // For health checks
+      if (req.path === '/health' || (req.path === '/' && req.method === 'GET')) {
+        res.status(200).send({ status: 'healthy' });
+        return;
+      }
+
       console.log('Manual trigger for weekly prompts');
       
       // Get all users

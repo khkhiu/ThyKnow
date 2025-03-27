@@ -8,13 +8,14 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log",
-    "lint": "eslint --ext .js,.ts .",
-    "lint:fix": "eslint --ext .js,.ts . --fix",
     "setup-webhook": "ts-node scripts/setup-webhook.ts",
     "setup-scheduler": "chmod +x scripts/setup-scheduler.sh && scripts/setup-scheduler.sh",
+    "setup-secrets": "chmod +x scripts/setup-secrets.sh && scripts/setup-secrets.sh",
+    "test-scheduler": "chmod +x scripts/test-scheduler.sh && scripts/test-scheduler.sh",
     "full-deploy": "chmod +x scripts/deploy.sh && scripts/deploy.sh",
-    "test-scheduler": "chmod +x scripts/test-scheduler.sh && scripts/test-scheduler.sh"
+    "logs": "firebase functions:log",
+    "lint": "eslint --ext .js,.ts .",
+    "lint:fix": "eslint --ext .js,.ts . --fix"
   },
   "engines": {
     "node": "20"

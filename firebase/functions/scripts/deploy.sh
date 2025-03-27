@@ -2,13 +2,12 @@
 # firebase/functions/scripts/deploy.sh
 set -e  # Exit on error
 
-# Load environment variables - Source with proper quoting
-set -a  # automatically export all variables
+# Load environment variables
 if [ -f .env ]; then
-  # Use . instead of source for better compatibility
+  set -a  # automatically export all variables
   . ./.env
+  set +a
 fi
-set +a
 
 # Check for required environment variables
 if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
@@ -31,9 +30,10 @@ echo "=== ThyKnow Bot Deployment ==="
 echo "Project ID: $PROJECT_ID"
 echo "Region: $REGION"
 
-# Step 1: Set Firebase config
-echo "Setting Firebase configuration..."
-firebase functions:config:set telegram.token="$TELEGRAM_BOT_TOKEN" --project $PROJECT_ID
+# Step 1: Set up secrets for Functions V2
+echo "Setting up secrets for Firebase Functions V2..."
+chmod +x scripts/setup-secrets.sh
+./scripts/setup-secrets.sh
 
 # Step 2: Build the project
 echo "Building TypeScript code..."
