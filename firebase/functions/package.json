@@ -17,7 +17,7 @@
     "test-scheduler": "chmod +x scripts/test-scheduler.sh && scripts/test-scheduler.sh"
   },
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "main": "lib/index.js",
   "dependencies": {
