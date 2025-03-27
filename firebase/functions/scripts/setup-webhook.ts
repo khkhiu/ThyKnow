@@ -75,7 +75,8 @@ async function setupWebhook(): Promise<void> {
       throw new Error('Telegram bot token not found. Please provide it via Firebase config, .env file, or --token option');
     }
     
-    const functionUrl = `https://${region}-${projectId}.cloudfunctions.net/${functionName}`;
+    // For Cloud Run V2, the URL format is now:
+    const functionUrl = `https://${functionName}-${region}-${projectId}.run.app`;
     
     console.log(`Setting up webhook for ${functionUrl}`);
     

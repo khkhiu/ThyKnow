@@ -33,19 +33,37 @@ bot.command('help', botHandlers.showHelp);
 bot.on('text', botHandlers.handleResponse);
 
 // Set up cloud function for webhook
-export const botWebhook = onRequest({ cors: true }, async (req, res) => {
-  try {
-    await bot.handleUpdate(req.body);
-    res.status(200).send('OK');
-  } catch (error) {
-    console.error('Error in webhook handler:', error);
-    res.status(500).send('Error');
+export const botWebhook = onRequest(
+  {
+    region: 'us-central1',
+    cors: true,
+    // This is critical for Cloud Run V2
+    concurrency: 80,
+    minInstances: 0,
+    // The function shouldn't timeout quickly
+    timeoutSeconds: 60,
+  }, 
+  async (req, res) => {
+    try {
+      await bot.handleUpdate(req.body);
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error('Error in webhook handler:', error);
+      res.status(500).send('Error');
+    }
   }
-});
+);
 
 // Pub/Sub topic handler for weekly prompts
 export const weeklyPromptScheduler = onMessagePublished(
-  'weekly-prompts', // This is the Pub/Sub topic name
+  {
+    topic: 'weekly-prompts', // This is the Pub/Sub topic name
+    region: 'us-central1',
+    // Cloud Run V2 settings
+    concurrency: 1, // Limit concurrent executions to prevent duplicate sends
+    retry: true, // Enable retries
+    timeoutSeconds: 540, // 9 minutes
+  },
   async (event) => {
     try {
       console.log('Starting weekly prompt job from Pub/Sub trigger');
@@ -62,34 +80,44 @@ export const weeklyPromptScheduler = onMessagePublished(
       console.log('Completed weekly prompt job');
     } catch (error) {
       console.error('Error in weekly prompt Pub/Sub handler:', error);
+      throw error; // Re-throw to indicate failure for retries
     }
   }
 );
 
 // Optional HTTP trigger for testing weekly prompts manually
-export const manualTriggerWeeklyPrompts = onRequest({ cors: true }, async (req, res) => {
-  try {
-    console.log('Manual trigger for weekly prompts');
-    
-    // Get all users
-    const users = await userService.getAllUsers();
-    console.log(`Sending prompts to ${users.length} users`);
-    
-    const sendPromises = users.map(user => 
-      botHandlers.sendWeeklyPromptToUser(user.id, bot)
-    );
-    
-    await Promise.all(sendPromises);
-    
-    res.status(200).send({ 
-      success: true, 
-      message: `Prompts sent to ${users.length} users` 
-    });
-  } catch (error) {
-    console.error('Error in manual trigger handler:', error);
-    res.status(500).send({ 
-      success: false, 
-      error: String(error) 
-    });
+export const manualTriggerWeeklyPrompts = onRequest(
+  {
+    region: 'us-central1',
+    cors: true, 
+    // Cloud Run V2 settings
+    concurrency: 1,
+    timeoutSeconds: 540, // 9 minutes
+  }, 
+  async (req, res) => {
+    try {
+      console.log('Manual trigger for weekly prompts');
+      
+      // Get all users
+      const users = await userService.getAllUsers();
+      console.log(`Sending prompts to ${users.length} users`);
+      
+      const sendPromises = users.map(user => 
+        botHandlers.sendWeeklyPromptToUser(user.id, bot)
+      );
+      
+      await Promise.all(sendPromises);
+      
+      res.status(200).send({ 
+        success: true, 
+        message: `Prompts sent to ${users.length} users` 
+      });
+    } catch (error) {
+      console.error('Error in manual trigger handler:', error);
+      res.status(500).send({ 
+        success: false, 
+        error: String(error) 
+      });
+    }
   }
-});
+);

@@ -2,10 +2,13 @@
 # firebase/functions/scripts/deploy.sh
 set -e  # Exit on error
 
-# Load environment variables
+# Load environment variables - Source with proper quoting
+set -a  # automatically export all variables
 if [ -f .env ]; then
-  source .env
+  # Use . instead of source for better compatibility
+  . ./.env
 fi
+set +a
 
 # Check for required environment variables
 if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
@@ -47,10 +50,19 @@ npm run setup-webhook -- --project $PROJECT_ID --region $REGION
 # Step 5: Set up the Cloud Scheduler
 echo "Setting up Cloud Scheduler..."
 chmod +x scripts/setup-scheduler.sh
-PROJECT_ID=$PROJECT_ID REGION=$REGION scripts/setup-scheduler.sh
+
+# Export variables explicitly for the scheduler script
+export PROJECT_ID=$PROJECT_ID
+export REGION=$REGION
+export SCHEDULE_TIME="$SCHEDULE_TIME"
+export TIMEZONE="$TIMEZONE"
+export TOPIC_NAME="$TOPIC_NAME"
+export SCHEDULE_NAME="$SCHEDULE_NAME"
+
+./scripts/setup-scheduler.sh
 
 echo "=== Deployment Complete ==="
 echo "Manual test commands:"
-echo "- Test webhook: curl https://$REGION-$PROJECT_ID.cloudfunctions.net/manualTriggerWeeklyPrompts"
-echo "- Run scheduler manually: gcloud scheduler jobs run weekly-journal-prompts --project $PROJECT_ID --location $REGION"
+echo "- Test webhook: curl https://botWebhook-$REGION-$PROJECT_ID.run.app"
+echo "- Run scheduler manually: gcloud scheduler jobs run ${SCHEDULE_NAME:-weekly-journal-prompts} --project $PROJECT_ID --location $REGION"
 echo "- View logs: firebase functions:log --project $PROJECT_ID"

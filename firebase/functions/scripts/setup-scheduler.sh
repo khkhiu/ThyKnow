@@ -3,9 +3,11 @@
 
 set -e  # Exit on error
 
-# Load environment variables
-if [ -f .env ]; then
-  source .env
+# Load environment variables if not already loaded
+if [ -z "$PROJECT_ID" ] && [ -f .env ]; then
+  set -a
+  . ./.env
+  set +a
 fi
 
 # Check for required environment variables
@@ -28,6 +30,8 @@ SCHEDULE_TIME=${SCHEDULE_TIME:-"0 9 * * 1"}  # Monday at 9 AM
 TIMEZONE=${TIMEZONE:-"Asia/Singapore"}
 
 echo "Setting up Cloud Scheduler with Pub/Sub for project: $PROJECT_ID"
+echo "Schedule time: $SCHEDULE_TIME"
+echo "Timezone: $TIMEZONE"
 
 # Step 1: Create Pub/Sub topic if it doesn't exist
 echo "Creating Pub/Sub topic: $TOPIC_NAME"
@@ -50,7 +54,7 @@ if gcloud scheduler jobs describe $SCHEDULE_NAME --project $PROJECT_ID --locatio
     --schedule "$SCHEDULE_TIME" \
     --topic $TOPIC_NAME \
     --message-body '{"action":"send_weekly_prompts"}' \
-    --time-zone $TIMEZONE
+    --time-zone "$TIMEZONE"
 else
   echo "Creating new scheduler job"
   gcloud scheduler jobs create pubsub $SCHEDULE_NAME \
@@ -59,7 +63,7 @@ else
     --schedule "$SCHEDULE_TIME" \
     --topic $TOPIC_NAME \
     --message-body '{"action":"send_weekly_prompts"}' \
-    --time-zone $TIMEZONE
+    --time-zone "$TIMEZONE"
 fi
 
 echo "Cloud Scheduler job created/updated successfully!"
@@ -70,6 +74,3 @@ echo "Which triggers Firebase function: weeklyPromptScheduler"
 echo ""
 echo "To test the scheduler manually, run:"
 echo "gcloud scheduler jobs run $SCHEDULE_NAME --project $PROJECT_ID --location $REGION"
-echo ""
-echo "Or use the HTTP trigger (after deployment):"
-echo "curl https://$REGION-$PROJECT_ID.cloudfunctions.net/manualTriggerWeeklyPrompts"
