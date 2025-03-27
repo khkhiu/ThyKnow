@@ -55,7 +55,7 @@ export const botWebhook = onRequest(
 );
 
 // Pub/Sub topic handler for weekly prompts
-export const weeklyPromptScheduler = onMessagePublished(
+export const weeklyPromptPubSub = onMessagePublished(
   {
     topic: 'weekly-prompts', // This is the Pub/Sub topic name
     region: 'us-central1',
