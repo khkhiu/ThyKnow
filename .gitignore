@@ -38,3 +38,4 @@ ENV/
 firebase/functions/.runtimeconfig.json
 firebase.json
 .firebaserc
+node_modules/
