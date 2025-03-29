@@ -1,5 +1,4 @@
 import { User } from '../models/User';
-import { IJournalEntry } from '../models/JournalEntry';
 import { PROMPTS } from '../constants';
 import { Prompt, PromptType } from '../types';
 import { logger } from '../utils/logger';
@@ -93,7 +92,12 @@ export class PromptService {
   /**
    * Create a journal entry object
    */
-  createJournalEntry(prompt: string, response: string, promptType: PromptType): Omit<IJournalEntry, 'userId' | '_id'> {
+  createJournalEntry(prompt: string, response: string, promptType: PromptType): {
+    prompt: string;
+    response: string;
+    promptType: PromptType;
+    timestamp: Date;
+  } {
     return {
       prompt,
       response,

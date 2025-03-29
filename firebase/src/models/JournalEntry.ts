@@ -1,8 +1,9 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
 import { PromptType } from '../types';
 
 // Journal entry interface
 export interface IJournalEntry extends Document {
+  _id: Types.ObjectId;
   userId: string;
   prompt: string;
   promptType: PromptType;

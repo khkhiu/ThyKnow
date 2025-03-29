@@ -69,7 +69,12 @@ export class UserService {
   /**
    * Save a user's response to a prompt
    */
-  async saveResponse(userId: string, entry: Omit<IJournalEntry, 'userId' | '_id'>): Promise<string> {
+  async saveResponse(userId: string, entry: {
+    prompt: string;
+    response: string;
+    promptType: PromptType;
+    timestamp: Date;
+  }): Promise<string> {
     try {
       const journalEntry = new JournalEntry({
         userId,
@@ -77,7 +82,8 @@ export class UserService {
       });
       
       await journalEntry.save();
-      return journalEntry._id.toString();
+      // Cast the _id to string directly to avoid type issues
+      return String(journalEntry._id);
     } catch (error) {
       logger.error(`Error saving response for user ${userId}:`, error);
       throw error;

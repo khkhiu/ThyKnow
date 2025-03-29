@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import { Telegraf } from 'telegraf';
 import { setupBotCommands } from './controllers/botController';
 import { errorHandler } from './middleware/errorHandler';
-import { webhookCallback } from 'telegraf/webhooks';
 import config from './config';
 import { logger } from './utils/logger';
 
@@ -24,7 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 setupBotCommands(bot);
 
 // Set up webhook endpoint for Telegram
-app.use('/webhook', webhookCallback(bot, 'express'));
+app.use('/webhook', express.json(), (req, res) => {
+  bot.handleUpdate(req.body, res);
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

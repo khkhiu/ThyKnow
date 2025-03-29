@@ -9,7 +9,7 @@ import { logger } from './utils/logger';
 
 // Connect to MongoDB
 mongoose
-  .connect(config.mongodbUri)
+  .connect(config.mongodbUri, {})
   .then(() => {
     logger.info('Connected to MongoDB');
     
@@ -39,10 +39,7 @@ mongoose
       logger.info('Shutting down server...');
       server.close(() => {
         logger.info('Server closed');
-        mongoose.connection.close(false, () => {
-          logger.info('MongoDB connection closed');
-          process.exit(0);
-        });
+        mongoose.connection.close(true);
       });
     };
     

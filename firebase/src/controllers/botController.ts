@@ -1,4 +1,5 @@
-import { Context, Telegraf } from 'telegraf';
+import { Context, Telegraf, NarrowedContext } from 'telegraf';
+import { Update, Message } from 'telegraf/typings/core/types/typegram';
 import moment from 'moment-timezone';
 import { userService } from '../services/userService';
 import { promptService } from '../services/promptService';
@@ -149,10 +150,10 @@ async function handleShowHelp(ctx: Context): Promise<void> {
 /**
  * Handle user text responses
  */
-async function handleUserResponse(ctx: Context): Promise<void> {
+async function handleUserResponse(ctx: NarrowedContext<Context, Update.MessageUpdate<Message.TextMessage>>): Promise<void> {
   try {
     const userId = ctx.from?.id.toString();
-    const messageText = ctx.message && 'text' in ctx.message ? ctx.message.text : null;
+    const messageText = ctx.message.text;
     
     if (!userId || !messageText) {
       logger.error('No user ID or message text found in context');
@@ -205,7 +206,7 @@ export function setupBotCommands(bot: Telegraf): void {
   bot.command('help', handleShowHelp);
   
   // Register message handlers for user responses
-  bot.on('text', handleUserResponse);
+  bot.on('text', (ctx) => handleUserResponse(ctx as NarrowedContext<Context, Update.MessageUpdate<Message.TextMessage>>));
   
   // Handle errors
   bot.catch((err, ctx) => {

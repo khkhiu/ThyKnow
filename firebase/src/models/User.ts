@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
 import { PromptType } from '../types';
 
 // Last prompt schema
@@ -16,6 +16,7 @@ const lastPromptSchema = new Schema<ILastPrompt>({
 
 // User interface
 export interface IUser extends Document {
+  _id: Types.ObjectId;
   id: string; // Telegram user ID
   createdAt: Date;
   promptCount: number;
