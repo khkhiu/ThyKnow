@@ -1,0 +1,36 @@
+services:
+  # Express.js application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: thyknow-express
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - MONGODB_URI=mongodb://mongo:27017/thyknow
+      - TIMEZONE=Asia/Singapore
+      - PROMPT_DAY=1
+      - PROMPT_HOUR=9
+      - MAX_HISTORY=5
+    depends_on:
+      - mongo
+
+  # MongoDB database
+  mongo:
+    image: mongo:6
+    container_name: thyknow-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo-data:
