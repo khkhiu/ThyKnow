@@ -395,35 +395,219 @@ async function handleCallbackQuery(ctx: CallbackContext): Promise<void> {
 }
 
 /**
+ * Handle text messages (responses to prompts)
+ */
+async function handleTextMessage(ctx: Context): Promise<void> {
+  try {
+    // Ignore command messages
+    if (ctx.message?.text?.startsWith('/')) {
+      return;
+    }
+    
+    const userId = ctx.from?.id.toString();
+    const messageText = ctx.message?.text;
+    
+    if (!userId || !messageText) {
+      logger.error('Missing user ID or message text');
+      return;
+    }
+    
+    logger.info(`Received text message from user ${userId}: ${messageText.substring(0, 20)}...`);
+    
+    // Get user data
+    const user = await userService.getUser(userId);
+    
+    if (!user) {
+      logger.info(`User ${userId} not found, suggesting to start the bot`);
+      await ctx.reply("Please start the bot with /start first!");
+      return;
+    }
+    
+    // Check if user has an active prompt to respond to
+    if (!user.lastPrompt) {
+      logger.info(`User ${userId} has no active prompt`);
+      await ctx.reply("I don't have a prompt for you to respond to. Use /prompt to get one.");
+      return;
+    }
+    
+    // Calculate time since prompt was sent (to avoid treating unrelated messages as responses)
+    const promptTime = new Date(user.lastPrompt.timestamp);
+    const now = new Date();
+    const hoursSincePrompt = (now.getTime() - promptTime.getTime()) / (1000 * 60 * 60);
+    
+    // If it's been more than 24 hours, maybe this isn't a response to the prompt
+    if (hoursSincePrompt > 24) {
+      logger.info(`User ${userId}'s last prompt is over 24 hours old (${hoursSincePrompt.toFixed(1)} hours). Asking for confirmation.`);
+      
+      // Could add an inline keyboard here to confirm if this is a response to the old prompt
+      await ctx.reply(
+        "It's been a while since I sent you a prompt. Are you responding to this prompt?\n\n" +
+        `"${user.lastPrompt.text}"\n\n` +
+        "If yes, I'll save your response. If not, you can use /prompt to get a new prompt.",
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "Yes, save my response", callback_data: `save_response:${messageText.substring(0, 20)}...` },
+                { text: "No, give me a new prompt", callback_data: "new_prompt" }
+              ]
+            ]
+          }
+        }
+      );
+      return;
+    }
+    
+    // Create journal entry
+    const entry = {
+      prompt: user.lastPrompt.text,
+      promptType: user.lastPrompt.type as PromptType,
+      response: messageText,
+      timestamp: new Date()
+    };
+    
+    // Save response
+    try {
+      await userService.saveResponse(userId, entry);
+      logger.info(`Successfully saved journal entry for user ${userId}`);
+      
+      // Determine feedback based on prompt type
+      const feedbackMessage = user.lastPrompt.type === 'self_awareness' 
+        ? FEEDBACK.SELF_AWARENESS 
+        : FEEDBACK.CONNECTIONS;
+      
+      // Send feedback to user
+      await ctx.reply(feedbackMessage);
+      
+    } catch (error) {
+      logger.error(`Failed to save response for user ${userId}:`, error);
+      await ctx.reply(MESSAGES.SAVE_ERROR);
+    }
+    
+  } catch (error) {
+    logger.error('Error handling text message:', error);
+    await ctx.reply(MESSAGES.ERROR);
+  }
+}
+
+/**
+ * Handle callback for saving response or getting new prompt
+ */
+async function handleResponseCallback(ctx: CallbackContext): Promise<void> {
+  try {
+    const userId = ctx.from?.id.toString();
+    
+    if (!userId) {
+      logger.error('No user ID in callback context');
+      await ctx.answerCbQuery('Error: User ID missing');
+      return;
+    }
+    
+    // Cast to DataQuery type to access the data property
+    const callbackQuery = ctx.callbackQuery as CallbackQuery.DataQuery;
+    const data = callbackQuery.data;
+    
+    if (!data) {
+      await ctx.answerCbQuery('Invalid callback data');
+      return;
+    }
+    
+    if (data === 'new_prompt') {
+      // User wants a new prompt instead of saving response
+      await ctx.answerCbQuery('Getting a new prompt...');
+      await ctx.deleteMessage();
+      
+      // Reuse the existing prompt command handler
+      const promptCtx = ctx as unknown as Context;
+      await handleSendPrompt(promptCtx);
+      return;
+    }
+    
+    if (data.startsWith('save_response:')) {
+      // User confirms they want to save their response
+      const user = await userService.getUser(userId);
+      
+      if (!user || !user.lastPrompt) {
+        await ctx.answerCbQuery('Error: Prompt data not found');
+        await ctx.editMessageText('Sorry, I could not find your prompt data. Please use /prompt to get a new one.');
+        return;
+      }
+      
+      // Get the original message text
+      const originalMessage = ctx.callbackQuery.message?.reply_to_message?.text;
+      
+      if (!originalMessage) {
+        await ctx.answerCbQuery('Error: Original message not found');
+        await ctx.editMessageText('Sorry, I could not find your original message. Please use /prompt to get a new prompt.');
+        return;
+      }
+      
+      // Create and save entry
+      const entry = {
+        prompt: user.lastPrompt.text,
+        promptType: user.lastPrompt.type as PromptType,
+        response: originalMessage,
+        timestamp: new Date()
+      };
+      
+      await userService.saveResponse(userId, entry);
+      await ctx.answerCbQuery('Response saved!');
+      
+      // Determine feedback based on prompt type
+      const feedbackMessage = user.lastPrompt.type === 'self_awareness' 
+        ? FEEDBACK.SELF_AWARENESS 
+        : FEEDBACK.CONNECTIONS;
+      
+      // Update message with confirmation
+      await ctx.editMessageText(feedbackMessage);
+    }
+    
+  } catch (error) {
+    logger.error('Error handling response callback:', error);
+    await ctx.answerCbQuery('Sorry, an error occurred');
+  }
+}
+
+/**
  * Set up all bot commands and handlers
  */
-export function setupBotCommands(bot: Telegraf): void {
+export function setupBotCommands(bot: Telegraf<Context>): void {
   // Register command handlers
   bot.start(handleStart);
   bot.command('prompt', handleSendPrompt);
   bot.command('history', handleShowHistory);
   bot.command('timezone', handleShowTimezone);
   bot.command('help', handleShowHelp);
-  
-  // Register schedule management commands
   bot.command('schedule', handleScheduleCommand);
   bot.command('schedule_day', handleScheduleDayCommand);
   bot.command('schedule_time', handleScheduleTimeCommand);
   bot.command('schedule_toggle', handleScheduleToggleCommand);
   
-  // Register callback query handler for interactive buttons
-  bot.on('callback_query', (ctx) => handleCallbackQuery(ctx as CallbackContext));
-  
-  // Register message handlers for user responses
-  //bot.on('text', (ctx) => handleUserResponse(ctx as NarrowedContext<Context, Update.MessageUpdate<Message.TextMessage>>));
-  
-  // Handle errors
-  bot.catch((err, ctx) => {
-    logger.error('Telegraf error', err);
-    ctx.reply('An error occurred while processing your request. Please try again later.');
+  // Register callback query handlers
+  bot.on('callback_query', (ctx) => {
+    const callbackData = (ctx.callbackQuery as any).data;
+    
+    if (!callbackData) return;
+    
+    if (callbackData.startsWith('set_day:') || callbackData.startsWith('set_time:')) {
+      return handleCallbackQuery(ctx);
+    }
+    
+    if (callbackData.startsWith('save_response:') || callbackData === 'new_prompt') {
+      return handleResponseCallback(ctx);
+    }
   });
   
-  // Set bot commands for menu
+  // *** ADD THIS HANDLER FOR TEXT MESSAGES ***
+  bot.on('text', handleTextMessage);
+  
+  // Register error handler
+  bot.catch((err, ctx) => {
+    logger.error('Bot error:', err);
+    ctx.reply(MESSAGES.ERROR);
+  });
+  
+  // Set up bot commands menu
   bot.telegram.setMyCommands([
     { command: 'start', description: 'Initialize the bot and get started' },
     { command: 'prompt', description: 'Get a new reflection prompt' },
@@ -431,7 +615,5 @@ export function setupBotCommands(bot: Telegraf): void {
     { command: 'timezone', description: 'Check prompt timings' },
     { command: 'schedule', description: 'Manage your prompt schedule' },
     { command: 'help', description: 'Show available commands and usage' }
-  ]).catch(error => {
-    logger.error('Error setting bot commands:', error);
-  });
+  ]);
 }
