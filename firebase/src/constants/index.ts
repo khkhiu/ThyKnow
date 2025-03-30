@@ -1,3 +1,4 @@
+// firebase/src/constants/index.ts
 import { PromptsCollection } from '../types';
 
 // Default timezone
@@ -31,7 +32,8 @@ export const COMMAND_DESCRIPTIONS = {
   PROMPT: "Get a new reflection prompt",
   HISTORY: "View your recent journal entries",
   HELP: "Show available commands and usage",
-  TIMEZONE: "Check prompt timings"
+  TIMEZONE: "Check prompt timings",
+  SCHEDULE: "Manage your prompt schedule"
 };
 
 // User-facing messages
@@ -44,8 +46,9 @@ export const MESSAGES = {
     "Commands:\n" +
     "/prompt - Get a new reflection prompt\n" +
     "/history - View your recent journal entries\n" +
+    "/schedule - Manage your prompt schedule\n" +
     "/timezone - Check prompt timings\n" +
-    "/help - shows all available commands\n\n" +
+    "/help - Shows all available commands\n\n" +
     "Let's start your journaling journey! Use /prompt to get your first question.",
   
   HELP:
@@ -53,17 +56,24 @@ export const MESSAGES = {
     "• /start - Initialize the bot and get started\n" +
     "• /prompt - Get a new reflection prompt\n" +
     "• /history - View your recent journal entries\n" +
+    "• /timezone - Check prompt timings\n" +
     "• /help - Show this help message\n\n" +
+    "📅 Schedule Management:\n" +
+    "• /schedule - View your current prompt schedule\n" +
+    "• /schedule_day - Set the day to receive prompts\n" +
+    "• /schedule_time - Set the time to receive prompts\n" +
+    "• /schedule_toggle - Turn weekly prompts on/off\n\n" +
     "📝 How to use:\n" +
     "1. Use /start to begin\n" +
     "2. Get prompts with /prompt\n" +
-    "3. View your entries with /history\n\n" +
-    "✨ The bot will also send you weekly prompts " +
-    "every Monday at 9 AM in Singapore timezone.",
+    "3. View your entries with /history\n" +
+    "4. Set your preferred schedule with /schedule\n\n" +
+    "✨ You will receive weekly prompts according to your schedule preferences.",
   
   TIMEZONE:
     "This bot operates on Singapore timezone (Asia/Singapore) for all users.\n" +
-    "Weekly prompts will be sent according to Singapore time.",
+    "Weekly prompts will be sent according to Singapore time.\n\n" +
+    "You can customize your prompt schedule using the /schedule command.",
   
   NO_HISTORY:
     "You haven't made any journal entries yet. Use /prompt to start!",
@@ -76,7 +86,34 @@ export const MESSAGES = {
   
   SAVE_ERROR:
     "Sorry, there was an error saving your response. " +
-    "Please try using /prompt to start again."
+    "Please try using /prompt to start again.",
+
+  SCHEDULE: {
+    CURRENT: 
+      "📅 Your current prompt schedule:\n\n" +
+      "Day: {day}\n" +
+      "Time: {hour}:00\n" +
+      "Status: {status}\n\n" +
+      "To change your schedule, use one of these commands:\n\n" +
+      "/schedule_day - Set the day of the week\n" +
+      "/schedule_time - Set the hour of the day\n" +
+      "/schedule_toggle - Turn weekly prompts on/off",
+      
+    SELECT_DAY:
+      "Select a day to receive your weekly prompts:",
+      
+    SELECT_TIME:
+      "Select the hour to receive your weekly prompts (in 24-hour format):",
+      
+    UPDATED:
+      "✅ Your schedule has been updated! You will receive prompts on {day} at {hour}:00.",
+      
+    ENABLED:
+      "✅ Weekly prompts are now enabled.",
+      
+    DISABLED:
+      "✅ Weekly prompts are now disabled."
+  }
 };
 
 // Feedback messages based on prompt type
@@ -90,10 +127,4 @@ export const FEEDBACK = {
     "✨ Thank you for sharing! Your response has been saved.\n\n" +
     "Building meaningful connections with others often starts with understanding ourselves.\n" +
     "Use /prompt when you're ready for another question."
-};
-
-// Weekly prompt schedule
-export const WEEKLY_PROMPT = {
-  DAY: 1, // Monday
-  HOUR: 9 // 9 AM
 };

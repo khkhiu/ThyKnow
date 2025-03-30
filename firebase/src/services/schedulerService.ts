@@ -1,3 +1,4 @@
+// firebase/src/services/schedulerService.ts
 import cron from 'node-cron';
 import { bot } from '../app';
 import { userService } from './userService';
@@ -33,25 +34,36 @@ export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
 }
 
 /**
- * Set up the scheduler to send weekly prompts
+ * Set up the scheduler to check hourly and send personalized prompts
  */
 export function setupScheduler(): void {
-  // Schedule to run every Monday at 9 AM in Singapore timezone
-  // Format: second minute hour day-of-month month day-of-week
-  const cronExpression = `0 ${config.scheduler.promptHour} * * ${config.scheduler.promptDay}`;
+  // Schedule to run every hour to check for users who should receive prompts
+  const cronExpression = `0 * * * *`; // Every hour
   
-  logger.info(`Setting up weekly prompt scheduler with cron expression: ${cronExpression}, timezone: ${config.timezone}`);
+  logger.info(`Setting up hourly prompt scheduler with cron expression: ${cronExpression}`);
   
   cron.schedule(cronExpression, async () => {
     try {
-      logger.info('Starting weekly prompt job');
+      const now = new Date();
+      const currentDay = now.getDay(); // 0-6 (Sunday to Saturday)
+      const currentHour = now.getHours(); // 0-23
+      
+      logger.info(`Checking scheduled prompts for day ${currentDay}, hour ${currentHour}`);
       
       // Get all users
       const users = await userService.getAllUsers();
-      logger.info(`Sending prompts to ${users.length} users`);
+      
+      // Filter users who should receive prompts now based on their preferences
+      const usersToSendPrompts = users.filter(user => 
+        user.schedulePreference.enabled &&
+        user.schedulePreference.day === currentDay &&
+        user.schedulePreference.hour === currentHour
+      );
+      
+      logger.info(`Sending prompts to ${usersToSendPrompts.length} users`);
       
       // For each user, send a prompt
-      for (const user of users) {
+      for (const user of usersToSendPrompts) {
         try {
           await sendWeeklyPromptToUser(user.id);
         } catch (error) {
@@ -59,9 +71,9 @@ export function setupScheduler(): void {
         }
       }
       
-      logger.info('Completed weekly prompt job');
+      logger.info('Completed scheduled prompt job');
     } catch (error) {
-      logger.error('Error in weekly prompt job:', error);
+      logger.error('Error in scheduled prompt job:', error);
     }
   }, {
     timezone: config.timezone

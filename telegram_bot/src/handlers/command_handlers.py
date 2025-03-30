@@ -1,160 +1,268 @@
-"""Command handlers for the Telegram Journal Bot."""
+# telegram_bot/src/handlers/command_handlers.py
 
-from telegram import Update
-from telegram.ext import ContextTypes
-import pytz
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler
 from datetime import datetime
-from typing import Optional
-from src.models.user import User
-from src.services.storage_service import StorageService
-from src.services.prompt_service import PromptService
-from src.utils.logger import get_logger
+from src.models.user import User, SchedulePreference
 
-logger = get_logger(__name__)
+# Define conversation states
+CHOOSING_DAY = 1
+CHOOSING_TIME = 2
 
-class CommandHandlers:
-    """Handlers for bot commands."""
+async def schedule(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handle the /schedule command.
     
-    def __init__(
-        self,
-        storage_service: StorageService,
-        prompt_service: PromptService,
-        max_history: int
-    ):
-        """
-        Initialize command handlers with required services.
-        
-        Args:
-            storage_service: Service for managing user data
-            prompt_service: Service for managing prompts
-            max_history: Maximum number of history entries to show
-        """
-        self.storage = storage_service
-        self.prompt_service = prompt_service
-        self.max_history = max_history
+    Shows the user's current schedule preferences and options to change them.
+    """
+    if not update.effective_user:
+        logger.error("No effective user found in update")
+        return
 
-    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Handle the /start command.
-        
-        Creates a new user if they don't exist and sends welcome message.
-        """
-        if not update.effective_user:
-            logger.error("No effective user found in update")
-            return
-
-        user_id = str(update.effective_user.id)
-        
-        if not self.storage.get_user(user_id):
-            user = User(id=user_id)
-            self.storage.add_user(user)
-            logger.info(f"Created new user with ID: {user_id}")
-
-        welcome_message = (
-            "Welcome to your personal journaling companion! 🌟\n\n"
-            "I'll send you weekly prompts to help you reflect on:\n"
-            "• Self-awareness 🤔\n"
-            "• Building meaningful connections 🤝\n\n"
-            "Commands:\n"
-            "/prompt - Get a new reflection prompt\n"
-            "/history - View your recent journal entries\n"
-            "/timezone - Check prompt timings\n"
-            "/help - shows all available commands\n\n"
-            "Let's start your journaling journey! Use /prompt to get your first question."
-        )
-        await update.message.reply_text(welcome_message)
-
-    async def view_history(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Handle the /history command.
-        
-        Shows the user their recent journal entries.
-        """
-        if not update.effective_user:
-            logger.error("No effective user found in update")
-            return
-
-        user_id = str(update.effective_user.id)
-        user = self.storage.get_user(user_id)
-        
-        if not user:
-            await update.message.reply_text(
-                "Please start the bot with /start first!"
-            )
-            return
-        
-        if not user.responses:
-            await update.message.reply_text(
-                "You haven't made any journal entries yet. Use /prompt to start!"
-            )
-            return
-
-        try:
-            recent_entries = user.get_recent_entries(self.max_history)
-            history_text = "📖 Your Recent Journal Entries:\n\n"
-            
-            for entry in recent_entries:
-                date = datetime.fromisoformat(entry.timestamp).strftime('%Y-%m-%d %H:%M')
-                history_text += f"📅 {date}\n"
-                history_text += f"Q: {entry.prompt}\n"
-                history_text += f"A: {entry.response}\n\n"
-
-            # Split message if it's too long
-            if len(history_text) > 4000:
-                chunks = [history_text[i:i+4000] for i in range(0, len(history_text), 4000)]
-                for chunk in chunks:
-                    await update.message.reply_text(chunk)
-            else:
-                await update.message.reply_text(history_text)
-
-        except Exception as e:
-            logger.error(f"Error displaying history for user {user_id}: {e}")
-            await update.message.reply_text(
-                "Sorry, there was an error retrieving your history. Please try again."
-            )
-
-    async def set_timezone(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Handle the /timezone command.
-        
-        Informs users that timezone is fixed to Singapore time.
-        """
+    user_id = str(update.effective_user.id)
+    user = self.storage.get_user(user_id)
+    
+    if not user:
         await update.message.reply_text(
-            "This bot operates on Singapore timezone (Asia/Singapore) for all users.\n"
-            "Weekly prompts will be sent according to Singapore time."
+            "Please start the bot with /start first!"
         )
+        return
+    
+    # Get day names
+    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    current_day = day_names[user.schedule_preference.day]
+    current_hour = user.schedule_preference.hour
+    status = "enabled" if user.schedule_preference.enabled else "disabled"
+    
+    # Create message showing current schedule
+    schedule_text = (
+        f"📅 Your current prompt schedule:\n\n"
+        f"Day: {current_day}\n"
+        f"Time: {current_hour}:00\n"
+        f"Status: {status}\n\n"
+        f"Use these commands to change your schedule:\n"
+        f"/schedule_day - Change the day\n"
+        f"/schedule_time - Change the time\n"
+        f"/schedule_toggle - Turn weekly prompts on/off"
+    )
+    
+    await update.message.reply_text(schedule_text)
 
-    async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Handle the /help command.
-        
-        Shows available commands and their usage.
-        """
-        help_text = (
-            "🤖 Available Commands:\n\n"
-            "• /start - Initialize the bot and get started\n"
-            "• /prompt - Get a new reflection prompt\n"
-            "• /history - View your recent journal entries\n"
-            "• /help - Show this help message\n\n"
-            "📝 How to use:\n"
-            "1. Use /start to begin\n"
-            "2. Get prompts with /prompt\n"
-            "3. View your entries with /history\n\n"
-            "✨ The bot will also send you weekly prompts "
-            "every Monday at 9 AM in your timezone."
-        )
-        await update.message.reply_text(help_text)
+async def schedule_day(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handle the /schedule_day command.
+    
+    Shows an inline keyboard with days of the week.
+    """
+    if not update.effective_user:
+        logger.error("No effective user found in update")
+        return
 
-    async def handle_error(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        General error handler for all commands.
-        
-        Logs errors and sends a user-friendly message.
-        """
-        logger.error(f"Update {update} caused error {context.error}")
-        error_message = (
-            "Sorry, something went wrong while processing your request. "
-            "Please try again later or use /help for available commands."
+    user_id = str(update.effective_user.id)
+    user = self.storage.get_user(user_id)
+    
+    if not user:
+        await update.message.reply_text(
+            "Please start the bot with /start first!"
         )
-        if update.effective_message:
-            await update.effective_message.reply_text(error_message)
+        return
+
+    # Create keyboard with days of the week
+    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    keyboard = []
+    
+    for i, day in enumerate(day_names):
+        keyboard.append([InlineKeyboardButton(day, callback_data=f"day:{i}")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        "Select a day to receive your weekly prompts:",
+        reply_markup=reply_markup
+    )
+    
+    return CHOOSING_DAY
+
+async def schedule_time(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handle the /schedule_time command.
+    
+    Shows an inline keyboard with hours of the day.
+    """
+    if not update.effective_user:
+        logger.error("No effective user found in update")
+        return
+
+    user_id = str(update.effective_user.id)
+    user = self.storage.get_user(user_id)
+    
+    if not user:
+        await update.message.reply_text(
+            "Please start the bot with /start first!"
+        )
+        return
+
+    # Create keyboard with hours (0-23)
+    keyboard = []
+    row = []
+    
+    for hour in range(24):
+        row.append(InlineKeyboardButton(f"{hour}:00", callback_data=f"time:{hour}"))
+        
+        # Create rows with 4 buttons each
+        if len(row) == 4:
+            keyboard.append(row)
+            row = []
+    
+    # Add any remaining buttons
+    if row:
+        keyboard.append(row)
+        
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        "Select the hour to receive your weekly prompts (in 24-hour format):",
+        reply_markup=reply_markup
+    )
+    
+    return CHOOSING_TIME
+
+async def schedule_toggle(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handle the /schedule_toggle command.
+    
+    Toggles whether the user receives weekly prompts.
+    """
+    if not update.effective_user:
+        logger.error("No effective user found in update")
+        return
+
+    user_id = str(update.effective_user.id)
+    user = self.storage.get_user(user_id)
+    
+    if not user:
+        await update.message.reply_text(
+            "Please start the bot with /start first!"
+        )
+        return
+    
+    # Toggle the enabled status
+    user.schedule_preference.enabled = not user.schedule_preference.enabled
+    self.storage.add_user(user)
+    
+    status = "enabled" if user.schedule_preference.enabled else "disabled"
+    
+    await update.message.reply_text(
+        f"✅ Weekly prompts are now {status}."
+    )
+
+async def handle_schedule_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handle callbacks from schedule inline keyboards.
+    
+    Updates user preferences based on their selection.
+    """
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(update.effective_user.id)
+    user = self.storage.get_user(user_id)
+    
+    if not user:
+        await query.edit_message_text(
+            "Error: User not found. Please use /start first."
+        )
+        return ConversationHandler.END
+    
+    # Get the callback data
+    data = query.data
+    
+    if data.startswith("day:"):
+        day = int(data.split(":")[1])
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        
+        # Update the user's preference
+        user.schedule_preference.day = day
+        self.storage.add_user(user)
+        
+        await query.edit_message_text(
+            f"✅ Day set to {day_names[day]}! You will receive prompts on {day_names[day]} at {user.schedule_preference.hour}:00."
+        )
+        return ConversationHandler.END
+    
+    elif data.startswith("time:"):
+        hour = int(data.split(":")[1])
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        
+        # Update the user's preference
+        user.schedule_preference.hour = hour
+        self.storage.add_user(user)
+        
+        await query.edit_message_text(
+            f"✅ Time set to {hour}:00! You will receive prompts on {day_names[user.schedule_preference.day]} at {hour}:00."
+        )
+        return ConversationHandler.END
+    
+    return ConversationHandler.END
+
+async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handle the /help command.
+    
+    Shows available commands and their usage.
+    """
+    help_text = (
+        "🤖 Available Commands:\n\n"
+        "• /start - Initialize the bot and get started\n"
+        "• /prompt - Get a new reflection prompt\n"
+        "• /history - View your recent journal entries\n"
+        "• /timezone - Check prompt timings\n"
+        "• /help - Show this help message\n\n"
+        "📅 Schedule Management:\n"
+        "• /schedule - View your current prompt schedule\n"
+        "• /schedule_day - Set the day to receive prompts\n"
+        "• /schedule_time - Set the time to receive prompts\n"
+        "• /schedule_toggle - Turn weekly prompts on/off\n\n"
+        "📝 How to use:\n"
+        "1. Use /start to begin\n"
+        "2. Get prompts with /prompt\n"
+        "3. View your entries with /history\n"
+        "4. Set your preferred schedule with /schedule\n\n"
+        "✨ You will receive weekly prompts according to your schedule preferences."
+    )
+    await update.message.reply_text(help_text)
+
+
+# Update the start method in telegram_bot/src/handlers/command_handlers.py
+
+async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handle the /start command.
+    
+    Creates a new user if they don't exist and sends welcome message.
+    """
+    if not update.effective_user:
+        logger.error("No effective user found in update")
+        return
+
+    user_id = str(update.effective_user.id)
+    
+    if not self.storage.get_user(user_id):
+        user = User(id=user_id)
+        self.storage.add_user(user)
+        logger.info(f"Created new user with ID: {user_id}")
+
+    welcome_message = (
+        "Welcome to your personal journaling companion! 🌟\n\n"
+        "I'll send you weekly prompts to help you reflect on:\n"
+        "• Self-awareness 🤔\n"
+        "• Building meaningful connections 🤝\n\n"
+        "Commands:\n"
+        "/prompt - Get a new reflection prompt\n"
+        "/history - View your recent journal entries\n"
+        "/schedule - Manage your prompt schedule\n"
+        "/timezone - Check prompt timings\n"
+        "/help - Shows all available commands\n\n"
+        "Let's start your journaling journey! Use /prompt to get your first question."
+    )
+    await update.message.reply_text(welcome_message)

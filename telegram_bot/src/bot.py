@@ -44,24 +44,30 @@ class JournalBot:
         self.last_prompt_type = None
 
     async def weekly_prompt_job(self, context):
-        """Job to send weekly prompts to all users."""
+        """Job to send weekly prompts to users based on their preferences."""
         try:
             # Get Singapore timezone
             sg_tz = pytz.timezone('Asia/Singapore')
             current_time = datetime.now(sg_tz)
+            current_day = current_time.weekday()  # 0-6 (Monday-Sunday)
+            current_hour = current_time.hour  # 0-23
             
-            # Only proceed if it's the target day and hour
-            if current_time.weekday() != self.config.prompt_day or current_time.hour != self.config.prompt_hour:
-                logger.info(f"Not time to send prompts. Current: weekday={current_time.weekday()}, hour={current_time.hour}")
-                return
-                
-            logger.info(f"Starting weekly prompt job at {current_time}")
+            logger.info(f"Checking for scheduled prompts at day={current_day}, hour={current_hour}")
             
             # Get all users
             users = self.storage_service.get_all_users()
-            logger.info(f"Sending prompts to {len(users)} users")
             
-            for user in users.values():
+            # Filter users who should receive prompts at this time
+            users_to_notify = []
+            for user_id, user in users.items():
+                if (user.schedule_preference.enabled and
+                    user.schedule_preference.day == current_day and
+                    user.schedule_preference.hour == current_hour):
+                    users_to_notify.append(user)
+            
+            logger.info(f"Sending prompts to {len(users_to_notify)} users")
+            
+            for user in users_to_notify:
                 try:
                     # Get the appropriate prompt for this user based on their count
                     prompt, prompt_type = self.prompt_service.get_next_prompt_for_user(user.id)
@@ -83,37 +89,62 @@ class JournalBot:
         except Exception as e:
             logger.error(f"Error in weekly prompt job: {e}")
 
-    def setup_handlers(self, application: Application):
-        """Set up all command and conversation handlers."""
-        # Create conversation handler with fallbacks to other commands
-        conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('prompt', self.conversation_handlers.send_prompt)],
-            states={
-                RESPONDING: [
-                    MessageHandler(
-                        filters.TEXT & ~filters.COMMAND,
-                        self.conversation_handlers.save_response
-                    )
-                ]
-            },
-            fallbacks=[
-                CommandHandler('start', self.command_handlers.start),
-                CommandHandler('history', self.command_handlers.view_history),
-                CommandHandler('timezone', self.command_handlers.set_timezone),
-                CommandHandler('help', self.command_handlers.help),
-                CommandHandler('prompt', self.conversation_handlers.send_prompt)
-            ],
-        )
 
-        # Add handlers
-        application.add_handler(conv_handler)
-        application.add_handler(CommandHandler('start', self.command_handlers.start))
-        application.add_handler(CommandHandler('history', self.command_handlers.view_history))
-        application.add_handler(CommandHandler('timezone', self.command_handlers.set_timezone))
-        application.add_handler(CommandHandler('help', self.command_handlers.help))
-        
-        # Add error handler
-        application.add_error_handler(self.command_handlers.handle_error)
+        def setup_handlers(self, application: Application):
+            """Set up all command and conversation handlers."""
+            # Create schedule conversation handler
+            schedule_conv_handler = ConversationHandler(
+                entry_points=[
+                    CommandHandler('schedule_day', self.command_handlers.schedule_day),
+                    CommandHandler('schedule_time', self.command_handlers.schedule_time)
+                ],
+                states={
+                    CHOOSING_DAY: [
+                        CallbackQueryHandler(self.command_handlers.handle_schedule_callback, pattern=r'^day:\d+$')
+                    ],
+                    CHOOSING_TIME: [
+                        CallbackQueryHandler(self.command_handlers.handle_schedule_callback, pattern=r'^time:\d+$')
+                    ]
+                },
+                fallbacks=[
+                    CommandHandler('start', self.command_handlers.start),
+                    CommandHandler('help', self.command_handlers.help)
+                ],
+            )
+            
+            # Create prompt conversation handler
+            prompt_conv_handler = ConversationHandler(
+                entry_points=[CommandHandler('prompt', self.conversation_handlers.send_prompt)],
+                states={
+                    RESPONDING: [
+                        MessageHandler(
+                            filters.TEXT & ~filters.COMMAND,
+                            self.conversation_handlers.save_response
+                        )
+                    ]
+                },
+                fallbacks=[
+                    CommandHandler('start', self.command_handlers.start),
+                    CommandHandler('history', self.command_handlers.view_history),
+                    CommandHandler('timezone', self.command_handlers.set_timezone),
+                    CommandHandler('help', self.command_handlers.help),
+                    CommandHandler('prompt', self.conversation_handlers.send_prompt)
+                ],
+            )
+
+            # Add handlers
+            application.add_handler(prompt_conv_handler)
+            application.add_handler(schedule_conv_handler)
+            application.add_handler(CommandHandler('start', self.command_handlers.start))
+            application.add_handler(CommandHandler('history', self.command_handlers.view_history))
+            application.add_handler(CommandHandler('timezone', self.command_handlers.set_timezone))
+            application.add_handler(CommandHandler('help', self.command_handlers.help))
+            application.add_handler(CommandHandler('schedule', self.command_handlers.schedule))
+            application.add_handler(CommandHandler('schedule_toggle', self.command_handlers.schedule_toggle))
+            
+            # Add error handler
+            application.add_error_handler(self.command_handlers.handle_error)
+
 
     def run(self):
         """Run the bot."""
@@ -127,17 +158,17 @@ class JournalBot:
             # Set up the Singapore timezone for the job
             sg_tz = pytz.timezone('Asia/Singapore')
             
-            # Setup a daily job that checks if it's the right day and time
+            # Setup job queue to check hourly if it's time to send prompts
             job_queue = application.job_queue
             
-            # Run job every hour to check if it's time to send prompts
+            # Run job every hour to check if it's time to send prompts to any users
             job_queue.run_repeating(
                 self.weekly_prompt_job,
                 interval=3600,  # Check every hour
                 first=1  # Start 1 second after bot startup
             )
             
-            logger.info(f"Scheduled weekly prompt job for day {self.config.prompt_day} at {self.config.prompt_hour}:00 SG time")
+            logger.info(f"Scheduled hourly prompt check job")
 
             # Start polling
             logger.info("Starting bot...")

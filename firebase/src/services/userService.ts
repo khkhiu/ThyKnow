@@ -25,17 +25,32 @@ export class UserService {
       let user = await User.findOne({ id: userId });
       
       if (!user) {
-        // Create new user
+        // Create new user with default schedule preferences
         user = new User({
           id: userId,
           createdAt: new Date(),
           promptCount: 0,
+          schedulePreference: {
+            day: 1, // Monday
+            hour: 9, // 9 AM
+            enabled: true
+          },
           ...data
         });
         await user.save();
         logger.info(`Created new user with ID: ${userId}`);
       } else if (Object.keys(data).length > 0) {
-        // Update existing user
+        // Handle nested schedulePreference object 
+        if (data.schedulePreference) {
+          user.schedulePreference = {
+            ...user.schedulePreference.toObject(),
+            ...data.schedulePreference
+          };
+          // Remove it so we don't overwrite it again below
+          delete data.schedulePreference;
+        }
+        
+        // Update other fields
         Object.assign(user, data);
         await user.save();
         logger.info(`Updated user with ID: ${userId}`);
@@ -44,6 +59,35 @@ export class UserService {
       return user;
     } catch (error) {
       logger.error(`Error creating/updating user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+
+  /**
+   * Update a user's schedule preferences
+   */
+  async updateSchedulePreference(
+    userId: string, 
+    preferences: Partial<ISchedulePreference>
+  ): Promise<void> {
+    try {
+      const user = await User.findOne({ id: userId });
+      
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+      
+      // Update only the provided preference fields
+      user.schedulePreference = {
+        ...user.schedulePreference.toObject(),
+        ...preferences
+      };
+      
+      await user.save();
+      logger.info(`Updated schedule preferences for user ${userId}`);
+    } catch (error) {
+      logger.error(`Error updating schedule for user ${userId}:`, error);
       throw error;
     }
   }
