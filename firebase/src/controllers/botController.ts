@@ -338,10 +338,29 @@ async function handleScheduleToggleCommand(ctx: Context): Promise<void> {
  * Handle callback queries for schedule settings
  */
 async function handleCallbackQuery(ctx: CallbackContext): Promise<void> {
+  
   try {
-    const userId = ctx.from.id.toString();
-    const callbackData = ctx.callbackQuery.data;
+    // Safety check for ctx.from
+    if (!ctx.from) {
+      logger.error('User data missing from callback query');
+      await ctx.answerCbQuery('Error: User data missing');
+      return;
+    }
     
+    const userId = ctx.from.id.toString();
+    
+    // The proper way to access the data property in Telegraf 4.x
+    // It's accessed directly from the callback query context
+    if (!ctx.callbackQuery || typeof ctx.callbackQuery !== 'object') {
+      logger.error('Invalid callback query');
+      await ctx.answerCbQuery('Error: Invalid callback');
+      return;
+    }
+    
+    // For Telegraf 4.x, we can use a type assertion to access the data
+    // as it's not properly typed in some versions
+    const callbackData = ctx.callbackQuery.data as string | undefined;
+
     if (!callbackData || !callbackData.includes(':')) {
       await ctx.answerCbQuery('Invalid callback data');
       return;

@@ -35,7 +35,9 @@ export interface IUser extends Document {
   createdAt: Date;
   promptCount: number;
   lastPrompt?: ILastPrompt;
-  schedulePreference: ISchedulePreference;
+  schedulePreference: ISchedulePreference & {
+    // No toObject method needed, we'll use spread operator instead
+  };
 }
 
 // User schema

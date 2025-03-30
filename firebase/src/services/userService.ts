@@ -3,7 +3,15 @@ import { JournalEntry, IJournalEntry } from '../models/JournalEntry';
 import { Prompt, PromptType } from '../types';
 import { logger } from '../utils/logger';
 
+// Define the schedule preference interface here since it's used in the service
+interface ISchedulePreference {
+  day: number;
+  hour: number;
+  enabled: boolean;
+}
+
 export class UserService {
+
   /**
    * Get a user by Telegram ID
    */
@@ -15,7 +23,7 @@ export class UserService {
       throw error;
     }
   }
-
+  
   /**
    * Create a new user or update an existing one
    */
@@ -42,8 +50,9 @@ export class UserService {
       } else if (Object.keys(data).length > 0) {
         // Handle nested schedulePreference object 
         if (data.schedulePreference) {
+          // Merge the existing schedule preference with the new values
           user.schedulePreference = {
-            ...user.schedulePreference.toObject(),
+            ...user.schedulePreference,
             ...data.schedulePreference
           };
           // Remove it so we don't overwrite it again below
@@ -80,7 +89,7 @@ export class UserService {
       
       // Update only the provided preference fields
       user.schedulePreference = {
-        ...user.schedulePreference.toObject(),
+        ...user.schedulePreference,
         ...preferences
       };
       
