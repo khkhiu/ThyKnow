@@ -7,6 +7,7 @@ import { promptService } from '../services/promptService';
 import { FEEDBACK, MESSAGES, TIMEZONE } from '../constants';
 import { logger } from '../utils/logger';
 import config from '../config';
+import { PromptType } from '@/types';
 
 // Define a type for callback query context
 type CallbackContext = NarrowedContext<Context, Update.CallbackQueryUpdate>;
@@ -399,20 +400,24 @@ async function handleCallbackQuery(ctx: CallbackContext): Promise<void> {
  */
 async function handleTextMessage(ctx: Context): Promise<void> {
   try {
+    // Get message and check if it's a text message
+    const message = ctx.message;
+    if (!message || !('text' in message)) {
+      return;
+    }
+    
     // Ignore command messages
-    if (ctx.message?.text?.startsWith('/')) {
+    if (message.text.startsWith('/')) {
       return;
     }
     
     const userId = ctx.from?.id.toString();
-    const messageText = ctx.message?.text;
+    const messageText = message.text;
     
     if (!userId || !messageText) {
       logger.error('Missing user ID or message text');
       return;
     }
-    
-    logger.info(`Received text message from user ${userId}: ${messageText.substring(0, 20)}...`);
     
     // Get user data
     const user = await userService.getUser(userId);
@@ -427,34 +432,6 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     if (!user.lastPrompt) {
       logger.info(`User ${userId} has no active prompt`);
       await ctx.reply("I don't have a prompt for you to respond to. Use /prompt to get one.");
-      return;
-    }
-    
-    // Calculate time since prompt was sent (to avoid treating unrelated messages as responses)
-    const promptTime = new Date(user.lastPrompt.timestamp);
-    const now = new Date();
-    const hoursSincePrompt = (now.getTime() - promptTime.getTime()) / (1000 * 60 * 60);
-    
-    // If it's been more than 24 hours, maybe this isn't a response to the prompt
-    if (hoursSincePrompt > 24) {
-      logger.info(`User ${userId}'s last prompt is over 24 hours old (${hoursSincePrompt.toFixed(1)} hours). Asking for confirmation.`);
-      
-      // Could add an inline keyboard here to confirm if this is a response to the old prompt
-      await ctx.reply(
-        "It's been a while since I sent you a prompt. Are you responding to this prompt?\n\n" +
-        `"${user.lastPrompt.text}"\n\n` +
-        "If yes, I'll save your response. If not, you can use /prompt to get a new prompt.",
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: "Yes, save my response", callback_data: `save_response:${messageText.substring(0, 20)}...` },
-                { text: "No, give me a new prompt", callback_data: "new_prompt" }
-              ]
-            ]
-          }
-        }
-      );
       return;
     }
     
@@ -533,8 +510,12 @@ async function handleResponseCallback(ctx: CallbackContext): Promise<void> {
         return;
       }
       
-      // Get the original message text
-      const originalMessage = ctx.callbackQuery.message?.reply_to_message?.text;
+      // Get the original message text with proper type checking
+      const message = ctx.callbackQuery.message;
+      const replyToMessage = message && 'reply_to_message' in message ? 
+        message.reply_to_message : undefined;
+      const originalMessage = replyToMessage && 'text' in replyToMessage ? 
+        replyToMessage.text : undefined;
       
       if (!originalMessage) {
         await ctx.answerCbQuery('Error: Original message not found');
