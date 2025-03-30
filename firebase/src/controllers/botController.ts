@@ -393,3 +393,45 @@ async function handleCallbackQuery(ctx: CallbackContext): Promise<void> {
     await ctx.answerCbQuery('Sorry, an error occurred');
   }
 }
+
+/**
+ * Set up all bot commands and handlers
+ */
+export function setupBotCommands(bot: Telegraf): void {
+  // Register command handlers
+  bot.start(handleStart);
+  bot.command('prompt', handleSendPrompt);
+  bot.command('history', handleShowHistory);
+  bot.command('timezone', handleShowTimezone);
+  bot.command('help', handleShowHelp);
+  
+  // Register schedule management commands
+  bot.command('schedule', handleScheduleCommand);
+  bot.command('schedule_day', handleScheduleDayCommand);
+  bot.command('schedule_time', handleScheduleTimeCommand);
+  bot.command('schedule_toggle', handleScheduleToggleCommand);
+  
+  // Register callback query handler for interactive buttons
+  bot.on('callback_query', (ctx) => handleCallbackQuery(ctx as CallbackContext));
+  
+  // Register message handlers for user responses
+  //bot.on('text', (ctx) => handleUserResponse(ctx as NarrowedContext<Context, Update.MessageUpdate<Message.TextMessage>>));
+  
+  // Handle errors
+  bot.catch((err, ctx) => {
+    logger.error('Telegraf error', err);
+    ctx.reply('An error occurred while processing your request. Please try again later.');
+  });
+  
+  // Set bot commands for menu
+  bot.telegram.setMyCommands([
+    { command: 'start', description: 'Initialize the bot and get started' },
+    { command: 'prompt', description: 'Get a new reflection prompt' },
+    { command: 'history', description: 'View your recent journal entries' },
+    { command: 'timezone', description: 'Check prompt timings' },
+    { command: 'schedule', description: 'Manage your prompt schedule' },
+    { command: 'help', description: 'Show available commands and usage' }
+  ]).catch(error => {
+    logger.error('Error setting bot commands:', error);
+  });
+}

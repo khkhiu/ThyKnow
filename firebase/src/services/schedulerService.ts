@@ -5,6 +5,16 @@ import { userService } from './userService';
 import { promptService } from './promptService';
 import config from '../config';
 import { logger } from '../utils/logger';
+import moment from 'moment-timezone';
+
+// Configuring timezones
+function jsToMondayBasedDay(jsDay: number): number {
+  return (jsDay + 6) % 7;
+}
+
+function mondayBasedToJsDay(mondayBasedDay: number): number {
+  return (mondayBasedDay + 1) % 7;
+}
 
 /**
  * Send a weekly prompt to a specific user
@@ -40,15 +50,21 @@ export function setupScheduler(): void {
   // Schedule to run every hour to check for users who should receive prompts
   const cronExpression = `0 * * * *`; // Every hour
   
-  logger.info(`Setting up hourly prompt scheduler with cron expression: ${cronExpression}`);
+  logger.info(`Setting up hourly prompt scheduler with cron expression: ${cronExpression} (${config.timezone} timezone)`);
   
   cron.schedule(cronExpression, async () => {
     try {
-      const now = new Date();
-      const currentDay = now.getDay(); // 0-6 (Sunday to Saturday)
-      const currentHour = now.getHours(); // 0-23
+      // Use moment-timezone to get Singapore time
+      const sgTime = moment().tz(config.timezone);
+
+      // Set Monday as first day of the week
+      const jsDayOfWeek = sgTime.day(); // Sunday=0 in JavaScript
+      const mondayBasedDay = jsToMondayBasedDay(jsDayOfWeek);
+
+      const currentDay = sgTime.day(); // 0-6 (Sunday to Saturday)
+      const currentHour = sgTime.hour(); // 0-23
       
-      logger.info(`Checking scheduled prompts for day ${currentDay}, hour ${currentHour}`);
+      logger.info(`Checking scheduled prompts for day ${currentDay}, hour ${currentHour} (${config.timezone})`);
       
       // Get all users
       const users = await userService.getAllUsers();
@@ -56,8 +72,8 @@ export function setupScheduler(): void {
       // Filter users who should receive prompts now based on their preferences
       const usersToSendPrompts = users.filter(user => 
         user.schedulePreference.enabled &&
-        user.schedulePreference.day === currentDay &&
-        user.schedulePreference.hour === currentHour
+        user.schedulePreference.day === mondayBasedDay && // Use the converted day if needed
+        user.schedulePreference.hour === sgTime.hour()
       );
       
       logger.info(`Sending prompts to ${usersToSendPrompts.length} users`);
@@ -76,6 +92,6 @@ export function setupScheduler(): void {
       logger.error('Error in scheduled prompt job:', error);
     }
   }, {
-    timezone: config.timezone
+    timezone: config.timezone // This sets the timezone for the cron job
   });
 }
