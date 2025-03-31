@@ -21,6 +21,9 @@ function mondayBasedToJsDay(mondayBasedDay: number): number {
  */
 export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
   try {
+    // Debug log to confirm userId is received correctly
+    logger.info(`sendWeeklyPromptToUser called with userId: ${userId}`);
+
     // Get next prompt for user
     const prompt = await promptService.getNextPromptForUser(userId);
     
@@ -106,12 +109,15 @@ export function setupScheduler(): void {
       // For each user, send a prompt
       for (const user of usersToSendPrompts) {
         try {
-          await sendWeeklyPromptToUser(user.id);
+          // Debug logging to confirm the ID
+          logger.info(`Preparing to send prompt to user: ${user.id}`);
+          
+          // Make sure you're passing the ID as a string
+          await sendWeeklyPromptToUser(String(user.id));
         } catch (error) {
           logger.error(`Error sending prompt to user ${user.id}:`, error);
         }
       }
-      
       logger.info('Completed scheduled prompt job');
 
       logger.info('TESTING: Attempting to send a test prompt to user 987496168');
