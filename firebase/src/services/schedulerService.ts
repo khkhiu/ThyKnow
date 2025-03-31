@@ -73,6 +73,26 @@ export function setupScheduler(): void {
       users.forEach(user => {
         logger.debug(`User ${user.id}: day=${user.schedulePreference.day}, hour=${user.schedulePreference.hour}, enabled=${user.schedulePreference.enabled}`);
       });
+      const matchingUsers = users.filter(user => 
+        user.schedulePreference.day === currentDay &&
+        user.schedulePreference.hour === currentHour
+      );
+      logger.debug(`Users matching day and hour: ${matchingUsers.length}`);
+
+      const enabledUsers = users.filter(user => user.schedulePreference.enabled);
+      logger.debug(`Users with enabled schedule: ${enabledUsers.length}`);
+
+      // For the specific user
+      const testUser = users.find(user => user.id === '987496168');
+      if (testUser) {
+        logger.debug(`Test user match day: ${testUser.schedulePreference.day === currentDay}`);
+        logger.debug(`Test user match hour: ${testUser.schedulePreference.hour === currentHour}`);
+        logger.debug(`Test user enabled: ${testUser.schedulePreference.enabled}`);
+        
+        // Check data types
+        logger.debug(`Types - currentDay: ${typeof currentDay}, user day: ${typeof testUser.schedulePreference.day}`);
+        logger.debug(`Types - currentHour: ${typeof currentHour}, user hour: ${typeof testUser.schedulePreference.hour}`);
+      }
 
       // Filter users who should receive prompts now based on their preferences
       const usersToSendPrompts = users.filter(user => 
@@ -93,6 +113,12 @@ export function setupScheduler(): void {
       }
       
       logger.info('Completed scheduled prompt job');
+
+      logger.info('TESTING: Attempting to send a test prompt to user 987496168');
+      const testUserId = '987496168';
+      await sendWeeklyPromptToUser(testUserId);
+      logger.info('TESTING: Successfully sent test prompt to user');
+
     } catch (error) {
       logger.error('Error in scheduled prompt job:', error);
     }

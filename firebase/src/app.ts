@@ -6,9 +6,12 @@ import { setupBotCommands } from './controllers/botController';
 import { errorHandler } from './middleware/errorHandler';
 import config from './config';
 import { logger } from './utils/logger';
+import dotenv from 'dotenv';
+
 
 // Create Express app
 const app = express();
+dotenv.config();
 
 // Create Telegram bot instance
 export const bot = new Telegraf(config.telegramBotToken);
@@ -32,6 +35,30 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Then add a new endpoint right after it
+app.get('/health-test-prompt', async (req, res) => {
+  try {
+    const testUserId = process.env.TEST_USER_ID;
+    logger.info(`TESTING: Attempting to send a test prompt to user ${testUserId}`);
+    
+    // Import the function if needed
+    const { sendWeeklyPromptToUser } = require('./services/schedulerService');
+    
+    await sendWeeklyPromptToUser(testUserId);
+    logger.info('TESTING: Successfully sent test prompt');
+    res.status(200).json({ 
+      status: 'ok', 
+      message: 'Test prompt sent successfully',
+      timestamp: new Date().toISOString() 
+    });
+  } catch (error) {
+    logger.error('TESTING: Error sending test prompt:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to send test prompt'
+    });
+  }
+});
 // Error handling middleware
 app.use(errorHandler);
 
