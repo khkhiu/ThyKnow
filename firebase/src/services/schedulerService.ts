@@ -7,7 +7,7 @@ import config from '../config';
 import { logger } from '../utils/logger';
 import moment from 'moment-timezone';
 
-// Configuring timezones helpers
+// Configuring timezones
 function jsToMondayBasedDay(jsDay: number): number {
   return (jsDay + 6) % 7;
 }
@@ -21,7 +21,8 @@ function mondayBasedToJsDay(mondayBasedDay: number): number {
  */
 export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
   try {
-    logger.info(`Sending weekly prompt to user: ${userId}`);
+    // Debug log to confirm userId is received correctly
+    logger.info(`sendWeeklyPromptToUser called with userId: ${userId}`);
 
     // Get next prompt for user
     const prompt = await promptService.getNextPromptForUser(userId);
@@ -39,7 +40,7 @@ export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
       
     // Send message
     await bot.telegram.sendMessage(userId, message);
-    logger.info(`Successfully sent ${prompt.type} prompt to user ${userId}`);
+    logger.info(`Sent ${prompt.type} prompt to user ${userId}`);
   } catch (error) {
     logger.error(`Error sending prompt to user ${userId}:`, error);
   }
@@ -58,25 +59,49 @@ export function setupScheduler(): void {
     try {
       // Use moment-timezone to get Singapore time
       const sgTime = moment().tz(config.timezone);
-      
+
       // Set Monday as first day of the week
+      const jsDayOfWeek = sgTime.day(); // Sunday=0 in JavaScript
+      const mondayBasedDay = jsToMondayBasedDay(jsDayOfWeek);
+
       const currentDay = sgTime.day(); // 0-6 (Sunday to Saturday)
       const currentHour = sgTime.hour(); // 0-23
-      const mondayBasedDay = jsToMondayBasedDay(currentDay);
       
-      logger.info(`Running scheduled prompt check for day ${currentDay}, hour ${currentHour} (${config.timezone})`);
+      logger.info(`Checking scheduled prompts for day ${currentDay}, hour ${currentHour} (${config.timezone})`);
       
       // Get all users
       const users = await userService.getAllUsers();
       
-      // Log total users for monitoring
-      logger.info(`Found ${users.length} total users`);
-      
+      // Debugging log
+      users.forEach(user => {
+        logger.debug(`User ${user.id}: day=${user.schedulePreference.day}, hour=${user.schedulePreference.hour}, enabled=${user.schedulePreference.enabled}`);
+      });
+      const matchingUsers = users.filter(user => 
+        user.schedulePreference.day === currentDay &&
+        user.schedulePreference.hour === currentHour
+      );
+      logger.debug(`Users matching day and hour: ${matchingUsers.length}`);
+
+      const enabledUsers = users.filter(user => user.schedulePreference.enabled);
+      logger.debug(`Users with enabled schedule: ${enabledUsers.length}`);
+
+      // For the specific user
+      const testUser = users.find(user => user.id === '987496168');
+      if (testUser) {
+        logger.debug(`Test user match day: ${testUser.schedulePreference.day === currentDay}`);
+        logger.debug(`Test user match hour: ${testUser.schedulePreference.hour === currentHour}`);
+        logger.debug(`Test user enabled: ${testUser.schedulePreference.enabled}`);
+        
+        // Check data types
+        logger.debug(`Types - currentDay: ${typeof currentDay}, user day: ${typeof testUser.schedulePreference.day}`);
+        logger.debug(`Types - currentHour: ${typeof currentHour}, user hour: ${typeof testUser.schedulePreference.hour}`);
+      }
+
       // Filter users who should receive prompts now based on their preferences
       const usersToSendPrompts = users.filter(user => 
         user.schedulePreference.enabled &&
-        user.schedulePreference.day === mondayBasedDay &&
-        user.schedulePreference.hour === currentHour
+        user.schedulePreference.day === mondayBasedDay && // Use the converted day if needed
+        user.schedulePreference.hour === sgTime.hour()
       );
       
       logger.info(`Sending prompts to ${usersToSendPrompts.length} users`);
@@ -84,12 +109,22 @@ export function setupScheduler(): void {
       // For each user, send a prompt
       for (const user of usersToSendPrompts) {
         try {
+          // Debug logging to confirm the ID
+          logger.info(`Preparing to send prompt to user: ${user.id}`);
+          
+          // Make sure you're passing the ID as a string
           await sendWeeklyPromptToUser(String(user.id));
         } catch (error) {
           logger.error(`Error sending prompt to user ${user.id}:`, error);
         }
       }
       logger.info('Completed scheduled prompt job');
+
+      logger.info('TESTING: Attempting to send a test prompt to user 987496168');
+      const testUserId = '987496168';
+      await sendWeeklyPromptToUser(testUserId);
+      logger.info('TESTING: Successfully sent test prompt to user');
+
     } catch (error) {
       logger.error('Error in scheduled prompt job:', error);
     }
@@ -97,19 +132,3 @@ export function setupScheduler(): void {
     timezone: config.timezone // This sets the timezone for the cron job
   });
 }
-
-/**
- * TESTING UTILITIES - Not used in production
- * These functions are separated for testing purposes only
- */
-export const testUtils = {
-  /**
-   * Send a test prompt to a specific user
-   * This function is only for testing and debugging
-   */
-  sendTestPrompt: async (userId: string): Promise<void> => {
-    logger.info(`TESTING: Sending test prompt to user ${userId}`);
-    await sendWeeklyPromptToUser(userId);
-    logger.info(`TESTING: Test prompt sent to user ${userId}`);
-  }
-};

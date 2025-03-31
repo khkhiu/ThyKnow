@@ -7,7 +7,7 @@ import { errorHandler } from './middleware/errorHandler';
 import config from './config';
 import { logger } from './utils/logger';
 import dotenv from 'dotenv';
-import { testUtils } from './services/schedulerService';
+import { sendWeeklyPromptToUser } from './services/schedulerService';
 
 // Create Express app
 const app = express();
@@ -35,36 +35,31 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Test endpoints - only available in development mode
-if (config.nodeEnv === 'development') {
-  app.get('/test/send-prompt', async (req, res) => {
-    try {
-      const { userId } = req.query;
-      
-      if (!userId || typeof userId !== 'string') {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Missing or invalid userId parameter'
-        });
-      }
-      
-      await testUtils.sendTestPrompt(userId);
-      
-      res.status(200).json({ 
-        status: 'ok', 
-        message: `Test prompt sent successfully to user ${userId}`,
-        timestamp: new Date().toISOString() 
-      });
-    } catch (error) {
-      logger.error('Error sending test prompt:', error);
-      res.status(500).json({ 
-        status: 'error', 
-        message: 'Failed to send test prompt'
-      });
-    }
-  });
-}
-
+// Then add a new endpoint right after it
+app.get('/health-test-prompt', async (req, res) => {
+  try {
+    // Use string format for the ID - this is critical
+    const testUserId = '987496168';  // Make sure this is a string
+    
+    logger.info(`TESTING: Attempting to send a test prompt to user ${testUserId}`);
+    
+    // Make sure the value is actually passed to the function
+    await sendWeeklyPromptToUser(testUserId);
+    
+    logger.info('TESTING: Successfully sent test prompt');
+    res.status(200).json({ 
+      status: 'ok', 
+      message: 'Test prompt sent successfully',
+      timestamp: new Date().toISOString() 
+    });
+  } catch (error) {
+    logger.error('TESTING: Error sending test prompt:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to send test prompt'
+    });
+  }
+});
 // Error handling middleware
 app.use(errorHandler);
 
