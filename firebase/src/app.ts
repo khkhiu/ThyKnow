@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { Telegraf } from 'telegraf';
-import { setupBotCommands } from './controllers/botController';
+import { setupBotCommands } from './controllers/index';
 import { errorHandler } from './middleware/errorHandler';
 import config from './config';
 import { logger } from './utils/logger';
