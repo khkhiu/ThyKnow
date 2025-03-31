@@ -1,0 +1,33 @@
+FROM node:18-slim
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy application code
+COPY . .
+
+# Build TypeScript
+RUN npm run build
+
+# Copy markdown files to the dist directory
+RUN mkdir -p dist/constants/prompts && \
+    cp src/constants/prompts/*.md dist/constants/prompts/
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Create directories for logs
+RUN mkdir -p logs
+
+# Expose port
+EXPOSE 3000
+
+# Run the application
+CMD ["node", "dist/server.js"]

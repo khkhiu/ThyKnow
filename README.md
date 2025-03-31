@@ -1,22 +1,23 @@
-# ThyKnow - Personal Journaling Bot
+# ThyKnow - Express.js Implementation
 
-ThyKnow is a Telegram bot designed to foster self-awareness and build meaningful connections through guided journaling prompts. The bot sends users thoughtful reflection questions on a regular schedule and saves their responses, creating a personal journal over time.
-
+ThyKnow is a Telegram bot designed to foster self-awareness and build meaningful connections through guided journaling prompts. This implementation uses Express.js, TypeScript, and MongoDB to provide a robust and scalable solution.
 
 ## 📋 Features
 
 - 🤔 **Self-awareness prompts**: Questions to help users reflect on their emotions, values, and personal growth.
 - 🤝 **Connection-building prompts**: Questions focusing on relationships and meaningful interactions.
-- 📅 **Weekly schedule**: Designed to send prompts every Monday at 9 AM (Singapore timezone). *Note: Automatic scheduling is still in development.*
+- 📅 **Weekly schedule**: Sends prompts every Monday at 9 AM (Singapore timezone).
 - 📝 **Personal journal**: Saves all responses for users to review later.
-- 🌐 **Cloud-based**: Built on Firebase for reliable and scalable performance.
+- 📊 **Analytics ready**: Architecture designed to support advanced analytics features.
+- 💰 **Payment integration ready**: Structure supports adding donation features.
+- 🧠 **AI integration ready**: Prepared for Vertex AI integration.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or higher)
-- [Firebase CLI](https://firebase.google.com/docs/cli)
+- [MongoDB](https://www.mongodb.com/) (local or cloud instance)
 - A [Telegram Bot Token](https://core.telegram.org/bots#how-do-i-create-a-bot) from BotFather
 
 ### Installation
@@ -24,69 +25,64 @@ ThyKnow is a Telegram bot designed to foster self-awareness and build meaningful
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/your-username/thyknow.git
-cd thyknow
+git clone https://github.com/your-username/thyknow-express.git
+cd thyknow-express
 ```
 
-2. **Set up Firebase**
+2. **Install dependencies**
 
 ```bash
-# Login to Firebase
-firebase login
-
-# Initialize Firebase project
-firebase use your-project-id
-```
-
-3. **Install dependencies**
-
-```bash
-# Install dependencies for Firebase Functions
-cd firebase/functions
 npm install
 ```
 
-4. **Configure environment variables**
+3. **Configure environment variables**
 
-```bash
-# Set your Telegram bot token in Firebase config
-firebase functions:config:set telegram.token="YOUR_BOT_TOKEN"
+Create a `.env` file in the root directory with the following content:
 
-# Get the config for local development
-firebase functions:config:get > .runtimeconfig.json
+```
+# Server configuration
+PORT=3000
+NODE_ENV=development
+BASE_URL=http://localhost:3000
+
+# Telegram Bot configuration
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+
+# MongoDB connection
+MONGODB_URI=mongodb://localhost:27017/thyknow
+
+# Scheduler settings
+PROMPT_DAY=1  # Monday
+PROMPT_HOUR=9  # 9 AM
+TIMEZONE=Asia/Singapore
+
+# Maximum history entries to show
+MAX_HISTORY=5
 ```
 
-5. **Build the project**
+4. **Start MongoDB**
+
+If using a local MongoDB instance:
 
 ```bash
+# Start MongoDB
+mongod
+```
+
+5. **Build and run the application**
+
+```bash
+# Build TypeScript
 npm run build
+
+# Start the server
+npm start
 ```
 
-## 🧪 Testing Locally
+For development with hot reload:
 
 ```bash
-# Start the Firebase emulator
 npm run dev
-
-# In a separate terminal, use ngrok to create a public URL
-ngrok http 5001
-
-# Set up webhook with your ngrok URL
-curl -X POST https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook \
-  -d "url=https://<NGROK_URL>/your-project-id/us-central1/botWebhook"
-
-# Test the webhook
-npm run test-webhook
-```
-
-## 📦 Deployment
-
-```bash
-# Deploy to Firebase
-npm run deploy
-
-# Set up the webhook
-npm run setup-webhook
 ```
 
 ## 🔧 Bot Commands
@@ -96,102 +92,90 @@ npm run setup-webhook
 | /start     | Initialize the bot and get started      |
 | /prompt    | Get a new reflection prompt             |
 | /history   | View your recent journal entries        |
-| /timezone  | Check prompt timings(WIP)               |
+| /timezone  | Check prompt timings                    |
 | /help      | Show available commands and usage       |
+
+## 🚢 Deployment
+
+### Docker Deployment
+
+You can use Docker Compose for an easy deployment:
+
+```bash
+# Start the application with MongoDB
+docker-compose up -d
+```
+
+### Google Cloud Run Deployment
+
+```bash
+# Set required environment variables
+export PROJECT_ID=your-gcp-project-id
+export TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+export MONGODB_URI=your-mongodb-connection-string
+
+# Run the deployment script
+bash cloud-run-deploy.sh
+```
+
+## 📋 Migration from Firebase Functions
+
+This Express.js implementation is a migration from the previous Firebase Functions implementation. Key differences:
+
+1. **Database**: MongoDB instead of Firestore
+2. **Scheduling**: node-cron instead of Firebase scheduled functions
+3. **Server**: Full Express.js server instead of serverless functions
+
+### Data Migration
+
+To migrate data from Firestore to MongoDB:
+
+1. Export your Firestore data
+2. Use the provided migration script:
+
+```bash
+# Export Firestore data
+firebase firestore:export firestore-export.json
+
+# Run migration script (creates a mongoimport-ready file)
+npm run migrate-data
+
+# Import to MongoDB
+mongoimport --db thyknow --collection users --file mongo-users.json
+mongoimport --db thyknow --collection journalentries --file mongo-entries.json
+```
 
 ## 🏗️ Project Structure
 
 ```
-firebase/
-├── functions/               # Firebase Cloud Functions
-│   ├── src/                 # Source code
-│   │   ├── constants/       # App constants
-│   │   ├── handlers/        # Telegram bot handlers
-│   │   ├── services/        # Business logic services
-│   │   ├── types/           # TypeScript type definitions
-│   │   └── index.ts         # Main entry point
-│   ├── scripts/             # Utility scripts
-│   ├── package.json         # Dependencies and scripts
-│   └── tsconfig.json        # TypeScript configuration
-├── firestore.rules          # Firestore security rules
-└── firebase.json            # Firebase configuration
+thyknow-express/
+├── src/
+│   ├── config/           # Configuration files
+│   ├── constants/        # App constants
+│   ├── controllers/      # Express route controllers
+│   ├── handlers/         # Bot command handlers
+│   ├── middleware/       # Express middleware
+│   ├── models/           # Database models
+│   ├── routes/           # Express routes
+│   ├── services/         # Business logic
+│   ├── types/            # TypeScript type definitions
+│   ├── utils/            # Utility functions
+│   ├── app.ts            # Express app setup
+│   └── server.ts         # Server entry point
+├── scripts/              # Utility scripts
+├── docker-compose.yml    # Docker Compose configuration
+├── Dockerfile            # Docker configuration
+├── package.json          # Dependencies and scripts
+└── tsconfig.json         # TypeScript configuration
 ```
-
-## 📝 Data Model
-
-### User
-```typescript
-interface User {
-  id: string;                // Telegram user ID
-  createdAt: Timestamp;      // Account creation time
-  promptCount: number;       // Number of prompts received
-  lastPrompt?: LastPrompt;   // The last prompt sent to the user
-}
-```
-
-### Journal Entry
-```typescript
-interface JournalEntry {
-  prompt: string;            // The question asked
-  promptType: PromptType;    // 'self_awareness' or 'connections'
-  response: string;          // User's response
-  timestamp: Timestamp;      // When the response was saved
-}
-```
-
-## 🛠️ Useful Commands
-
-```bash
-# Delete webhook (if you need to switch to polling mode)
-npm run delete-webhook
-
-# Check webhook status
-npm run test-webhook
-
-# View Firebase logs
-npm run logs
-
-# Lint and format code
-npm run lint:fix
-```
-
-## 🧠 Prompt Categories
-
-ThyKnow alternates between two categories of prompts:
-
-### Self-Awareness
-Questions that encourage reflection on personal emotions, values, and growth.
-
-### Connections
-Questions focused on relationships and meaningful social interactions.
-
-## 🔄 Weekly Schedule
-
-The bot is designed to automatically send prompts every Monday at 9 AM Singapore time (UTC+8).
-
-> **Note:** The automatic weekly sending of prompts is currently under development and not yet fully implemented. Currently, users need to manually request prompts using the `/prompt` command.
-
-## ⚙️ Configuration Options
-
-You can customize the bot's behavior through Firebase Functions config:
-
-```bash
-# Set the day for weekly prompts (0 = Sunday, 1 = Monday, etc.)
-firebase functions:config:set scheduler.day=1
-
-# Set the hour for weekly prompts (24-hour format)
-firebase functions:config:set scheduler.hour=9
-```
-
-## 📚 Inspiration
-
-ThyKnow was created to help combat feelings of isolation and disconnection that contribute to depression and anxiety. By encouraging regular self-reflection and consideration of relationships, the bot aims to foster greater self-awareness and deeper connections.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ## 🙏 Acknowledgements
 
 - [Telegraf](https://github.com/telegraf/telegraf) for the elegant Telegram Bot API
-- [Firebase](https://firebase.google.com/) for hosting and database services
+- [Express.js](https://expressjs.com/) for the web framework
+- [MongoDB](https://www.mongodb.com/) for the database
+- [node-cron](https://github.com/node-cron/node-cron) for scheduling

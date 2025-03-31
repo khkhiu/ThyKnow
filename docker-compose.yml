@@ -1,34 +1,37 @@
 services:
-  # Python Telegram Bot
-  telegram-bot:
+  # Express.js application
+  app:
     build:
-      context: ./telegram_bot
-      dockerfile: ./Dockerfile
-    container_name: telegram-journal-bot
-    volumes:
-      - ./telegram_bot/data:/app/data
-      - ./telegram_bot/logs:/app/logs
-    environment:
-      - BOT_TOKEN=${BOT_TOKEN}
-      - USERS_FILE=data/users.json
-      - CHECK_INTERVAL=3600
-      - PROMPT_HOUR=9
-      - PROMPT_DAY=0
-      - MAX_HISTORY=5
+      context: ./firebase
+      dockerfile: Dockerfile
+    container_name: thyknow-express
     restart: unless-stopped
-
-  # Firebase Functions
-  firebase:
-    build:
-      context: ./firebase/functions
-      dockerfile: ./Dockerfile
-    container_name: firebase-functions
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - PORT=8080
     ports:
-      - "8080:8080"  # Health check port
-      - "8879:8879"  # Firebase Functions port
-      - "5001:5001"  # Functions emulator
-      - "4000:4000"  # Emulator UI
-      - "8688:8688"  # Direct emulator port
+      - "3000:3000"
+    volumes:
+      - ./firebase/logs:/app/logs
+      - ./firebase/src/constants/prompts:/app/dist/constants/prompts
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - MONGODB_URI=mongodb://mongo:27017/thyknow
+      - TIMEZONE=Asia/Singapore
+      - PROMPT_DAY=1
+      - PROMPT_HOUR=9
+      - MAX_HISTORY=5
+    depends_on:
+      - mongo
+
+  # MongoDB database
+  mongo:
+    image: mongo:6
+    container_name: thyknow-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo-data:
