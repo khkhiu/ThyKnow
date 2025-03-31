@@ -34,11 +34,6 @@ export const MESSAGES = {
       "4. Set your preferred schedule with /schedule\n\n" +
       "✨ You will receive weekly prompts according to your schedule preferences.",
     
-    TIMEZONE:
-      "This bot operates on Singapore timezone (Asia/Singapore) for all users.\n" +
-      "Weekly prompts will be sent according to Singapore time.\n\n" +
-      "You can customize your prompt schedule using the /schedule command.",
-    
     NO_HISTORY:
       "You haven't made any journal entries yet. Use /prompt to start!",
     
