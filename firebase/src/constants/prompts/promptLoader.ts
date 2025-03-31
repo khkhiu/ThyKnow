@@ -10,6 +10,18 @@ import { logger } from '../../utils/logger';
  */
 export function loadPromptsFromMarkdown(filePath: string): string[] {
   try {
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      // Try alternate location (for development vs production environments)
+      const altPath = path.join(process.cwd(), filePath.startsWith('/') ? filePath.slice(1) : filePath);
+      if (fs.existsSync(altPath)) {
+        filePath = altPath;
+      } else {
+        logger.warn(`Prompt file not found at ${filePath} or ${altPath}, using fallback prompts`);
+        return [];
+      }
+    }
+    
     // Read the markdown file
     const content = fs.readFileSync(filePath, 'utf-8');
     

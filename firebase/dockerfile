@@ -15,6 +15,10 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
+# Copy markdown files to the dist directory
+RUN mkdir -p dist/constants/prompts && \
+    cp src/constants/prompts/*.md dist/constants/prompts/
+
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
