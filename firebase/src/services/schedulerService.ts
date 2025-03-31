@@ -69,6 +69,11 @@ export function setupScheduler(): void {
       // Get all users
       const users = await userService.getAllUsers();
       
+      // Debugging log
+      users.forEach(user => {
+        logger.debug(`User ${user.id}: day=${user.schedulePreference.day}, hour=${user.schedulePreference.hour}, enabled=${user.schedulePreference.enabled}`);
+      });
+
       // Filter users who should receive prompts now based on their preferences
       const usersToSendPrompts = users.filter(user => 
         user.schedulePreference.enabled &&
