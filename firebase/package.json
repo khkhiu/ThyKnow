@@ -11,8 +11,7 @@
     "lint:fix": "eslint --ext .ts src/ --fix",
     "setup-webhook": "ts-node scripts/setup-webhook.ts",
     "test": "mocha --require ts-node/register test/**/*.test.ts",
-    "test:coverage": "nyc --reporter=lcov --reporter=text npm test",
-    "test:e2e": "ts-node test/e2e/bot.test.ts"
+    "test:coverage": "nyc --reporter=lcov --reporter=text npm test"
   },
   "keywords": [
     "telegram",
