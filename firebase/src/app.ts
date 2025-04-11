@@ -1,3 +1,4 @@
+// src/app.ts (with added Pub/Sub routes)
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -8,6 +9,7 @@ import config from './config';
 import { logger } from './utils/logger';
 import dotenv from 'dotenv';
 import { sendWeeklyPromptToUser } from './services/schedulerService';
+import pubSubRoutes from './routes/pubSubRoutes'; // Import the new routes
 
 // Create Express app
 const app = express();
@@ -30,12 +32,15 @@ app.use('/webhook', express.json(), (req, res) => {
   bot.handleUpdate(req.body, res);
 });
 
+// Set up Pub/Sub routes
+app.use('/pubsub', pubSubRoutes);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Then add a new endpoint right after it
+// Health test prompt endpoint
 app.get('/health-test-prompt', async (req, res) => {
   try {
     // Use string format for the ID - this is critical
@@ -60,6 +65,7 @@ app.get('/health-test-prompt', async (req, res) => {
     });
   }
 });
+
 // Error handling middleware
 app.use(errorHandler);
 
