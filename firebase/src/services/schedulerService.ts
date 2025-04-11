@@ -120,11 +120,6 @@ export function setupScheduler(): void {
       }
       logger.info('Completed scheduled prompt job');
 
-      logger.info('TESTING: Attempting to send a test prompt to user 987496168');
-      const testUserId = '987496168';
-      await sendWeeklyPromptToUser(testUserId);
-      logger.info('TESTING: Successfully sent test prompt to user');
-
     } catch (error) {
       logger.error('Error in scheduled prompt job:', error);
     }

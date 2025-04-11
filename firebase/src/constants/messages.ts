@@ -3,20 +3,21 @@
 // User-facing messages
 export const MESSAGES = {
     WELCOME: 
-      "Welcome to your personal journaling companion! 🌟\n\n" +
-      "I'll send you weekly prompts to help you reflect on:\n" +
-      "• Self-awareness 🤔\n" +
-      "• Building meaningful connections 🤝\n\n" +
+      "🦕 Welcome to ThyKnow! 🦖\n\n" +
+      "Just like dinos ruled the Earth, you're about to rule self-discovery & building relationships! 🌍💡\n\n" +
+      "ThyKnow sends you weekly prompts to help you reflect on:\n" +
+      "• Self-awareness 🤔 (Because knowing yourself is a Jurassic-level skill!)\n" +
+      "• Meaningful connections 🤝 (Because even T-Rex needed a buddy!)\n\n" +
       "Commands:\n" +
       "/prompt - Get a new reflection prompt\n" +
       "/history - View your recent journal entries\n" +
       "/schedule - Manage your prompt schedule\n" +
       "/timezone - Check prompt timings\n" +
       "/help - Shows all available commands\n\n" +
-      "Let's start your journaling journey! Use /prompt to get your first question.",
+      "So buckle up, friend! It's time to RAWR into personal development! 🚀🦕",
     
     HELP:
-      "🤖 Available Commands:\n\n" +
+      "🦕 Available Commands 🦖\n\n" +
       "• /start - Initialize the bot and get started\n" +
       "• /prompt - Get a new reflection prompt\n" +
       "• /history - View your recent journal entries\n" +
@@ -28,20 +29,20 @@ export const MESSAGES = {
       "• /schedule_time - Set the time to receive prompts\n" +
       "• /schedule_toggle - Turn weekly prompts on/off\n\n" +
       "📝 How to use:\n" +
-      "1. Use /start to begin\n" +
+      "1. Use /start to begin your prehistoric journey\n" +
       "2. Get prompts with /prompt\n" +
       "3. View your entries with /history\n" +
       "4. Set your preferred schedule with /schedule\n\n" +
       "✨ You will receive weekly prompts according to your schedule preferences.",
     
     NO_HISTORY:
-      "You haven't made any journal entries yet. Use /prompt to start!",
+      "You haven't made any journal entries yet. Use /prompt to start your dino-discovery journey!",
     
     NO_PROMPT:
       "Sorry, I couldn't find your prompt. Please use /prompt to get a new one.",
     
     ERROR:
-      "Sorry, something went wrong. Please try again.",
+      "RAWR! Something went wrong. Please try again.",
     
     SAVE_ERROR:
       "Sorry, there was an error saving your response. " +
@@ -68,9 +69,9 @@ export const MESSAGES = {
         "✅ Your schedule has been updated! You will receive prompts on {day} at {hour}:00.",
         
       ENABLED:
-        "✅ Weekly prompts are now enabled.",
+        "✅ Weekly prompts are now enabled. RAWR!",
         
       DISABLED:
-        "✅ Weekly prompts are now disabled."
+        "✅ Weekly prompts are now disabled. Your dino is taking a nap."
     }
   };

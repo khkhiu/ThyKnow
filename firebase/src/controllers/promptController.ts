@@ -38,9 +38,11 @@ export async function handleSendPrompt(ctx: Context): Promise<void> {
     await ctx.reply(
       `${categoryEmoji} ${categoryName} Reflection:\n\n${prompt.text}\n\n` +
       "Take your time to reflect and respond when you're ready. " +
-      "Your response will be saved in your journal.\n\n" +
+      "Your response will be saved in your journal.\n\n" 
+      /*
       "You can use other commands like /history while thinking - " +
       "just reply directly to this message when you're ready."
+      */
     );
     
     logger.info(`Sent prompt to user ${userId}`);

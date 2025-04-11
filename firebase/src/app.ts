@@ -36,6 +36,7 @@ app.use('/webhook', express.json(), (req, res) => {
 app.use('/pubsub', pubSubRoutes);
 
 // Health check endpoint
+/*
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -65,7 +66,7 @@ app.get('/health-test-prompt', async (req, res) => {
     });
   }
 });
-
+*/
 // Error handling middleware
 app.use(errorHandler);
 

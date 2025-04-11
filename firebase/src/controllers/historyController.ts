@@ -37,7 +37,7 @@ export async function handleShowHistory(ctx: Context): Promise<void> {
     for (const entry of entries) {
       const date = moment(entry.timestamp).tz(config.timezone).format('YYYY-MM-DD HH:mm');
       historyText += `📅 ${date}\n`;
-      historyText += `Q: ${entry.prompt}\n`;
+      historyText += `Q: ${entry.prompt}\n\n`;
       historyText += `A: ${entry.response}\n\n`;
     }
     
