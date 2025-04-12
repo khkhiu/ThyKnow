@@ -25,8 +25,81 @@ export async function handleSendPrompt(ctx: Context): Promise<void> {
       return;
     }
     
-    // Get next prompt for this user
-    const prompt = await promptService.getNextPromptForUser(userId);
+    // Instead of getting the next prompt, we show a menu to choose the type
+    await ctx.reply(
+      "📝 Which type of prompt would you like?",
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "🧠 Self-Awareness",
+                callback_data: "prompt_type:self_awareness"
+              }
+            ],
+            [
+              {
+                text: "🤝 Connections",
+                callback_data: "prompt_type:connections"
+              }
+            ],
+            [
+              {
+                text: "🔄 Surprise Me (Alternate)",
+                callback_data: "prompt_type:alternate"
+              }
+            ]
+          ]
+        }
+      }
+    );
+    
+    logger.info(`Showed prompt selection menu to user ${userId}`);
+  } catch (error) {
+    logger.error('Error in prompt command:', error);
+    await ctx.reply('Sorry, there was an error getting your prompt. Please try again.');
+  }
+}
+
+/**
+ * Handle prompt type selection callback
+ */
+export async function handlePromptTypeCallback(ctx: Context): Promise<void> {
+  try {
+    const userId = ctx.from?.id.toString();
+    
+    if (!userId) {
+      logger.error('No user ID in callback context');
+      await ctx.answerCbQuery('Error: User ID missing');
+      return;
+    }
+    
+    // Get the callback data and extract the type
+    const callbackQuery = ctx.callbackQuery;
+    
+    if (!callbackQuery || !('data' in callbackQuery)) {
+      await ctx.answerCbQuery('Invalid callback data');
+      return;
+    }
+    
+    const data = callbackQuery.data;
+    
+    if (!data || !data.startsWith('prompt_type:')) {
+      await ctx.answerCbQuery('Invalid prompt type');
+      return;
+    }
+    
+    const promptType = data.split(':')[1] as PromptType | 'alternate';
+    
+    // Get a prompt of the selected type
+    let prompt;
+    if (promptType === 'alternate') {
+      // Use the existing alternating system
+      prompt = await promptService.getNextPromptForUser(userId);
+    } else {
+      // Get a prompt of the specific type
+      prompt = await promptService.getPromptBySpecificType(userId, promptType as PromptType);
+    }
     
     // Save current prompt to user's data
     await userService.saveLastPrompt(userId, prompt);
@@ -35,20 +108,20 @@ export async function handleSendPrompt(ctx: Context): Promise<void> {
     const categoryEmoji = prompt.type === 'self_awareness' ? '🧠' : '🤝';
     const categoryName = prompt.type === 'self_awareness' ? 'Self-Awareness' : 'Connections';
     
-    await ctx.reply(
+    // Answer the callback query
+    await ctx.answerCbQuery(`Getting a ${categoryName} prompt...`);
+    
+    // Edit the original message to show the prompt
+    await ctx.editMessageText(
       `${categoryEmoji} ${categoryName} Reflection:\n\n${prompt.text}\n\n` +
       "Take your time to reflect and respond when you're ready. " +
-      "Your response will be saved in your journal.\n\n" 
-      /*
-      "You can use other commands like /history while thinking - " +
-      "just reply directly to this message when you're ready."
-      */
+      "Your response will be saved in your journal."
     );
     
-    logger.info(`Sent prompt to user ${userId}`);
+    logger.info(`Sent ${prompt.type} prompt to user ${userId}`);
   } catch (error) {
-    logger.error('Error in prompt command:', error);
-    await ctx.reply('Sorry, there was an error getting your prompt. Please try again.');
+    logger.error('Error handling prompt type callback:', error);
+    await ctx.answerCbQuery('Sorry, an error occurred');
   }
 }
 

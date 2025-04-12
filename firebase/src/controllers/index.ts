@@ -2,7 +2,7 @@
 import { Telegraf, Context } from 'telegraf';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { handleStart, handleShowTimezone, handleShowHelp } from './userController';
-import { handleSendPrompt, handleTextMessage } from './promptController';
+import { handleSendPrompt, handleTextMessage, handlePromptTypeCallback } from './promptController';
 import { handleShowHistory } from './historyController';
 import { 
   handleScheduleCommand, 
@@ -42,6 +42,10 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     
     if (callbackData.startsWith('save_response:') || callbackData === 'new_prompt') {
       return handleResponseCallback(ctx);
+    }
+    
+    if (callbackData.startsWith('prompt_type:')) {
+      return handlePromptTypeCallback(ctx);
     }
   });
   
