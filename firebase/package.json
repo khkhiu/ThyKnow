@@ -34,6 +34,7 @@
     "moment-timezone": "^0.5.43",
     "mongoose": "^8.2.0",
     "node-cron": "^3.0.3",
+    "pg": "^8.14.1",
     "telegraf": "^4.15.0",
     "uuid": "^9.0.1",
     "winston": "^3.11.0"
@@ -45,6 +46,7 @@
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.19.86",
     "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.12",
     "@types/sinon": "^17.0.4",
     "@types/sinon-chai": "^3.2.12",
     "@types/supertest": "^6.0.2",
