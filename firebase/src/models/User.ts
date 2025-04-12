@@ -11,12 +11,6 @@ export interface IUser {
   createdAt: Date;
   promptCount: number;
   schedulePreference: ISchedulePreference;
-  // Add lastPrompt to interface to fix TypeScript errors
-  lastPrompt?: {
-    text: string;
-    type: PromptType;
-    timestamp: Date;
-  };
 }
 
 // Last prompt interface
@@ -34,23 +28,26 @@ export interface ISchedulePreference {
   enabled: boolean;
 }
 
+// Internal interface for database row structure
+interface IUserRow {
+  id: string;
+  createdAt: Date;
+  promptCount: number;
+  scheduleDay: number;
+  scheduleHour: number;
+  scheduleEnabled: boolean;
+  lastPromptText?: string;
+  lastPromptType?: string;
+  lastPromptTimestamp?: Date;
+}
+
 export class User {
   /**
    * Find a user by their Telegram ID
    */
   static async findOne(id: string): Promise<IUser | null> {
     try {
-      // Define a type for the database row
-      interface UserRow {
-        id: string;
-        createdAt: Date;
-        promptCount: number;
-        scheduleDay: number;
-        scheduleHour: number;
-        scheduleEnabled: boolean;
-      }
-
-      const users = await query<UserRow>(`
+      const users = await query<IUserRow>(`
         SELECT 
           u.id, 
           u.created_at AS "createdAt", 
@@ -66,17 +63,17 @@ export class User {
         return null;
       }
 
-      const user = users[0];
+      const row = users[0];
       
       // Transform the flat data structure into the expected interface
       return {
-        id: user.id,
-        createdAt: user.createdAt,
-        promptCount: user.promptCount,
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
         schedulePreference: {
-          day: user.scheduleDay,
-          hour: user.scheduleHour,
-          enabled: user.scheduleEnabled
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
         }
       };
     } catch (error) {
@@ -88,22 +85,16 @@ export class User {
   /**
    * Find a user by their Telegram ID along with their last prompt
    */
-  static async findOneWithLastPrompt(id: string): Promise<IUser | null> {
+  static async findOneWithLastPrompt(id: string): Promise<IUser & { lastPrompt?: ILastPrompt } | null> {
     try {
-      // Define a type for the row data
-      interface UserQueryResult {
-        id: string;
-        createdAt: Date;
-        promptCount: number;
-        scheduleDay: number;
-        scheduleHour: number;
-        scheduleEnabled: boolean;
+      // Define an extended row type to include last prompt fields
+      interface IUserRowWithPrompt extends IUserRow {
         lastPromptText?: string;
-        lastPromptType?: PromptType;
+        lastPromptType?: string;
         lastPromptTimestamp?: Date;
       }
-
-      const result = await query<UserQueryResult>(`
+      
+      const result = await query<IUserRowWithPrompt>(`
         SELECT 
           u.id, 
           u.created_at AS "createdAt", 
@@ -126,7 +117,7 @@ export class User {
       const row = result[0];
       
       // Transform the flat data structure into the expected interface
-      const user: IUser = {
+      const user: IUser & { lastPrompt?: ILastPrompt } = {
         id: row.id,
         createdAt: row.createdAt,
         promptCount: row.promptCount,
@@ -140,6 +131,7 @@ export class User {
       // Add last prompt if it exists
       if (row.lastPromptText) {
         user.lastPrompt = {
+          userId: row.id,
           text: row.lastPromptText,
           type: row.lastPromptType as PromptType,
           timestamp: row.lastPromptTimestamp as Date
@@ -165,17 +157,7 @@ export class User {
     try {
       const schedulePreference = data.schedulePreference || {};
       
-      // Define a type for the database row
-      interface UserRow {
-        id: string;
-        createdAt: Date;
-        promptCount: number;
-        scheduleDay: number;
-        scheduleHour: number;
-        scheduleEnabled: boolean;
-      }
-      
-      const result = await query<UserRow>(`
+      const result = await query<IUserRow>(`
         INSERT INTO users (
           id, 
           created_at, 
@@ -208,17 +190,17 @@ export class User {
         schedulePreference.enabled !== undefined ? schedulePreference.enabled : true
       ]);
 
-      const user = result[0];
+      const row = result[0];
       
       // Transform the flat data structure into the expected interface
       return {
-        id: user.id,
-        createdAt: user.createdAt,
-        promptCount: user.promptCount,
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
         schedulePreference: {
-          day: user.scheduleDay,
-          hour: user.scheduleHour,
-          enabled: user.scheduleEnabled
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
         }
       };
     } catch (error) {
@@ -244,49 +226,43 @@ export class User {
       let paramIndex = 1;
       
       if (data.promptCount !== undefined) {
-        updates.push(`prompt_count = ${paramIndex++}`);
+        updates.push(`prompt_count = $${paramIndex++}`);
         values.push(data.promptCount);
       }
       
       if (data.schedulePreference) {
         if (data.schedulePreference.day !== undefined) {
-          updates.push(`schedule_day = ${paramIndex++}`);
+          updates.push(`schedule_day = $${paramIndex++}`);
           values.push(data.schedulePreference.day);
         }
         
         if (data.schedulePreference.hour !== undefined) {
-          updates.push(`schedule_hour = ${paramIndex++}`);
+          updates.push(`schedule_hour = $${paramIndex++}`);
           values.push(data.schedulePreference.hour);
         }
         
         if (data.schedulePreference.enabled !== undefined) {
-          updates.push(`schedule_enabled = ${paramIndex++}`);
+          updates.push(`schedule_enabled = $${paramIndex++}`);
           values.push(data.schedulePreference.enabled);
         }
       }
       
       // If there's nothing to update, just return the existing user
       if (updates.length === 0) {
-        return await User.findOne(id) as IUser;
+        const existingUser = await User.findOne(id);
+        if (!existingUser) {
+          throw new Error(`User with ID ${id} not found`);
+        }
+        return existingUser;
       }
       
-      // Add the ID as the last parameter
-      values.push(id);
+      // Add the ID as the last parameter - ensure it remains a string
+      values.push(String(id));
       
-      // Define a type for the database row
-      interface UserRow {
-        id: string;
-        createdAt: Date;
-        promptCount: number;
-        scheduleDay: number;
-        scheduleHour: number;
-        scheduleEnabled: boolean;
-      }
-      
-      const result = await query<UserRow>(`
+      const result = await query<IUserRow>(`
         UPDATE users
         SET ${updates.join(', ')}
-        WHERE id = ${paramIndex}
+        WHERE id = $${paramIndex}
         RETURNING 
           id, 
           created_at AS "createdAt", 
@@ -300,17 +276,17 @@ export class User {
         throw new Error(`User with ID ${id} not found`);
       }
 
-      const user = result[0];
+      const row = result[0];
       
       // Transform the flat data structure into the expected interface
       return {
-        id: user.id,
-        createdAt: user.createdAt,
-        promptCount: user.promptCount,
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
         schedulePreference: {
-          day: user.scheduleDay,
-          hour: user.scheduleHour,
-          enabled: user.scheduleEnabled
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
         }
       };
     } catch (error) {
@@ -328,7 +304,7 @@ export class User {
         // Check if a last prompt already exists for this user
         const existingPrompt = await client.query(
           'SELECT user_id FROM last_prompts WHERE user_id = $1',
-          [userId]
+          [String(userId)]  // Ensure userId is a string
         );
         
         if (existingPrompt.rows.length > 0) {
@@ -337,14 +313,14 @@ export class User {
             `UPDATE last_prompts 
              SET text = $1, type = $2, timestamp = NOW() 
              WHERE user_id = $3`,
-            [prompt.text, prompt.type, userId]
+            [prompt.text, prompt.type, String(userId)]  // Ensure userId is a string
           );
         } else {
           // Insert new last prompt
           await client.query(
             `INSERT INTO last_prompts (user_id, text, type, timestamp) 
              VALUES ($1, $2, $3, NOW())`,
-            [userId, prompt.text, prompt.type]
+            [String(userId), prompt.text, prompt.type]  // Ensure userId is a string
           );
         }
       });
@@ -359,17 +335,7 @@ export class User {
    */
   static async find(): Promise<IUser[]> {
     try {
-      // Define a type for the database row
-      interface UserRow {
-        id: string;
-        createdAt: Date;
-        promptCount: number;
-        scheduleDay: number;
-        scheduleHour: number;
-        scheduleEnabled: boolean;
-      }
-
-      const users = await query<UserRow>(`
+      const users = await query<IUserRow>(`
         SELECT 
           id, 
           created_at AS "createdAt", 
@@ -381,14 +347,14 @@ export class User {
       `);
       
       // Transform the flat data structure into the expected interface
-      return users.map(user => ({
-        id: user.id,
-        createdAt: user.createdAt,
-        promptCount: user.promptCount,
+      return users.map(row => ({
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
         schedulePreference: {
-          day: user.scheduleDay,
-          hour: user.scheduleHour,
-          enabled: user.scheduleEnabled
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
         }
       }));
     } catch (error) {

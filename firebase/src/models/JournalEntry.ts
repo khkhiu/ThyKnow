@@ -44,7 +44,7 @@ export class JournalEntry {
           response, 
           timestamp
       `, [
-        data.userId,
+        String(data.userId),  // Ensure userId is a string
         data.prompt,
         data.promptType,
         data.response,
@@ -75,7 +75,7 @@ export class JournalEntry {
         WHERE user_id = $1
         ORDER BY timestamp DESC
         LIMIT $2
-      `, [userId, limit]);
+      `, [String(userId), limit]);  // Ensure userId is a string
     } catch (error) {
       logger.error(`Error finding journal entries for user ${userId}:`, error);
       throw error;

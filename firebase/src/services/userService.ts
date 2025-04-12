@@ -1,17 +1,22 @@
 // File: src/services/userService.ts
 // User service with PostgreSQL support
 
-import { User, IUser, ISchedulePreference } from '../models/User';
+import { User, IUser, ISchedulePreference, ILastPrompt } from '../models/User';
 import { JournalEntry, IJournalEntry } from '../models/JournalEntry';
 import { Prompt, PromptType } from '../types';
 import { logger } from '../utils/logger';
+
+// Define a combined type for user with possible lastPrompt
+type UserWithLastPrompt = IUser & { lastPrompt?: ILastPrompt };
 
 export class UserService {
   /**
    * Get a user by Telegram ID
    */
-  async getUser(userId: string): Promise<IUser | null> {
+  async getUser(userId: string): Promise<UserWithLastPrompt | null> {
     try {
+      // Ensure userId is a string
+      userId = String(userId);
       return await User.findOneWithLastPrompt(userId);
     } catch (error) {
       logger.error(`Error getting user ${userId}:`, error);
@@ -24,6 +29,9 @@ export class UserService {
    */
   async createOrUpdateUser(userId: string, data: Partial<IUser> = {}): Promise<IUser> {
     try {
+      // Ensure userId is a string
+      userId = String(userId);
+      
       // Check if user exists
       let user = await User.findOne(userId);
       
@@ -69,6 +77,9 @@ export class UserService {
     preferences: Partial<ISchedulePreference>
   ): Promise<void> {
     try {
+      // Ensure userId is a string
+      userId = String(userId);
+      
       const user = await User.findOne(userId);
       
       if (!user) {
@@ -88,6 +99,9 @@ export class UserService {
    */
   async saveLastPrompt(userId: string, prompt: Prompt): Promise<void> {
     try {
+      // Ensure userId is a string
+      userId = String(userId);
+      
       await User.saveLastPrompt(userId, {
         text: prompt.text,
         type: prompt.type
@@ -108,6 +122,9 @@ export class UserService {
     timestamp: Date;
   }): Promise<string> {
     try {
+      // Ensure userId is a string
+      userId = String(userId);
+      
       const journalEntry = await JournalEntry.create({
         userId,
         ...entry
@@ -126,6 +143,9 @@ export class UserService {
    */
   async getRecentEntries(userId: string, limit: number = 5): Promise<IJournalEntry[]> {
     try {
+      // Ensure userId is a string
+      userId = String(userId);
+      
       return await JournalEntry.findByUserId(userId, limit);
     } catch (error) {
       logger.error(`Error getting recent entries for user ${userId}:`, error);
