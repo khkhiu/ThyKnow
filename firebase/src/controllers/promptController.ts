@@ -25,8 +25,11 @@ export async function handleSendPrompt(ctx: Context): Promise<void> {
       return;
     }
     
-    // Get next prompt for this user
-    const prompt = await promptService.getNextPromptForUser(userId);
+    // Check if a specific prompt type was chosen via the /choose command
+    const chosenPromptType = (ctx as any).chosenPromptType as PromptType | undefined;
+    
+    // Get next prompt for this user, passing the chosen type if available
+    const prompt = await promptService.getNextPromptForUser(userId, chosenPromptType);
     
     // Save current prompt to user's data
     await userService.saveLastPrompt(userId, prompt);
@@ -39,9 +42,11 @@ export async function handleSendPrompt(ctx: Context): Promise<void> {
       `${categoryEmoji} ${categoryName} Reflection:\n\n${prompt.text}\n\n` +
       "Take your time to reflect and respond when you're ready. " +
       "Your response will be saved in your journal.\n\n" +
-      "You can use other commands like /history while thinking - " +
-      "just reply directly to this message when you're ready."
+      "💡 Tip: Use /choose to select a specific type of prompt next time."
     );
+    
+    // Clear the chosen prompt type to ensure it's not reused
+    delete (ctx as any).chosenPromptType;
     
     logger.info(`Sent prompt to user ${userId}`);
   } catch (error) {
@@ -86,7 +91,7 @@ export async function handleTextMessage(ctx: Context): Promise<void> {
     // Check if user has an active prompt to respond to
     if (!user.lastPrompt) {
       logger.info(`User ${userId} has no active prompt`);
-      await ctx.reply("I don't have a prompt for you to respond to. Use /prompt to get one.");
+      await ctx.reply("I don't have a prompt for you to respond to. Use /prompt to get one or /choose to select a specific type.");
       return;
     }
     

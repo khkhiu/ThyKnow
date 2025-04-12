@@ -128,13 +128,14 @@ export async function handleShowTimezone(ctx: Context): Promise<void> {
  * Show help command handler
  */
 export async function handleShowHelp(ctx: Context): Promise<void> {
-  const helpText = MESSAGES.HELP + 
+  const helpText = MESSAGES.HELP
+  /* 
     "\n\nSchedule Management:\n" +
     "• /schedule - View your current prompt schedule\n" +
     "• /schedule_day - Set the day to receive prompts\n" +
     "• /schedule_time - Set the time to receive prompts\n" +
     "• /schedule_toggle - Turn weekly prompts on/off";
-    
+  */  
   await ctx.reply(helpText);
   logger.info(`Showed help to user ${ctx.from?.id}`);
 }

@@ -1,4 +1,4 @@
-// firebase/src/services/schedulerService.ts
+// src/services/schedulerService.ts
 import cron from 'node-cron';
 import { bot } from '../app';
 import { userService } from './userService';
@@ -7,24 +7,17 @@ import config from '../config';
 import { logger } from '../utils/logger';
 import moment from 'moment-timezone';
 
-// Configuring timezones
-function jsToMondayBasedDay(jsDay: number): number {
-  return (jsDay + 6) % 7;
-}
-
-function mondayBasedToJsDay(mondayBasedDay: number): number {
-  return (mondayBasedDay + 1) % 7;
-}
-
 /**
  * Send a weekly prompt to a specific user
+ * If promptType is specified, send that type, otherwise alternate based on user's count
  */
 export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
   try {
     // Debug log to confirm userId is received correctly
     logger.info(`sendWeeklyPromptToUser called with userId: ${userId}`);
 
-    // Get next prompt for user
+    // Get next prompt for user - this will automatically alternate
+    // based on the user's prompt count if no type is specified
     const prompt = await promptService.getNextPromptForUser(userId);
     
     // Update user's last prompt
@@ -36,7 +29,8 @@ export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
     
     const message = 
       `🌟 Weekly Reflection Time! ${categoryEmoji} ${categoryName}\n\n${prompt.text}\n\n` +
-      "Take a moment to pause and reflect on this question.";
+      "Take a moment to pause and reflect on this question.\n\n" +
+      "💡 Tip: Use /choose if you'd prefer a specific type of prompt next time.";
       
     // Send message
     await bot.telegram.sendMessage(userId, message);
@@ -59,11 +53,6 @@ export function setupScheduler(): void {
     try {
       // Use moment-timezone to get Singapore time
       const sgTime = moment().tz(config.timezone);
-
-      // Set Monday as first day of the week
-      const jsDayOfWeek = sgTime.day(); // Sunday=0 in JavaScript
-      const mondayBasedDay = jsToMondayBasedDay(jsDayOfWeek);
-
       const currentDay = sgTime.day(); // 0-6 (Sunday to Saturday)
       const currentHour = sgTime.hour(); // 0-23
       
@@ -76,6 +65,8 @@ export function setupScheduler(): void {
       users.forEach(user => {
         logger.debug(`User ${user.id}: day=${user.schedulePreference.day}, hour=${user.schedulePreference.hour}, enabled=${user.schedulePreference.enabled}`);
       });
+
+      // Debug what the system is finding
       const matchingUsers = users.filter(user => 
         user.schedulePreference.day === currentDay &&
         user.schedulePreference.hour === currentHour
@@ -85,7 +76,7 @@ export function setupScheduler(): void {
       const enabledUsers = users.filter(user => user.schedulePreference.enabled);
       logger.debug(`Users with enabled schedule: ${enabledUsers.length}`);
 
-      // For the specific user
+      // For specific debugging
       const testUser = users.find(user => user.id === '987496168');
       if (testUser) {
         logger.debug(`Test user match day: ${testUser.schedulePreference.day === currentDay}`);
@@ -100,8 +91,8 @@ export function setupScheduler(): void {
       // Filter users who should receive prompts now based on their preferences
       const usersToSendPrompts = users.filter(user => 
         user.schedulePreference.enabled &&
-        user.schedulePreference.day === mondayBasedDay && // Use the converted day if needed
-        user.schedulePreference.hour === sgTime.hour()
+        user.schedulePreference.day === currentDay && 
+        user.schedulePreference.hour === currentHour
       );
       
       logger.info(`Sending prompts to ${usersToSendPrompts.length} users`);
@@ -119,11 +110,6 @@ export function setupScheduler(): void {
         }
       }
       logger.info('Completed scheduled prompt job');
-
-      logger.info('TESTING: Attempting to send a test prompt to user 987496168');
-      const testUserId = '987496168';
-      await sendWeeklyPromptToUser(testUserId);
-      logger.info('TESTING: Successfully sent test prompt to user');
 
     } catch (error) {
       logger.error('Error in scheduled prompt job:', error);

@@ -2,10 +2,11 @@
 
 // Command descriptions for Telegram bot
 export const COMMAND_DESCRIPTIONS = {
-    START: "Initialize the bot and get started",
-    PROMPT: "Get a new reflection prompt",
-    HISTORY: "View your recent journal entries",
-    HELP: "Show available commands and usage",
-    TIMEZONE: "Check prompt timings",
-    SCHEDULE: "Manage your prompt schedule"
-  };
+  START: "Initialize the bot and get started",
+  PROMPT: "Get a new reflection prompt",
+  CHOOSE: "Choose a specific type of prompt",
+  HISTORY: "View your recent journal entries",
+  HELP: "Show available commands and usage",
+  TIMEZONE: "Check prompt timings",
+  SCHEDULE: "Manage your prompt schedule"
+};
