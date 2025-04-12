@@ -1,4 +1,4 @@
-# Terraform configuration for ThyKnow Telegram Bot on GCP
+# Terraform configuration for ThyKnow Telegram Bot on GCP with Cloud SQL
 
 terraform {
   required_providers {
@@ -38,7 +38,8 @@ resource "google_project_service" "services" {
     "secretmanager.googleapis.com", 
     "cloudscheduler.googleapis.com", 
     "pubsub.googleapis.com",
-    "artifactregistry.googleapis.com"
+    "artifactregistry.googleapis.com",
+    "sqladmin.googleapis.com"  # Added for Cloud SQL
   ])
   
   service = each.key
@@ -71,9 +72,9 @@ resource "google_secret_manager_secret" "telegram_bot_token" {
   
   replication {
     user_managed {
-        replicas {
-            location = var.region
-        }
+      replicas {
+        location = var.region
+      }
     }
   }
 }
@@ -84,38 +85,64 @@ resource "google_secret_manager_secret_version" "telegram_bot_token_version" {
   secret_data = var.telegram_bot_token
 }
 
-# Create secret for MongoDB URI
-resource "google_secret_manager_secret" "mongodb_uri" {
-  depends_on = [google_project_service.services]
+# Create the Cloud SQL instance (PostgreSQL)
+resource "google_sql_database_instance" "thyknow_db" {
+  name             = "thyknow-db-${var.environment}"
+  database_version = "POSTGRES_14"
+  region           = var.region
   
-  secret_id = "mongodb-uri"
-  
-  replication {
-    user_managed {
-        replicas {
-            location = var.region
-        }
+  settings {
+    tier = var.db_tier
+    
+    # IP configuration
+    ip_configuration {
+      ipv4_enabled    = true
+      # Private network could be added here for production
+      
+      # Allow connections from anywhere (for development)
+      # In production, you should restrict this to specific IP ranges
+      authorized_networks {
+        name  = "all"
+        value = "0.0.0.0/0"
+      }
+    }
+    
+    # Automated backups
+    backup_configuration {
+      enabled            = true
+      # binary_log_enabled only applicable to MySQL
+      start_time         = "02:00"  # 2 AM UTC
+    }
+    
+    # Database flags
+    database_flags {
+      name  = "max_connections"
+      value = "100"
+    }
+    
+    # Set maintenance window 
+    maintenance_window {
+      day          = 7  # Sunday
+      hour         = 1  # 1 AM UTC
+      update_track = "stable"
     }
   }
+  
+  deletion_protection = false # Make this true for production
 }
 
-# Create secret version for MongoDB URI
-resource "google_secret_manager_secret_version" "mongodb_uri_version" {
-  secret      = google_secret_manager_secret.mongodb_uri.id
-  secret_data = var.mongodb_uri
+# Create the database
+resource "google_sql_database" "thyknow_database" {
+  name     = "thyknow"
+  instance = google_sql_database_instance.thyknow_db.name
+  charset  = "UTF8"
 }
 
-# Grant access to secrets for service account
-resource "google_secret_manager_secret_iam_member" "telegram_token_access" {
-  secret_id = google_secret_manager_secret.telegram_bot_token.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.thyknow_service_account.email}"
-}
-
-resource "google_secret_manager_secret_iam_member" "mongodb_uri_access" {
-  secret_id = google_secret_manager_secret.mongodb_uri.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.thyknow_service_account.email}"
+# Create the database user
+resource "google_sql_user" "thyknow_db_user" {
+  name     = "thyknow_app"
+  instance = google_sql_database_instance.thyknow_db.name
+  password = var.db_password
 }
 
 # Create a Pub/Sub topic for scheduled prompts
@@ -123,43 +150,6 @@ resource "google_pubsub_topic" "weekly_prompts" {
   depends_on = [google_project_service.services]
   
   name = var.topic_name
-}
-
-# Create a Pub/Sub subscription for the Cloud Run service
-resource "google_pubsub_subscription" "thyknow_subscription" {
-  name  = "thyknow-subscription"
-  topic = google_pubsub_topic.weekly_prompts.name
-  
-  push_config {
-    push_endpoint = "${google_cloud_run_service.thyknow_service.status[0].url}/pubsub/messages"
-    
-    attributes = {
-      x-goog-version = "v1"
-    }
-    
-    oidc_token {
-      service_account_email = google_service_account.thyknow_service_account.email
-    }
-  }
-  
-  # Configure exponential backoff
-  retry_policy {
-    minimum_backoff = "10s"
-    maximum_backoff = "600s"
-  }
-  
-  # Set message retention duration
-  message_retention_duration = "604800s" # 7 days
-  
-  # Enable duplicate detection
-  enable_message_ordering = false
-  
-  # Set expiration policy
-  expiration_policy {
-    ttl = "2592000s" # 30 days
-  }
-  
-  depends_on = [google_cloud_run_service.thyknow_service]
 }
 
 # Create a Cloud Scheduler job for weekly prompts
@@ -182,7 +172,8 @@ resource "google_cloud_run_service" "thyknow_service" {
   depends_on = [
     google_project_service.services,
     google_secret_manager_secret_version.telegram_bot_token_version,
-    google_secret_manager_secret_version.mongodb_uri_version
+    google_sql_database.thyknow_database,
+    google_sql_user.thyknow_db_user
   ]
   
   name     = "thyknow-express"
@@ -193,9 +184,7 @@ resource "google_cloud_run_service" "thyknow_service" {
       service_account_name = google_service_account.thyknow_service_account.email
       
       containers {
-        # You'll need to build and push the image first:
-        # docker build -t ${var.region}-docker.pkg.dev/${var.project_id}/thyknow/thyknow-express:latest .
-        # docker push ${var.region}-docker.pkg.dev/${var.project_id}/thyknow/thyknow-express:latest
+        # You'll need to build and push the image first
         image = "${var.region}-docker.pkg.dev/${var.project_id}/thyknow/thyknow-express:latest"
         
         env {
@@ -228,11 +217,40 @@ resource "google_cloud_run_service" "thyknow_service" {
           value = var.max_history
         }
         
-        resources {
-          limits = {
-            cpu    = "1000m"
-            memory = "512Mi"
+        # PostgreSQL Database Configuration
+        env {
+          name  = "DB_HOST"
+          value = google_sql_database_instance.thyknow_db.first_ip_address
+        }
+        
+        env {
+          name  = "DB_PORT"
+          value = "5432"
+        }
+        
+        env {
+          name  = "DB_NAME"
+          value = google_sql_database.thyknow_database.name
+        }
+        
+        env {
+          name  = "DB_USER"
+          value = google_sql_user.thyknow_db_user.name
+        }
+        
+        env {
+          name = "DB_PASSWORD"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.db_password.secret_id
+              key  = "latest"
+            }
           }
+        }
+        
+        env {
+          name  = "DB_SSL"
+          value = "true"
         }
         
         # Mount Telegram Bot Token from Secret Manager
@@ -246,14 +264,10 @@ resource "google_cloud_run_service" "thyknow_service" {
           }
         }
         
-        # Mount MongoDB URI from Secret Manager
-        env {
-          name = "MONGODB_URI"
-          value_from {
-            secret_key_ref {
-              name = google_secret_manager_secret.mongodb_uri.secret_id
-              key  = "latest"
-            }
+        resources {
+          limits = {
+            cpu    = "1000m"
+            memory = "512Mi"
           }
         }
         
@@ -263,11 +277,11 @@ resource "google_cloud_run_service" "thyknow_service" {
         }
       }
       
-      # Timeout settings
-      timeout_seconds = 300
-      
       # Container concurrency
       container_concurrency = 80
+      
+      # Timeout settings
+      timeout_seconds = 300
     }
     
     metadata {
@@ -282,6 +296,72 @@ resource "google_cloud_run_service" "thyknow_service" {
     percent         = 100
     latest_revision = true
   }
+}
+
+# Create secret for Database Password
+resource "google_secret_manager_secret" "db_password" {
+  secret_id = "db-password"
+  
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+# Create secret version for Database Password
+resource "google_secret_manager_secret_version" "db_password_version" {
+  secret      = google_secret_manager_secret.db_password.id
+  secret_data = var.db_password
+}
+
+# Grant access to secrets for service account
+resource "google_secret_manager_secret_iam_member" "telegram_token_access" {
+  secret_id = google_secret_manager_secret.telegram_bot_token.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.thyknow_service_account.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "db_password_access" {
+  secret_id = google_secret_manager_secret.db_password.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.thyknow_service_account.email}"
+}
+
+# Create a Pub/Sub subscription for the Cloud Run service
+resource "google_pubsub_subscription" "thyknow_subscription" {
+  name  = "thyknow-subscription"
+  topic = google_pubsub_topic.weekly_prompts.name
+  
+  push_config {
+    push_endpoint = "${google_cloud_run_service.thyknow_service.status[0].url}/pubsub/messages"
+    
+    attributes = {
+      x-goog-version = "v1"
+    }
+    
+    oidc_token {
+      service_account_email = google_service_account.thyknow_service_account.email
+    }
+  }
+  
+  # Configure exponential backoff
+  retry_policy {
+    minimum_backoff = "10s"
+    maximum_backoff = "600s"
+  }
+  
+  # Set message retention duration
+  message_retention_duration = "604800s" # 7 days
+  
+  # Set expiration policy
+  expiration_policy {
+    ttl = "2592000s" # 30 days
+  }
+  
+  depends_on = [google_cloud_run_service.thyknow_service]
 }
 
 # Set IAM policy for Cloud Run service to be publicly accessible
@@ -308,10 +388,4 @@ resource "google_cloud_run_service_iam_member" "pubsub_invoker" {
   service  = google_cloud_run_service.thyknow_service.name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.thyknow_service_account.email}"
-}
-
-# Create an output variable with the service URL
-output "service_url" {
-  value       = google_cloud_run_service.thyknow_service.status[0].url
-  description = "The URL of the deployed service"
 }

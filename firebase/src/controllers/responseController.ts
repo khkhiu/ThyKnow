@@ -47,7 +47,15 @@ export async function handleResponseCallback(ctx: CallbackContext): Promise<void
       // User confirms they want to save their response
       const user = await userService.getUser(userId);
       
-      if (!user || !user.lastPrompt) {
+      if (!user) {
+        await ctx.answerCbQuery('Error: User not found');
+        await ctx.editMessageText('Sorry, I could not find your user data. Please use /start to initialize the bot.');
+        return;
+      }
+      
+      // Access lastPrompt which might not exist directly on user
+      const userWithPrompt = user as any;
+      if (!userWithPrompt.lastPrompt) {
         await ctx.answerCbQuery('Error: Prompt data not found');
         await ctx.editMessageText('Sorry, I could not find your prompt data. Please use /prompt to get a new one.');
         return;
@@ -68,8 +76,8 @@ export async function handleResponseCallback(ctx: CallbackContext): Promise<void
       
       // Create and save entry
       const entry = {
-        prompt: user.lastPrompt.text,
-        promptType: user.lastPrompt.type as PromptType,
+        prompt: userWithPrompt.lastPrompt.text,
+        promptType: userWithPrompt.lastPrompt.type as PromptType,
         response: originalMessage,
         timestamp: new Date()
       };
@@ -78,7 +86,7 @@ export async function handleResponseCallback(ctx: CallbackContext): Promise<void
       await ctx.answerCbQuery('Response saved!');
       
       // Determine feedback based on prompt type
-      const feedbackMessage = user.lastPrompt.type === 'self_awareness' 
+      const feedbackMessage = userWithPrompt.lastPrompt.type === 'self_awareness' 
         ? FEEDBACK.SELF_AWARENESS 
         : FEEDBACK.CONNECTIONS;
       

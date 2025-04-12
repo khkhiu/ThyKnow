@@ -1,60 +1,365 @@
-// firebase/src/models/User.ts
-import mongoose, { Document, Schema, Types } from 'mongoose';
-import { PromptType } from '../types';
+// File: src/models/User.ts
+// User Model for PostgreSQL
 
-// Last prompt schema
+import { query, transaction } from '../database';
+import { PromptType } from '../types';
+import { logger } from '../utils/logger';
+
+// User interface
+export interface IUser {
+  id: string; // Telegram user ID
+  createdAt: Date;
+  promptCount: number;
+  schedulePreference: ISchedulePreference;
+}
+
+// Last prompt interface
 export interface ILastPrompt {
+  userId: string;
   text: string;
   type: PromptType;
   timestamp: Date;
 }
 
-const lastPromptSchema = new Schema<ILastPrompt>({
-  text: { type: String, required: true },
-  type: { type: String, enum: ['self_awareness', 'connections'], required: true },
-  timestamp: { type: Date, default: Date.now }
-});
-
-// User schedule preferences
+// Schedule preference interface
 export interface ISchedulePreference {
   day: number; // 0-6 (Sunday to Saturday)
   hour: number; // 0-23
   enabled: boolean;
 }
 
-const schedulePreferenceSchema = new Schema<ISchedulePreference>({
-  day: { type: Number, min: 0, max: 6, default: 1 }, // Monday by default
-  hour: { type: Number, min: 0, max: 23, default: 9 }, // 9 AM by default
-  enabled: { type: Boolean, default: true }
-});
-
-// User interface
-export interface IUser extends Document {
-  _id: Types.ObjectId;
-  id: string; // Telegram user ID
+// Internal interface for database row structure
+interface IUserRow {
+  id: string;
   createdAt: Date;
   promptCount: number;
-  lastPrompt?: ILastPrompt;
-  schedulePreference: ISchedulePreference & {
-    // No toObject method needed, we'll use spread operator instead
-  };
+  scheduleDay: number;
+  scheduleHour: number;
+  scheduleEnabled: boolean;
+  lastPromptText?: string;
+  lastPromptType?: string;
+  lastPromptTimestamp?: Date;
 }
 
-// User schema
-const userSchema = new Schema<IUser>({
-  id: { type: String, required: true, unique: true }, // Telegram user ID
-  createdAt: { type: Date, default: Date.now },
-  promptCount: { type: Number, default: 0 },
-  lastPrompt: { type: lastPromptSchema, required: false },
-  schedulePreference: { 
-    type: schedulePreferenceSchema, 
-    default: () => ({
-      day: 1, // Monday
-      hour: 9, // 9 AM
-      enabled: true
-    })
-  }
-});
+export class User {
+  /**
+   * Find a user by their Telegram ID
+   */
+  static async findOne(id: string): Promise<IUser | null> {
+    try {
+      const users = await query<IUserRow>(`
+        SELECT 
+          u.id, 
+          u.created_at AS "createdAt", 
+          u.prompt_count AS "promptCount",
+          u.schedule_day AS "scheduleDay",
+          u.schedule_hour AS "scheduleHour",
+          u.schedule_enabled AS "scheduleEnabled"
+        FROM users u
+        WHERE u.id = $1
+      `, [id]);
 
-// Create and export the User model
-export const User = mongoose.model<IUser>('User', userSchema);
+      if (users.length === 0) {
+        return null;
+      }
+
+      const row = users[0];
+      
+      // Transform the flat data structure into the expected interface
+      return {
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
+        schedulePreference: {
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
+        }
+      };
+    } catch (error) {
+      logger.error(`Error finding user ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find a user by their Telegram ID along with their last prompt
+   */
+  static async findOneWithLastPrompt(id: string): Promise<IUser & { lastPrompt?: ILastPrompt } | null> {
+    try {
+      // Define an extended row type to include last prompt fields
+      interface IUserRowWithPrompt extends IUserRow {
+        lastPromptText?: string;
+        lastPromptType?: string;
+        lastPromptTimestamp?: Date;
+      }
+      
+      const result = await query<IUserRowWithPrompt>(`
+        SELECT 
+          u.id, 
+          u.created_at AS "createdAt", 
+          u.prompt_count AS "promptCount",
+          u.schedule_day AS "scheduleDay",
+          u.schedule_hour AS "scheduleHour",
+          u.schedule_enabled AS "scheduleEnabled",
+          lp.text AS "lastPromptText",
+          lp.type AS "lastPromptType",
+          lp.timestamp AS "lastPromptTimestamp"
+        FROM users u
+        LEFT JOIN last_prompts lp ON u.id = lp.user_id
+        WHERE u.id = $1
+      `, [id]);
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      const row = result[0];
+      
+      // Transform the flat data structure into the expected interface
+      const user: IUser & { lastPrompt?: ILastPrompt } = {
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
+        schedulePreference: {
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
+        }
+      };
+
+      // Add last prompt if it exists
+      if (row.lastPromptText) {
+        user.lastPrompt = {
+          userId: row.id,
+          text: row.lastPromptText,
+          type: row.lastPromptType as PromptType,
+          timestamp: row.lastPromptTimestamp as Date
+        };
+      }
+
+      return user;
+    } catch (error) {
+      logger.error(`Error finding user with last prompt ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new user
+   */
+  static async create(data: {
+    id: string;
+    createdAt?: Date;
+    promptCount?: number;
+    schedulePreference?: Partial<ISchedulePreference>;
+  }): Promise<IUser> {
+    try {
+      const schedulePreference = data.schedulePreference || {};
+      
+      const result = await query<IUserRow>(`
+        INSERT INTO users (
+          id, 
+          created_at, 
+          prompt_count, 
+          schedule_day, 
+          schedule_hour, 
+          schedule_enabled
+        )
+        VALUES (
+          $1, 
+          $2, 
+          $3, 
+          $4, 
+          $5, 
+          $6
+        )
+        RETURNING 
+          id, 
+          created_at AS "createdAt", 
+          prompt_count AS "promptCount",
+          schedule_day AS "scheduleDay",
+          schedule_hour AS "scheduleHour",
+          schedule_enabled AS "scheduleEnabled"
+      `, [
+        data.id,
+        data.createdAt || new Date(),
+        data.promptCount || 0,
+        schedulePreference.day !== undefined ? schedulePreference.day : 1,
+        schedulePreference.hour !== undefined ? schedulePreference.hour : 9,
+        schedulePreference.enabled !== undefined ? schedulePreference.enabled : true
+      ]);
+
+      const row = result[0];
+      
+      // Transform the flat data structure into the expected interface
+      return {
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
+        schedulePreference: {
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
+        }
+      };
+    } catch (error) {
+      logger.error(`Error creating user ${data.id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing user
+   */
+  static async update(
+    id: string,
+    data: {
+      promptCount?: number;
+      schedulePreference?: Partial<ISchedulePreference>;
+    }
+  ): Promise<IUser> {
+    try {
+      // Build the update parts dynamically based on what's provided
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 1;
+      
+      if (data.promptCount !== undefined) {
+        updates.push(`prompt_count = $${paramIndex++}`);
+        values.push(data.promptCount);
+      }
+      
+      if (data.schedulePreference) {
+        if (data.schedulePreference.day !== undefined) {
+          updates.push(`schedule_day = $${paramIndex++}`);
+          values.push(data.schedulePreference.day);
+        }
+        
+        if (data.schedulePreference.hour !== undefined) {
+          updates.push(`schedule_hour = $${paramIndex++}`);
+          values.push(data.schedulePreference.hour);
+        }
+        
+        if (data.schedulePreference.enabled !== undefined) {
+          updates.push(`schedule_enabled = $${paramIndex++}`);
+          values.push(data.schedulePreference.enabled);
+        }
+      }
+      
+      // If there's nothing to update, just return the existing user
+      if (updates.length === 0) {
+        const existingUser = await User.findOne(id);
+        if (!existingUser) {
+          throw new Error(`User with ID ${id} not found`);
+        }
+        return existingUser;
+      }
+      
+      // Add the ID as the last parameter - ensure it remains a string
+      values.push(String(id));
+      
+      const result = await query<IUserRow>(`
+        UPDATE users
+        SET ${updates.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING 
+          id, 
+          created_at AS "createdAt", 
+          prompt_count AS "promptCount",
+          schedule_day AS "scheduleDay",
+          schedule_hour AS "scheduleHour",
+          schedule_enabled AS "scheduleEnabled"
+      `, values);
+
+      if (result.length === 0) {
+        throw new Error(`User with ID ${id} not found`);
+      }
+
+      const row = result[0];
+      
+      // Transform the flat data structure into the expected interface
+      return {
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
+        schedulePreference: {
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
+        }
+      };
+    } catch (error) {
+      logger.error(`Error updating user ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save the last prompt for a user
+   */
+  static async saveLastPrompt(userId: string, prompt: { text: string; type: PromptType }): Promise<void> {
+    try {
+      await transaction(async (client) => {
+        // Check if a last prompt already exists for this user
+        const existingPrompt = await client.query(
+          'SELECT user_id FROM last_prompts WHERE user_id = $1',
+          [String(userId)]  // Ensure userId is a string
+        );
+        
+        if (existingPrompt.rows.length > 0) {
+          // Update existing last prompt
+          await client.query(
+            `UPDATE last_prompts 
+             SET text = $1, type = $2, timestamp = NOW() 
+             WHERE user_id = $3`,
+            [prompt.text, prompt.type, String(userId)]  // Ensure userId is a string
+          );
+        } else {
+          // Insert new last prompt
+          await client.query(
+            `INSERT INTO last_prompts (user_id, text, type, timestamp) 
+             VALUES ($1, $2, $3, NOW())`,
+            [String(userId), prompt.text, prompt.type]  // Ensure userId is a string
+          );
+        }
+      });
+    } catch (error) {
+      logger.error(`Error saving last prompt for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all users
+   */
+  static async find(): Promise<IUser[]> {
+    try {
+      const users = await query<IUserRow>(`
+        SELECT 
+          id, 
+          created_at AS "createdAt", 
+          prompt_count AS "promptCount",
+          schedule_day AS "scheduleDay",
+          schedule_hour AS "scheduleHour",
+          schedule_enabled AS "scheduleEnabled"
+        FROM users
+      `);
+      
+      // Transform the flat data structure into the expected interface
+      return users.map(row => ({
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
+        schedulePreference: {
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
+        }
+      }));
+    } catch (error) {
+      logger.error('Error finding all users:', error);
+      throw error;
+    }
+  }
+}

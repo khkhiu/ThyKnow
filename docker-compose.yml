@@ -10,28 +10,54 @@ services:
       - "3000:3000"
     volumes:
       - ./firebase/logs:/app/logs
-      - ./firebase/src/constants/prompts:/app/dist/constants/prompts
+      - ./firebase/src/constants/prompts.ts:/app/src/constants/prompts.ts
     environment:
       - NODE_ENV=development
       - PORT=3000
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - MONGODB_URI=mongodb://mongo:27017/thyknow
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=thyknow
+      - DB_USER=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_SSL=false
       - TIMEZONE=Asia/Singapore
       - PROMPT_DAY=1
       - PROMPT_HOUR=9
       - MAX_HISTORY=5
     depends_on:
-      - mongo
+      postgres:
+        condition: service_healthy
 
-  # MongoDB database
-  mongo:
-    image: mongo:6
-    container_name: thyknow-mongo
+  # PostgreSQL database
+  postgres:
+    image: postgres:14
+    container_name: thyknow-postgres
     restart: unless-stopped
     volumes:
-      - mongo-data:/data/db
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
     ports:
-      - "27017:27017"
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=thyknow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Adminer - Database administration tool (optional)
+  adminer:
+    image: adminer
+    container_name: thyknow-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
 
 volumes:
-  mongo-data:
+  postgres-data:

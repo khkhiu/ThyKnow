@@ -3,6 +3,7 @@ import { User } from '../models/User';
 import { PROMPTS } from '../constants';
 import { Prompt, PromptType } from '../types';
 import { logger } from '../utils/logger';
+import { userService } from './userService';
 
 export class PromptService {
   private promptHistory: Record<PromptType, string[]> = {
@@ -53,23 +54,24 @@ export class PromptService {
    */
   async getNextPromptForUser(userId: string, promptType?: PromptType): Promise<Prompt> {
     try {
+      // Ensure userId is a string
+      userId = String(userId);
+      
       // Get user from database
-      let user = await User.findOne({ id: userId });
+      let user = await User.findOne(userId);
       let promptCount = 1;
       
       if (user) {
         // Increment prompt count
         promptCount = (user.promptCount || 0) + 1;
-        user.promptCount = promptCount;
-        await user.save();
+        await User.update(userId, { promptCount });
       } else {
         // Create new user with count = 1
-        user = new User({
+        await User.create({
           id: userId,
           createdAt: new Date(),
           promptCount: 1
         });
-        await user.save();
       }
       
       // Determine prompt type based on count or use specified type

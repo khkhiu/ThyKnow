@@ -89,7 +89,9 @@ export async function handleTextMessage(ctx: Context): Promise<void> {
     }
     
     // Check if user has an active prompt to respond to
-    if (!user.lastPrompt) {
+    // Note: lastPrompt might not exist since we're using findOneWithLastPrompt
+    const userWithPrompt = user as any;
+    if (!userWithPrompt.lastPrompt) {
       logger.info(`User ${userId} has no active prompt`);
       await ctx.reply("I don't have a prompt for you to respond to. Use /prompt to get one or /choose to select a specific type.");
       return;
@@ -97,8 +99,8 @@ export async function handleTextMessage(ctx: Context): Promise<void> {
     
     // Create journal entry
     const entry = {
-      prompt: user.lastPrompt.text,
-      promptType: user.lastPrompt.type as PromptType,
+      prompt: userWithPrompt.lastPrompt.text,
+      promptType: userWithPrompt.lastPrompt.type as PromptType,
       response: messageText,
       timestamp: new Date()
     };
@@ -109,7 +111,7 @@ export async function handleTextMessage(ctx: Context): Promise<void> {
       logger.info(`Successfully saved journal entry for user ${userId}`);
       
       // Determine feedback based on prompt type
-      const feedbackMessage = user.lastPrompt.type === 'self_awareness' 
+      const feedbackMessage = userWithPrompt.lastPrompt.type === 'self_awareness' 
         ? FEEDBACK.SELF_AWARENESS 
         : FEEDBACK.CONNECTIONS;
       

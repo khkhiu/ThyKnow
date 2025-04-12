@@ -13,6 +13,9 @@ import moment from 'moment-timezone';
  */
 export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
   try {
+    // Ensure userId is a string
+    userId = String(userId);
+    
     // Debug log to confirm userId is received correctly
     logger.info(`sendWeeklyPromptToUser called with userId: ${userId}`);
 

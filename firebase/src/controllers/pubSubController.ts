@@ -46,8 +46,10 @@ export async function handlePubSubMessage(req: Request, res: Response): Promise<
     if (messageData.action === 'sendPrompts') {
       await processWeeklyPrompts();
     } else if (messageData.action === 'sendPromptToUser' && messageData.userId) {
-      await sendWeeklyPromptToUser(messageData.userId);
-      logger.info(`Sent prompt to specific user: ${messageData.userId}`);
+      // Ensure userId is treated as a string
+      const userId = String(messageData.userId);
+      await sendWeeklyPromptToUser(userId);
+      logger.info(`Sent prompt to specific user: ${userId}`);
     } else {
       logger.warn(`Unknown Pub/Sub message action: ${messageData.action}`);
     }
@@ -82,6 +84,7 @@ async function processWeeklyPrompts(): Promise<void> {
     // Send prompts to each eligible user
     for (const user of usersToSendPrompts) {
       try {
+        // Ensure user ID is treated as a string
         await sendWeeklyPromptToUser(String(user.id));
         logger.info(`Successfully sent prompt to user ${user.id}`);
       } catch (error) {
