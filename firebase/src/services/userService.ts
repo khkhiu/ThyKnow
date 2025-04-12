@@ -1,23 +1,18 @@
-import { User, IUser, ILastPrompt } from '../models/User';
+// File: src/services/userService.ts
+// User service with PostgreSQL support
+
+import { User, IUser, ISchedulePreference } from '../models/User';
 import { JournalEntry, IJournalEntry } from '../models/JournalEntry';
 import { Prompt, PromptType } from '../types';
 import { logger } from '../utils/logger';
 
-// Define the schedule preference interface here since it's used in the service
-interface ISchedulePreference {
-  day: number;
-  hour: number;
-  enabled: boolean;
-}
-
 export class UserService {
-
   /**
    * Get a user by Telegram ID
    */
   async getUser(userId: string): Promise<IUser | null> {
     try {
-      return await User.findOne({ id: userId });
+      return await User.findOneWithLastPrompt(userId);
     } catch (error) {
       logger.error(`Error getting user ${userId}:`, error);
       throw error;
@@ -30,38 +25,32 @@ export class UserService {
   async createOrUpdateUser(userId: string, data: Partial<IUser> = {}): Promise<IUser> {
     try {
       // Check if user exists
-      let user = await User.findOne({ id: userId });
+      let user = await User.findOne(userId);
       
       if (!user) {
         // Create new user with default schedule preferences
-        user = new User({
+        const userData = {
           id: userId,
           createdAt: new Date(),
           promptCount: 0,
-          schedulePreference: {
-            day: 1, // Monday
-            hour: 9, // 9 AM
-            enabled: true
-          },
           ...data
-        });
-        await user.save();
+        };
+        
+        user = await User.create(userData);
         logger.info(`Created new user with ID: ${userId}`);
       } else if (Object.keys(data).length > 0) {
-        // Handle nested schedulePreference object 
-        if (data.schedulePreference) {
-          // Merge the existing schedule preference with the new values
-          user.schedulePreference = {
-            ...user.schedulePreference,
-            ...data.schedulePreference
-          };
-          // Remove it so we don't overwrite it again below
-          delete data.schedulePreference;
+        // Update existing user
+        const updateData: { promptCount?: number; schedulePreference?: Partial<ISchedulePreference> } = {};
+        
+        if (data.promptCount !== undefined) {
+          updateData.promptCount = data.promptCount;
         }
         
-        // Update other fields
-        Object.assign(user, data);
-        await user.save();
+        if (data.schedulePreference) {
+          updateData.schedulePreference = data.schedulePreference;
+        }
+        
+        user = await User.update(userId, updateData);
         logger.info(`Updated user with ID: ${userId}`);
       }
       
@@ -72,7 +61,6 @@ export class UserService {
     }
   }
 
-
   /**
    * Update a user's schedule preferences
    */
@@ -81,19 +69,13 @@ export class UserService {
     preferences: Partial<ISchedulePreference>
   ): Promise<void> {
     try {
-      const user = await User.findOne({ id: userId });
+      const user = await User.findOne(userId);
       
       if (!user) {
         throw new Error(`User ${userId} not found`);
       }
       
-      // Update only the provided preference fields
-      user.schedulePreference = {
-        ...user.schedulePreference,
-        ...preferences
-      };
-      
-      await user.save();
+      await User.update(userId, { schedulePreference: preferences });
       logger.info(`Updated schedule preferences for user ${userId}`);
     } catch (error) {
       logger.error(`Error updating schedule for user ${userId}:`, error);
@@ -106,13 +88,10 @@ export class UserService {
    */
   async saveLastPrompt(userId: string, prompt: Prompt): Promise<void> {
     try {
-      const lastPrompt: ILastPrompt = {
+      await User.saveLastPrompt(userId, {
         text: prompt.text,
-        type: prompt.type,
-        timestamp: new Date()
-      };
-      
-      await this.createOrUpdateUser(userId, { lastPrompt });
+        type: prompt.type
+      });
     } catch (error) {
       logger.error(`Error saving last prompt for user ${userId}:`, error);
       throw error;
@@ -129,14 +108,13 @@ export class UserService {
     timestamp: Date;
   }): Promise<string> {
     try {
-      const journalEntry = new JournalEntry({
+      const journalEntry = await JournalEntry.create({
         userId,
         ...entry
       });
       
-      await journalEntry.save();
-      // Cast the _id to string directly to avoid type issues
-      return String(journalEntry._id);
+      // Return the ID as a string to maintain compatibility with existing code
+      return String(journalEntry.id);
     } catch (error) {
       logger.error(`Error saving response for user ${userId}:`, error);
       throw error;
@@ -148,9 +126,7 @@ export class UserService {
    */
   async getRecentEntries(userId: string, limit: number = 5): Promise<IJournalEntry[]> {
     try {
-      return await JournalEntry.find({ userId })
-        .sort({ timestamp: -1 })
-        .limit(limit);
+      return await JournalEntry.findByUserId(userId, limit);
     } catch (error) {
       logger.error(`Error getting recent entries for user ${userId}:`, error);
       throw error;

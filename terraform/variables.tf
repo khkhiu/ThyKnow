@@ -9,16 +9,28 @@ variable "region" {
   default     = "us-central1"
 }
 
+variable "environment" {
+  description = "Environment (dev, prod, etc.)"
+  type        = string
+  default     = "dev"
+}
+
 variable "telegram_bot_token" {
   description = "The Telegram Bot Token from BotFather"
   type        = string
   sensitive   = true
 }
 
-variable "mongodb_uri" {
-  description = "The MongoDB connection URI"
+variable "db_password" {
+  description = "The password for the PostgreSQL database user"
   type        = string
   sensitive   = true
+}
+
+variable "db_tier" {
+  description = "The machine type for the Cloud SQL instance"
+  type        = string
+  default     = "db-f1-micro"  # Smallest tier for development, increase for production
 }
 
 variable "timezone" {
