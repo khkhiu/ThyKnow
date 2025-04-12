@@ -6,7 +6,6 @@ import { promptService } from './promptService';
 import config from '../config';
 import { logger } from '../utils/logger';
 import moment from 'moment-timezone';
-import { PromptType } from '../types';
 
 /**
  * Send a weekly prompt to a specific user
@@ -16,37 +15,23 @@ export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
     // Debug log to confirm userId is received correctly
     logger.info(`sendWeeklyPromptToUser called with userId: ${userId}`);
 
-    // Send a menu to choose prompt type
-    await bot.telegram.sendMessage(
-      userId,
-      "🌟 Weekly Reflection Time! Choose your prompt type:",
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "🧠 Self-Awareness",
-                callback_data: "prompt_type:self_awareness"
-              }
-            ],
-            [
-              {
-                text: "🤝 Connections",
-                callback_data: "prompt_type:connections"
-              }
-            ],
-            [
-              {
-                text: "🔄 Surprise Me (Alternate)",
-                callback_data: "prompt_type:alternate"
-              }
-            ]
-          ]
-        }
-      }
-    );
+    // Get next prompt for user
+    const prompt = await promptService.getNextPromptForUser(userId);
     
-    logger.info(`Sent prompt type selection menu to user ${userId}`);
+    // Update user's last prompt
+    await userService.saveLastPrompt(userId, prompt);
+    
+    // Indicate the category to the user
+    const categoryEmoji = prompt.type === 'self_awareness' ? '🧠' : '🤝';
+    const categoryName = prompt.type === 'self_awareness' ? 'Self-Awareness' : 'Connections';
+    
+    const message = 
+      `🌟 Weekly Reflection Time! ${categoryEmoji} ${categoryName}\n\n${prompt.text}\n\n` +
+      "Take a moment to pause and reflect on this question.";
+      
+    // Send message
+    await bot.telegram.sendMessage(userId, message);
+    logger.info(`Sent ${prompt.type} prompt to user ${userId}`);
   } catch (error) {
     logger.error(`Error sending prompt to user ${userId}:`, error);
   }
@@ -101,6 +86,7 @@ export function setupScheduler(): void {
       }
 
       // Filter users who should receive prompts now based on their preferences
+      // IMPORTANT FIX: Don't use mondayBasedDay here, match directly with user preferences
       const usersToSendPrompts = users.filter(user => 
         user.schedulePreference.enabled &&
         user.schedulePreference.day === currentDay && 

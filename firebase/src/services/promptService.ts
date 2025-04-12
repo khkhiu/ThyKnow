@@ -47,44 +47,6 @@ export class PromptService {
   }
 
   /**
-   * Get a prompt of a specific type requested by the user
-   */
-  async getPromptBySpecificType(userId: string, type: PromptType): Promise<Prompt> {
-    try {
-      // Get user from database to update the prompt count
-      let user = await User.findOne({ id: userId });
-      let promptCount = 1;
-      
-      if (user) {
-        // Increment prompt count
-        promptCount = (user.promptCount || 0) + 1;
-        user.promptCount = promptCount;
-        await user.save();
-      } else {
-        // Create new user with count = 1
-        user = new User({
-          id: userId,
-          createdAt: new Date(),
-          promptCount: 1
-        });
-        await user.save();
-      }
-      
-      // Get prompt of the requested type
-      const promptText = this.getPromptByType(type);
-      
-      return {
-        text: promptText,
-        type: type,
-        count: promptCount
-      };
-    } catch (error) {
-      logger.error(`Error getting specific prompt for user ${userId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
    * Get the next prompt for a user based on their prompt count
    */
   async getNextPromptForUser(userId: string): Promise<Prompt> {
