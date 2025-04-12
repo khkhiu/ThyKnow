@@ -1,4 +1,4 @@
-// firebase/src/services/schedulerService.ts
+// src/services/schedulerService.ts
 import cron from 'node-cron';
 import { bot } from '../app';
 import { userService } from './userService';
@@ -9,13 +9,15 @@ import moment from 'moment-timezone';
 
 /**
  * Send a weekly prompt to a specific user
+ * If promptType is specified, send that type, otherwise alternate based on user's count
  */
 export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
   try {
     // Debug log to confirm userId is received correctly
     logger.info(`sendWeeklyPromptToUser called with userId: ${userId}`);
 
-    // Get next prompt for user
+    // Get next prompt for user - this will automatically alternate
+    // based on the user's prompt count if no type is specified
     const prompt = await promptService.getNextPromptForUser(userId);
     
     // Update user's last prompt
@@ -27,7 +29,8 @@ export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
     
     const message = 
       `🌟 Weekly Reflection Time! ${categoryEmoji} ${categoryName}\n\n${prompt.text}\n\n` +
-      "Take a moment to pause and reflect on this question.";
+      "Take a moment to pause and reflect on this question.\n\n" +
+      "💡 Tip: Use /choose if you'd prefer a specific type of prompt next time.";
       
     // Send message
     await bot.telegram.sendMessage(userId, message);
@@ -86,7 +89,6 @@ export function setupScheduler(): void {
       }
 
       // Filter users who should receive prompts now based on their preferences
-      // IMPORTANT FIX: Don't use mondayBasedDay here, match directly with user preferences
       const usersToSendPrompts = users.filter(user => 
         user.schedulePreference.enabled &&
         user.schedulePreference.day === currentDay && 

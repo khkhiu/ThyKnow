@@ -12,6 +12,7 @@ import {
   handleScheduleCallback 
 } from './scheduleController';
 import { handleResponseCallback } from './responseController';
+import { handleChooseCommand, handleChooseCallback } from './chooseController';
 import { logger } from '../utils/logger';
 import { MESSAGES } from '../constants';
 
@@ -29,6 +30,7 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.command('schedule_day', handleScheduleDayCommand);
   bot.command('schedule_time', handleScheduleTimeCommand);
   bot.command('schedule_toggle', handleScheduleToggleCommand);
+  bot.command('choose', handleChooseCommand); // Add the new choose command
   
   // Register callback query handlers
   bot.on('callback_query', (ctx) => {
@@ -42,6 +44,10 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     
     if (callbackData.startsWith('save_response:') || callbackData === 'new_prompt') {
       return handleResponseCallback(ctx);
+    }
+    
+    if (callbackData.startsWith('choose:')) {
+      return handleChooseCallback(ctx);
     }
   });
   
@@ -58,6 +64,7 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.telegram.setMyCommands([
     { command: 'start', description: 'Initialize the bot and get started' },
     { command: 'prompt', description: 'Get a new reflection prompt' },
+    { command: 'choose', description: 'Choose a specific type of prompt' },
     { command: 'history', description: 'View your recent journal entries' },
     { command: 'timezone', description: 'Check prompt timings' },
     { command: 'schedule', description: 'Manage your prompt schedule' },

@@ -1,3 +1,4 @@
+// src/services/promptService.ts
 import { User } from '../models/User';
 import { PROMPTS } from '../constants';
 import { Prompt, PromptType } from '../types';
@@ -48,8 +49,9 @@ export class PromptService {
 
   /**
    * Get the next prompt for a user based on their prompt count
+   * If promptType is provided, use that specific type instead of alternating
    */
-  async getNextPromptForUser(userId: string): Promise<Prompt> {
+  async getNextPromptForUser(userId: string, promptType?: PromptType): Promise<Prompt> {
     try {
       // Get user from database
       let user = await User.findOne({ id: userId });
@@ -70,17 +72,25 @@ export class PromptService {
         await user.save();
       }
       
-      // Determine prompt type based on count
-      // Odd numbers (including 1) get self-awareness
-      // Even numbers get connections
-      const promptType: PromptType = promptCount % 2 === 1 ? 'self_awareness' : 'connections';
+      // Determine prompt type based on count or use specified type
+      let selectedPromptType: PromptType;
+      
+      if (promptType) {
+        // If a specific type was requested, use that
+        selectedPromptType = promptType;
+      } else {
+        // Otherwise, alternate based on prompt count
+        // Odd numbers (including 1) get self-awareness
+        // Even numbers get connections
+        selectedPromptType = promptCount % 2 === 1 ? 'self_awareness' : 'connections';
+      }
       
       // Get prompt of determined type
-      const promptText = this.getPromptByType(promptType);
+      const promptText = this.getPromptByType(selectedPromptType);
       
       return {
         text: promptText,
-        type: promptType,
+        type: selectedPromptType,
         count: promptCount
       };
     } catch (error) {
