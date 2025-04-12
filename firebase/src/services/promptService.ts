@@ -53,23 +53,23 @@ export class PromptService {
    */
   async getNextPromptForUser(userId: string, promptType?: PromptType): Promise<Prompt> {
     try {
-      // Get user from database
-      let user = await User.findOne({ id: userId });
+      // Get user from database - fixed to pass userId as string
+      let user = await User.findOne(userId);
       let promptCount = 1;
       
       if (user) {
         // Increment prompt count
         promptCount = (user.promptCount || 0) + 1;
-        user.promptCount = promptCount;
-        await user.save();
+        
+        // Update the user with the new prompt count
+        await User.update(userId, { promptCount });
       } else {
         // Create new user with count = 1
-        user = new User({
+        user = await User.create({
           id: userId,
           createdAt: new Date(),
           promptCount: 1
         });
-        await user.save();
       }
       
       // Determine prompt type based on count or use specified type
