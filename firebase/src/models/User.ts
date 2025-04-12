@@ -28,13 +28,26 @@ export interface ISchedulePreference {
   enabled: boolean;
 }
 
+// Internal interface for database row structure
+interface IUserRow {
+  id: string;
+  createdAt: Date;
+  promptCount: number;
+  scheduleDay: number;
+  scheduleHour: number;
+  scheduleEnabled: boolean;
+  lastPromptText?: string;
+  lastPromptType?: string;
+  lastPromptTimestamp?: Date;
+}
+
 export class User {
   /**
    * Find a user by their Telegram ID
    */
   static async findOne(id: string): Promise<IUser | null> {
     try {
-      const users = await query<IUser>(`
+      const users = await query<IUserRow>(`
         SELECT 
           u.id, 
           u.created_at AS "createdAt", 
@@ -50,17 +63,17 @@ export class User {
         return null;
       }
 
-      const user = users[0];
+      const row = users[0];
       
       // Transform the flat data structure into the expected interface
       return {
-        id: user.id,
-        createdAt: user.createdAt,
-        promptCount: user.promptCount,
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
         schedulePreference: {
-          day: user.scheduleDay,
-          hour: user.scheduleHour,
-          enabled: user.scheduleEnabled
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
         }
       };
     } catch (error) {
@@ -74,7 +87,7 @@ export class User {
    */
   static async findOneWithLastPrompt(id: string): Promise<(IUser & { lastPrompt?: ILastPrompt }) | null> {
     try {
-      const result = await query(`
+      const result = await query<IUserRow>(`
         SELECT 
           u.id, 
           u.created_at AS "createdAt", 
@@ -114,7 +127,7 @@ export class User {
           userId: row.id,
           text: row.lastPromptText,
           type: row.lastPromptType as PromptType,
-          timestamp: row.lastPromptTimestamp
+          timestamp: row.lastPromptTimestamp as Date
         };
       }
 
@@ -137,7 +150,7 @@ export class User {
     try {
       const schedulePreference = data.schedulePreference || {};
       
-      const result = await query<IUser>(`
+      const result = await query<IUserRow>(`
         INSERT INTO users (
           id, 
           created_at, 
@@ -170,17 +183,17 @@ export class User {
         schedulePreference.enabled !== undefined ? schedulePreference.enabled : true
       ]);
 
-      const user = result[0];
+      const row = result[0];
       
       // Transform the flat data structure into the expected interface
       return {
-        id: user.id,
-        createdAt: user.createdAt,
-        promptCount: user.promptCount,
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
         schedulePreference: {
-          day: user.scheduleDay,
-          hour: user.scheduleHour,
-          enabled: user.scheduleEnabled
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
         }
       };
     } catch (error) {
@@ -235,7 +248,7 @@ export class User {
       // Add the ID as the last parameter
       values.push(id);
       
-      const result = await query<IUser>(`
+      const result = await query<IUserRow>(`
         UPDATE users
         SET ${updates.join(', ')}
         WHERE id = $${paramIndex}
@@ -252,17 +265,17 @@ export class User {
         throw new Error(`User with ID ${id} not found`);
       }
 
-      const user = result[0];
+      const row = result[0];
       
       // Transform the flat data structure into the expected interface
       return {
-        id: user.id,
-        createdAt: user.createdAt,
-        promptCount: user.promptCount,
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
         schedulePreference: {
-          day: user.scheduleDay,
-          hour: user.scheduleHour,
-          enabled: user.scheduleEnabled
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
         }
       };
     } catch (error) {
@@ -311,7 +324,7 @@ export class User {
    */
   static async find(): Promise<IUser[]> {
     try {
-      const users = await query<any>(`
+      const users = await query<IUserRow>(`
         SELECT 
           id, 
           created_at AS "createdAt", 
@@ -323,14 +336,14 @@ export class User {
       `);
       
       // Transform the flat data structure into the expected interface
-      return users.map(user => ({
-        id: user.id,
-        createdAt: user.createdAt,
-        promptCount: user.promptCount,
+      return users.map(row => ({
+        id: row.id,
+        createdAt: row.createdAt,
+        promptCount: row.promptCount,
         schedulePreference: {
-          day: user.scheduleDay,
-          hour: user.scheduleHour,
-          enabled: user.scheduleEnabled
+          day: row.scheduleDay,
+          hour: row.scheduleHour,
+          enabled: row.scheduleEnabled
         }
       }));
     } catch (error) {
