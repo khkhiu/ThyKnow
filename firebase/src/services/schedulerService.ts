@@ -7,15 +7,6 @@ import config from '../config';
 import { logger } from '../utils/logger';
 import moment from 'moment-timezone';
 
-// Configuring timezones
-function jsToMondayBasedDay(jsDay: number): number {
-  return (jsDay + 6) % 7;
-}
-
-function mondayBasedToJsDay(mondayBasedDay: number): number {
-  return (mondayBasedDay + 1) % 7;
-}
-
 /**
  * Send a weekly prompt to a specific user
  */
@@ -59,11 +50,6 @@ export function setupScheduler(): void {
     try {
       // Use moment-timezone to get Singapore time
       const sgTime = moment().tz(config.timezone);
-
-      // Set Monday as first day of the week
-      const jsDayOfWeek = sgTime.day(); // Sunday=0 in JavaScript
-      const mondayBasedDay = jsToMondayBasedDay(jsDayOfWeek);
-
       const currentDay = sgTime.day(); // 0-6 (Sunday to Saturday)
       const currentHour = sgTime.hour(); // 0-23
       
@@ -76,6 +62,8 @@ export function setupScheduler(): void {
       users.forEach(user => {
         logger.debug(`User ${user.id}: day=${user.schedulePreference.day}, hour=${user.schedulePreference.hour}, enabled=${user.schedulePreference.enabled}`);
       });
+
+      // Debug what the system is finding
       const matchingUsers = users.filter(user => 
         user.schedulePreference.day === currentDay &&
         user.schedulePreference.hour === currentHour
@@ -85,7 +73,7 @@ export function setupScheduler(): void {
       const enabledUsers = users.filter(user => user.schedulePreference.enabled);
       logger.debug(`Users with enabled schedule: ${enabledUsers.length}`);
 
-      // For the specific user
+      // For specific debugging
       const testUser = users.find(user => user.id === '987496168');
       if (testUser) {
         logger.debug(`Test user match day: ${testUser.schedulePreference.day === currentDay}`);
@@ -98,10 +86,11 @@ export function setupScheduler(): void {
       }
 
       // Filter users who should receive prompts now based on their preferences
+      // IMPORTANT FIX: Don't use mondayBasedDay here, match directly with user preferences
       const usersToSendPrompts = users.filter(user => 
         user.schedulePreference.enabled &&
-        user.schedulePreference.day === mondayBasedDay && // Use the converted day if needed
-        user.schedulePreference.hour === sgTime.hour()
+        user.schedulePreference.day === currentDay && 
+        user.schedulePreference.hour === currentHour
       );
       
       logger.info(`Sending prompts to ${usersToSendPrompts.length} users`);
