@@ -1,6 +1,6 @@
-# ThyKnow - Express.js Implementation
+# ThyKnow - Express.js Implementation with PostgreSQL
 
-ThyKnow is a Telegram bot designed to foster self-awareness and build meaningful connections through guided journaling prompts. This implementation uses Express.js, TypeScript, and MongoDB to provide a robust and scalable solution.
+ThyKnow is a Telegram bot designed to foster self-awareness and build meaningful connections through guided journaling prompts. This implementation uses Express.js, TypeScript, and PostgreSQL to provide a robust and scalable solution.
 
 ## 📋 Features
 
@@ -17,7 +17,7 @@ ThyKnow is a Telegram bot designed to foster self-awareness and build meaningful
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or higher)
-- [MongoDB](https://www.mongodb.com/) (local or cloud instance)
+- [PostgreSQL](https://www.postgresql.org/) (v14 or higher)
 - A [Telegram Bot Token](https://core.telegram.org/bots#how-do-i-create-a-bot) from BotFather
 
 ### Installation
@@ -48,8 +48,15 @@ BASE_URL=http://localhost:3000
 # Telegram Bot configuration
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 
-# MongoDB connection
-MONGODB_URI=mongodb://localhost:27017/thyknow
+# PostgreSQL connection
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=thyknow
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_SSL=false
+DB_POOL_SIZE=10
+DB_IDLE_TIMEOUT=30000
 
 # Scheduler settings
 PROMPT_DAY=1  # Monday
@@ -60,16 +67,27 @@ TIMEZONE=Asia/Singapore
 MAX_HISTORY=5
 ```
 
-4. **Start MongoDB**
+4. **Set up PostgreSQL database**
 
-If using a local MongoDB instance:
+Create a PostgreSQL database:
 
 ```bash
-# Start MongoDB
-mongod
+psql -U postgres -c "CREATE DATABASE thyknow;"
 ```
 
-5. **Build and run the application**
+5. **Initialize the database schema**
+
+```bash
+npm run init-db
+```
+
+Or if you prefer to use the migration system:
+
+```bash
+npm run migrate
+```
+
+6. **Build and run the application**
 
 ```bash
 # Build TypeScript
@@ -102,47 +120,62 @@ npm run dev
 You can use Docker Compose for an easy deployment:
 
 ```bash
-# Start the application with MongoDB
+# Start the application with PostgreSQL
 docker-compose up -d
 ```
 
-### Google Cloud Run Deployment
+### Google Cloud Run & Cloud SQL Deployment
 
 ```bash
 # Set required environment variables
 export PROJECT_ID=your-gcp-project-id
 export TELEGRAM_BOT_TOKEN=your-telegram-bot-token
-export MONGODB_URI=your-mongodb-connection-string
+export DB_PASSWORD=your-secure-password
 
 # Run the deployment script
 bash cloud-run-deploy.sh
 ```
 
-## 📋 Migration from Firebase Functions
+## 📋 Database Information
 
-This Express.js implementation is a migration from the previous Firebase Functions implementation. Key differences:
+This implementation uses PostgreSQL to store:
 
-1. **Database**: MongoDB instead of Firestore
-2. **Scheduling**: node-cron instead of Firebase scheduled functions
-3. **Server**: Full Express.js server instead of serverless functions
+1. **Users**: Basic user information and scheduling preferences
+2. **Last Prompts**: The most recent prompt sent to each user
+3. **Journal Entries**: All user responses to prompts
 
-### Data Migration
+### Database Schema
 
-To migrate data from Firestore to MongoDB:
+Here's a simplified version of the database schema:
 
-1. Export your Firestore data
-2. Use the provided migration script:
+```sql
+-- Users table
+CREATE TABLE users (
+  id VARCHAR(50) PRIMARY KEY,         -- Telegram user ID
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  prompt_count INTEGER NOT NULL DEFAULT 0,
+  schedule_day INTEGER NOT NULL DEFAULT 1,      -- Default: Monday
+  schedule_hour INTEGER NOT NULL DEFAULT 9,     -- Default: 9 AM
+  schedule_enabled BOOLEAN NOT NULL DEFAULT TRUE
+);
 
-```bash
-# Export Firestore data
-firebase firestore:export firestore-export.json
+-- Last Prompt table
+CREATE TABLE last_prompts (
+  user_id VARCHAR(50) PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('self_awareness', 'connections')),
+  timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
 
-# Run migration script (creates a mongoimport-ready file)
-npm run migrate-data
-
-# Import to MongoDB
-mongoimport --db thyknow --collection users --file mongo-users.json
-mongoimport --db thyknow --collection journalentries --file mongo-entries.json
+-- Journal Entry table
+CREATE TABLE journal_entries (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  prompt TEXT NOT NULL,
+  prompt_type VARCHAR(20) NOT NULL CHECK (prompt_type IN ('self_awareness', 'connections')),
+  response TEXT NOT NULL,
+  timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
 ```
 
 ## 🏗️ Project Structure
@@ -153,6 +186,7 @@ thyknow-express/
 │   ├── config/           # Configuration files
 │   ├── constants/        # App constants
 │   ├── controllers/      # Express route controllers
+│   ├── database/         # Database connection and utilities
 │   ├── handlers/         # Bot command handlers
 │   ├── middleware/       # Express middleware
 │   ├── models/           # Database models
@@ -163,6 +197,10 @@ thyknow-express/
 │   ├── app.ts            # Express app setup
 │   └── server.ts         # Server entry point
 ├── scripts/              # Utility scripts
+│   ├── init-database.ts  # Database initialization
+│   ├── migrate-db.ts     # Database migration tool
+│   └── migrations/       # SQL migration files
+├── terraform/            # Terraform IaC for GCP
 ├── docker-compose.yml    # Docker Compose configuration
 ├── Dockerfile            # Docker configuration
 ├── package.json          # Dependencies and scripts
@@ -177,5 +215,6 @@ This project is licensed under the MIT License.
 
 - [Telegraf](https://github.com/telegraf/telegraf) for the elegant Telegram Bot API
 - [Express.js](https://expressjs.com/) for the web framework
-- [MongoDB](https://www.mongodb.com/) for the database
+- [PostgreSQL](https://www.postgresql.org/) for the database
+- [node-pg](https://node-postgres.com/) for PostgreSQL client
 - [node-cron](https://github.com/node-cron/node-cron) for scheduling
