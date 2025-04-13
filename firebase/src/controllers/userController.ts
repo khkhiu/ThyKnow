@@ -5,6 +5,7 @@ import { MESSAGES } from '../constants';
 import { logger } from '../utils/logger';
 import moment from 'moment-timezone';
 import config from '../config';
+import { handleChooseCommand } from './chooseController';
 
 /**
  * Start command handler
@@ -18,12 +19,25 @@ export async function handleStart(ctx: Context): Promise<void> {
       return;
     }
     
+    // Check if user already exists
+    const existingUser = await userService.getUser(userId);
+    const isFirstStart = !existingUser;
+    
     // Create or get user
     await userService.createOrUpdateUser(userId);
     
     // Send welcome message
     await ctx.reply(MESSAGES.WELCOME);
-    logger.info(`Started session for user ${userId}`);
+    logger.info(`Started session for user ${userId} (firstTime: ${isFirstStart})`);
+    
+    // If this is the first start, also trigger the choose command
+    if (isFirstStart) {
+      logger.info(`First time user ${userId}, triggering choose command`);
+      // Add a small delay to ensure welcome message is seen first
+      setTimeout(() => {
+        handleChooseCommand(ctx);
+      }, 500);
+    }
   } catch (error) {
     logger.error('Error in start command:', error);
     await ctx.reply(MESSAGES.ERROR);
