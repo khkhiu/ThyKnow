@@ -1,26 +1,14 @@
 /**
- * Script to set up Telegram webhook
+ * Script to set up Telegram webhook on Railway
  * 
  * Usage: 
- *   npm run setup-webhook
- *   
- * Or with command-line args:
- *   npm run setup-webhook -- --url=https://your-server.com
+ *   npm run railway:webhook
  */
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { program } from 'commander';
 
 // Load environment variables
 dotenv.config();
-
-// Define command-line options
-program
-  .option('-u, --url <url>', 'Base URL for your server')
-  .option('-t, --token <token>', 'Telegram bot token')
-  .parse(process.argv);
-
-const options = program.opts();
 
 interface WebhookResponse {
   ok: boolean;
@@ -30,22 +18,24 @@ interface WebhookResponse {
 
 async function setupWebhook(): Promise<void> {
   try {
-    // Get options from command line, env vars, or defaults
-    const botToken = options.token || process.env.TELEGRAM_BOT_TOKEN;
-    const baseUrl = options.url || process.env.BASE_URL;
+    // Get token and URL from environment
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const baseUrl = process.env.RAILWAY_STATIC_URL || process.env.RAILWAY_PUBLIC_DOMAIN;
     
     if (!botToken) {
-      throw new Error('Telegram bot token not found. Please provide it via .env file or --token option');
+      throw new Error('TELEGRAM_BOT_TOKEN environment variable is required');
     }
     
     if (!baseUrl) {
-      throw new Error('Base URL not found. Please provide it via .env file or --url option');
+      throw new Error('No Railway URL found. Make sure your app is deployed to Railway');
     }
     
+    // Form the webhook URL
     const webhookUrl = `${baseUrl}/webhook`;
     
     console.log(`Setting up webhook for ${webhookUrl}`);
     
+    // Call Telegram API to set the webhook
     const response = await axios.get<WebhookResponse>(
       `https://api.telegram.org/bot${botToken}/setWebhook?url=${webhookUrl}`
     );
@@ -54,6 +44,13 @@ async function setupWebhook(): Promise<void> {
     
     if (response.data.ok) {
       console.log('✅ Webhook setup successful!');
+      
+      // Get webhook info to verify
+      const infoResponse = await axios.get<any>(
+        `https://api.telegram.org/bot${botToken}/getWebhookInfo`
+      );
+      
+      console.log('Webhook Info:', infoResponse.data);
     } else {
       console.error('❌ Webhook setup failed:', response.data.description);
     }

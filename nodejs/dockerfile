@@ -1,34 +1,32 @@
+# Use Node.js v23 as the base image
 FROM node:23-slim
 
-# Install PostgreSQL client libraries
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create app directory
+# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
 # Install dependencies
-RUN npm install
+COPY package*.json ./
+RUN npm ci
 
-# Copy application code
+# Copy source code
 COPY . .
 
-# Build TypeScript
+# Build TypeScript code
 RUN npm run build
+
+# Clean up dev dependencies to reduce image size
+RUN npm prune --production
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Create directories for logs
-RUN mkdir -p logs
-
-# Expose port
+# Expose the application port
 EXPOSE 3000
 
-# Run the application
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start the application
 CMD ["node", "dist/server.js"]

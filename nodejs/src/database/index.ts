@@ -1,21 +1,28 @@
-// File: src/database/index.ts
-// PostgreSQL Database Connection
+// src/database/index.ts
+// PostgreSQL Database Connection optimized for Railway
 
 import { Pool, PoolClient } from 'pg';
 import config from '../config';
 import { logger } from '../utils/logger';
 
-// Create a connection pool
-const pool = new Pool({
+// Create connection configuration
+const connectionConfig = {
   host: config.postgresql.host,
   port: config.postgresql.port,
   database: config.postgresql.database,
   user: config.postgresql.username,
   password: config.postgresql.password,
-  ssl: config.postgresql.ssl ? { rejectUnauthorized: false } : false,
+  // Handle SSL configuration
+  ssl: config.postgresql.ssl ? {
+    rejectUnauthorized: false // Required for Railway's PostgreSQL
+  } : false,
   max: config.postgresql.maxPoolSize,
   idleTimeoutMillis: config.postgresql.idleTimeout,
-});
+  connectionTimeoutMillis: 10000, // Add a timeout to prevent hanging connections
+};
+
+// Create a connection pool
+const pool = new Pool(connectionConfig);
 
 // Event handlers for the pool
 pool.on('connect', () => {
@@ -116,7 +123,8 @@ export const initDatabase = async (): Promise<void> => {
 // Function to check database connectivity
 export const checkDatabaseConnection = async (): Promise<boolean> => {
   try {
-    await query('SELECT NOW()');
+    const result = await query<{ now: Date }>('SELECT NOW()');
+    logger.info(`Database connection successful, server time: ${result[0]?.now}`);
     return true;
   } catch (error) {
     logger.error('Database connection check failed:', error);

@@ -1,0 +1,60 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Node.js
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Environment files
+.env
+.env.*
+
+# Build outputs
+dist
+coverage
+build
+
+# Editor directories and files
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Test files
+test
+__tests__
+*.test.ts
+*.spec.ts
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Railway files
+.railway
+railway.json
+railway.toml
+
+# Documentation
+*.md
+docs
+LICENSE
+
+# Development configs
+.eslintrc
+.prettierrc
+.editorconfig
+nodemon.json
+tsconfig.json

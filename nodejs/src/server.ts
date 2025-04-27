@@ -1,5 +1,5 @@
-// File: src/server.ts
-// Server startup with PostgreSQL initialization
+// src/server.ts
+// Server startup optimized for Railway
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -13,6 +13,10 @@ import { initDatabase, checkDatabaseConnection, closePool } from './database';
 // Main function to start the server
 async function startServer() {
   try {
+    // Log startup info
+    logger.info(`Starting ThyKnow server in ${config.nodeEnv} mode`);
+    logger.info(`Using timezone: ${config.timezone}`);
+    
     // Initialize and connect to PostgreSQL
     logger.info('Connecting to PostgreSQL database...');
     await initDatabase();
@@ -32,34 +36,61 @@ async function startServer() {
       // Set up bot webhook if in production
       if (config.nodeEnv === 'production') {
         const webhookUrl = `${config.baseUrl}/webhook`;
+        logger.info(`Setting webhook URL to: ${webhookUrl}`);
+        
         bot.telegram.setWebhook(webhookUrl)
           .then(() => logger.info(`Webhook set to ${webhookUrl}`))
-          .catch(error => logger.error('Failed to set webhook:', error));
+          .catch(error => {
+            logger.error('Failed to set webhook:', error);
+            // Don't exit the process in production as Railway will just restart it
+            if (config.nodeEnv !== 'production') {
+              process.exit(1);
+            }
+          });
       } else {
         // Use polling in development mode
+        logger.info('Starting bot in polling mode (development)');
         bot.launch()
           .then(() => logger.info('Bot started in polling mode'))
-          .catch(error => logger.error('Failed to start bot:', error));
+          .catch(error => {
+            logger.error('Failed to start bot:', error);
+            process.exit(1);
+          });
       }
       
       // Set up scheduler for weekly prompts
       setupScheduler();
+      logger.info('Prompt scheduler initialized');
     });
     
     // Graceful shutdown
-    const shutdown = async () => {
-      logger.info('Shutting down server...');
+    const shutdown = async (signal: string) => {
+      logger.info(`Received ${signal}. Shutting down server...`);
+      
+      // First stop accepting new requests
       server.close(() => {
-        logger.info('Server closed');
+        logger.info('HTTP server closed');
+        
+        // Then close database connections
         closePool().then(() => {
           logger.info('Database connections closed');
           process.exit(0);
+        }).catch(err => {
+          logger.error('Error closing database connections:', err);
+          process.exit(1);
         });
       });
+      
+      // Force exit after 10 seconds if graceful shutdown fails
+      setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+      }, 10000);
     };
     
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
+    // Handle various termination signals
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
     
   } catch (error) {
     logger.error('Error starting server:', error);
