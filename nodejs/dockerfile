@@ -1,23 +1,22 @@
-# Use Node.js v18 instead of v23 for better compatibility
+# Use Node.js v23 as the base image
 FROM node:23-slim
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first (for better caching)
+# Copy package files and tsconfig first
 COPY package*.json ./
-
-# Copy tsconfig.json before running npm ci
 COPY tsconfig.json ./
 
-# Install dependencies
+# Copy the source code before installing dependencies
+# This is crucial because the postinstall script needs the src directory
+COPY src/ ./src/
+
+# Now install dependencies
 RUN npm ci
 
-# Copy the rest of the source code
+# Copy any remaining files
 COPY . .
-
-# Build TypeScript code
-RUN npm run build
 
 # Clean up dev dependencies to reduce image size
 RUN npm prune --production
