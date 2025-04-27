@@ -57,4 +57,3 @@ LICENSE
 .prettierrc
 .editorconfig
 nodemon.json
-tsconfig.json
