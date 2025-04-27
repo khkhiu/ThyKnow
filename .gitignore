@@ -39,3 +39,4 @@ firebase/functions/.runtimeconfig.json
 firebase.json
 .firebaserc
 node_modules/
+kt-firebase-backend-GCP.json
