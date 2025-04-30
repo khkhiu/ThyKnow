@@ -116,7 +116,7 @@ Railway provides a managed PostgreSQL database with the following benefits:
 
 **Solution**:
 1. Check that your application is running successfully on Railway
-2. Verify that the `RAILWAY_STATIC_URL` environment variable is set correctly
+2. Verify that the `RAILWAY_PRIVATE_DOMAIN` environment variable is set correctly
 3. Try setting the webhook manually using the Telegram API
 
 ### 2. Database Connection Issues

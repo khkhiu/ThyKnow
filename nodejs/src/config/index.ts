@@ -63,7 +63,7 @@ const config = {
     idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10) // 30 seconds
   } as PostgreSQLConfig,
   timezone: process.env.TIMEZONE || 'Asia/Singapore',
-  baseUrl: process.env.RAILWAY_STATIC_URL || process.env.BASE_URL || 'http://localhost:3000',
+  baseUrl: process.env.RAILWAY_PRIVATE_DOMAIN || process.env.BASE_URL || 'http://localhost:3000',
   scheduler: {
     promptDay: parseInt(process.env.PROMPT_DAY || '1', 10), // Monday
     promptHour: parseInt(process.env.PROMPT_HOUR || '9', 10), // 9 AM

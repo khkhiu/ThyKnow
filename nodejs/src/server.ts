@@ -19,7 +19,7 @@ function logRailwayEnvironment() {
   // List important environment variables for Railway
   const railwayVars = [
     'PORT',
-    'RAILWAY_STATIC_URL', 
+    'RAILWAY_PRIVATE_DOMAIN', 
     'RAILWAY_PUBLIC_DOMAIN',
     'RAILWAY_SERVICE_NAME',
     'RAILWAY_PROJECT_NAME',

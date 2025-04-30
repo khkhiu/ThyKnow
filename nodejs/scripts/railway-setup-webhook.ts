@@ -20,14 +20,14 @@ async function setupWebhook(): Promise<void> {
   try {
     // Get token and URL from environment
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const baseUrl = process.env.RAILWAY_STATIC_URL || process.env.RAILWAY_PUBLIC_DOMAIN || process.env.BASE_URL;
+    const baseUrl = process.env.RAILWAY_PRIVATE_DOMAIN || process.env.RAILWAY_PUBLIC_DOMAIN || process.env.BASE_URL;
     
     if (!botToken) {
       throw new Error('TELEGRAM_BOT_TOKEN environment variable is required');
     }
     
     if (!baseUrl) {
-      throw new Error('No Railway URL found. Make sure your app is deployed to Railway and RAILWAY_STATIC_URL or BASE_URL is set');
+      throw new Error('No Railway URL found. Make sure your app is deployed to Railway and RAILWAY_PRIVATE_DOMAIN or BASE_URL is set');
     }
     
     // Form the webhook URL
