@@ -1,61 +1,53 @@
 // src/database/index.ts
-// PostgreSQL Database Connection specifically for Railway
+// Simplified PostgreSQL connection for Railway
 
 import { Pool, PoolClient } from 'pg';
-import config from '../config';
 import { logger } from '../utils/logger';
 
-// Log the DATABASE_URL (with sensitive parts masked) for debugging
-function logDatabaseUrl() {
-  if (process.env.DATABASE_URL) {
-    try {
-      const url = new URL(process.env.DATABASE_URL);
-      // Mask password for security
-      const maskedUrl = `postgresql://${url.username}:****@${url.hostname}:${url.port}${url.pathname}`;
-      logger.info(`DATABASE_URL format: ${maskedUrl}`);
-    } catch (error) {
-      logger.error('Error parsing DATABASE_URL for logging:', error);
-    }
-  } else {
-    logger.warn('DATABASE_URL environment variable is not set');
+// Log all environment variables to help debug
+logger.info('=== Environment Variables ===');
+for (const key in process.env) {
+  if (key.includes('DATABASE') || key.includes('DB_') || key.includes('RAILWAY')) {
+    // Mask any sensitive values
+    const value = key.includes('PASSWORD') || key.includes('URL') 
+      ? '[MASKED]' 
+      : process.env[key];
+    logger.info(`${key}: ${value}`);
   }
 }
+logger.info('===========================');
 
-// Create connection pool
-let pool: Pool;
+// Check if DATABASE_URL exists
+if (!process.env.DATABASE_URL) {
+  logger.error('DATABASE_URL environment variable is not set!');
+  logger.error('This is required for Railway PostgreSQL connection.');
+  logger.error('Please make sure you have added the PostgreSQL plugin to your Railway project.');
+}
 
-// Log connection information (with sensitive parts masked)
-logDatabaseUrl();
+// Create a single pool instance using DATABASE_URL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-// Initialize the pool using DATABASE_URL directly for Railway
+// Log database connection attempt
+logger.info(`Attempting to connect to PostgreSQL with DATABASE_URL`);
 if (process.env.DATABASE_URL) {
-  logger.info('Using DATABASE_URL for PostgreSQL connection');
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false // Required for Railway PostgreSQL
-    }
-  });
-  
-  logger.info('PostgreSQL pool initialized with DATABASE_URL');
-} else {
-  // Fallback for local development
-  logger.info('DATABASE_URL not found, using config values for PostgreSQL connection');
-  pool = new Pool({
-    host: config.postgresql.host,
-    port: config.postgresql.port,
-    database: config.postgresql.database,
-    user: config.postgresql.user,
-    password: config.postgresql.password,
-    ssl: config.postgresql.ssl
-  });
-  
-  logger.info(`PostgreSQL pool initialized with host: ${config.postgresql.host}`);
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    logger.info(`Database host is: ${url.hostname}`);
+    logger.info(`Database port is: ${url.port}`);
+    logger.info(`Database name is: ${url.pathname.substring(1)}`);
+  } catch (error) {
+    logger.error('Error parsing DATABASE_URL:', error);
+  }
 }
 
 // Event handlers for the pool
 pool.on('connect', () => {
-  logger.debug('New PostgreSQL client connected');
+  logger.info('Successfully connected to PostgreSQL database');
 });
 
 pool.on('error', (err) => {
@@ -72,7 +64,7 @@ export const getClient = async (): Promise<PoolClient> => {
   }
 };
 
-// Helper function to execute a query and release the client
+// Helper function to execute a query
 export const query = async <T>(text: string, params: any[] = []): Promise<T[]> => {
   const client = await getClient();
   try {
