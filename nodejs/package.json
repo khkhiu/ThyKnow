@@ -10,9 +10,10 @@
     "railway:up": "railway up",
     "railway:status": "railway status",
     "railway:logs": "railway logs",
+    "setup-webhook": "ts-node scripts/setup-webhook.ts",
+    "railway:webhook": "railway run ts-node scripts/setup-webhook.ts",
     "lint": "eslint --ext .ts src/",
     "lint:fix": "eslint --ext .ts src/ --fix",
-    "setup-webhook": "ts-node scripts/setup-webhook.ts",
     "test": "mocha --require ts-node/register test/**/*.test.ts",
     "test:coverage": "nyc --reporter=lcov --reporter=text npm test",
     "postinstall": "npm run build"

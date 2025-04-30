@@ -1,5 +1,5 @@
 // src/server.ts
-// Server startup optimized for Railway
+// Server startup optimized for Railway with improved error handling
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -10,6 +10,9 @@ import { setupScheduler } from './services/schedulerService';
 import { logger } from './utils/logger';
 import { initDatabase, checkDatabaseConnection, closePool } from './database';
 
+// Helper function to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Main function to start the server
 async function startServer() {
   try {
@@ -17,17 +20,46 @@ async function startServer() {
     logger.info(`Starting ThyKnow server in ${config.nodeEnv} mode`);
     logger.info(`Using timezone: ${config.timezone}`);
     
-    // Initialize and connect to PostgreSQL
-    logger.info('Connecting to PostgreSQL database...');
-    await initDatabase();
-    const isConnected = await checkDatabaseConnection();
+    // Log database configuration (sanitized)
+    logger.info(`Database host: ${config.postgresql.host}`);
+    logger.info(`Database name: ${config.postgresql.database}`);
+    logger.info(`SSL enabled: ${Boolean(config.postgresql.ssl)}`);
     
-    if (!isConnected) {
-      logger.error('Failed to connect to PostgreSQL database');
-      process.exit(1);
+    // Initialize and connect to PostgreSQL with retry logic for Railway startup
+    logger.info('Connecting to PostgreSQL database...');
+    
+    let isConnected = false;
+    let retryCount = 0;
+    const maxRetries = 5;
+    
+    while (!isConnected && retryCount < maxRetries) {
+      try {
+        await initDatabase();
+        isConnected = await checkDatabaseConnection();
+        
+        if (isConnected) {
+          logger.info('Connected to PostgreSQL database successfully');
+        } else {
+          retryCount++;
+          logger.warn(`Database connection attempt ${retryCount}/${maxRetries} failed. Retrying...`);
+          await delay(5000); // Wait 5 seconds before retry
+        }
+      } catch (error) {
+        retryCount++;
+        logger.error(`Database connection attempt ${retryCount}/${maxRetries} failed with error:`, error);
+        await delay(5000); // Wait 5 seconds before retry
+      }
     }
     
-    logger.info('Connected to PostgreSQL database');
+    if (!isConnected) {
+      logger.error(`Failed to connect to PostgreSQL database after ${maxRetries} attempts`);
+      // In production (Railway), we'll continue and hope the database connects later
+      if (config.nodeEnv !== 'production') {
+        process.exit(1);
+      } else {
+        logger.warn('Continuing startup despite database connection failure (production mode)');
+      }
+    }
     
     // Start the Express server
     const server = app.listen(config.port, () => {
@@ -42,7 +74,7 @@ async function startServer() {
           .then(() => logger.info(`Webhook set to ${webhookUrl}`))
           .catch(error => {
             logger.error('Failed to set webhook:', error);
-            // Don't exit the process in production as Railway will just restart it
+            // Don't exit in production
             if (config.nodeEnv !== 'production') {
               process.exit(1);
             }
@@ -94,7 +126,12 @@ async function startServer() {
     
   } catch (error) {
     logger.error('Error starting server:', error);
-    process.exit(1);
+    // In production, log the error but don't terminate
+    if (config.nodeEnv !== 'production') {
+      process.exit(1);
+    } else {
+      logger.warn('Continuing despite startup error (production mode)');
+    }
   }
 }
 

@@ -10,16 +10,18 @@ const connectionConfig = {
   host: config.postgresql.host,
   port: config.postgresql.port,
   database: config.postgresql.database,
-  user: config.postgresql.username,
+  user: config.postgresql.user,
   password: config.postgresql.password,
-  // Handle SSL configuration
-  ssl: config.postgresql.ssl ? {
-    rejectUnauthorized: false // Required for Railway's PostgreSQL
-  } : false,
+  // Always enable SSL for Railway with rejectUnauthorized: false
+  ssl: config.postgresql.ssl,
   max: config.postgresql.maxPoolSize,
   idleTimeoutMillis: config.postgresql.idleTimeout,
   connectionTimeoutMillis: 10000, // Add a timeout to prevent hanging connections
 };
+
+// Log the database configuration (without sensitive info)
+logger.info(`Configuring database connection to ${connectionConfig.host}:${connectionConfig.port}/${connectionConfig.database}`);
+logger.debug(`SSL enabled: ${Boolean(connectionConfig.ssl)}`);
 
 // Create a connection pool
 const pool = new Pool(connectionConfig);

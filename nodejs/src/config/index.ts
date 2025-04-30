@@ -1,5 +1,5 @@
 // src/config/index.ts
-// Configuration with Railway support - fixed types
+// Configuration with Railway support - improved database URL parsing
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -9,7 +9,7 @@ interface PostgreSQLConfig {
   host: string;
   port: number;
   database: string;
-  username: string;
+  user: string;
   password: string;
   ssl: boolean | { rejectUnauthorized: boolean };
   maxPoolSize: number;
@@ -24,11 +24,11 @@ const parseDbUrl = (url: string | undefined): PostgreSQLConfig | null => {
     const dbUrl = new URL(url);
     return {
       host: dbUrl.hostname,
-      port: parseInt(dbUrl.port, 10),
+      port: parseInt(dbUrl.port, 10) || 5432,
       database: dbUrl.pathname.substring(1), // Remove leading slash
-      username: dbUrl.username,
+      user: dbUrl.username,
       password: dbUrl.password,
-      ssl: true, // Railway PostgreSQL uses SSL
+      ssl: { rejectUnauthorized: false }, // Required for Railway PostgreSQL
       maxPoolSize: parseInt(process.env.DB_POOL_SIZE || '10', 10),
       idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10)
     };
@@ -50,9 +50,11 @@ const config = {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
     database: process.env.DB_NAME || 'thyknow',
-    username: process.env.DB_USER || 'postgres',
+    user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
-    ssl: process.env.DB_SSL === 'true',
+    ssl: process.env.DB_SSL === 'true' 
+      ? { rejectUnauthorized: false } 
+      : false,
     maxPoolSize: parseInt(process.env.DB_POOL_SIZE || '10', 10),
     idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10) // 30 seconds
   } as PostgreSQLConfig,
