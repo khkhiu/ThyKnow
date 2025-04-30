@@ -1,25 +1,53 @@
-// File: src/database/index.ts
-// PostgreSQL Database Connection
+// src/database/index.ts
+// Simplified PostgreSQL connection for Railway
 
 import { Pool, PoolClient } from 'pg';
-import config from '../config';
 import { logger } from '../utils/logger';
 
-// Create a connection pool
+// Log all environment variables to help debug
+logger.info('=== Environment Variables ===');
+for (const key in process.env) {
+  if (key.includes('DATABASE') || key.includes('DB_') || key.includes('RAILWAY')) {
+    // Mask any sensitive values
+    const value = key.includes('PASSWORD') || key.includes('URL') 
+      ? '[MASKED]' 
+      : process.env[key];
+    logger.info(`${key}: ${value}`);
+  }
+}
+logger.info('===========================');
+
+// Check if DATABASE_URL exists
+if (!process.env.DATABASE_URL) {
+  logger.error('DATABASE_URL environment variable is not set!');
+  logger.error('This is required for Railway PostgreSQL connection.');
+  logger.error('Please make sure you have added the PostgreSQL plugin to your Railway project.');
+}
+
+// Create a single pool instance using DATABASE_URL
 const pool = new Pool({
-  host: config.postgresql.host,
-  port: config.postgresql.port,
-  database: config.postgresql.database,
-  user: config.postgresql.username,
-  password: config.postgresql.password,
-  ssl: config.postgresql.ssl ? { rejectUnauthorized: false } : false,
-  max: config.postgresql.maxPoolSize,
-  idleTimeoutMillis: config.postgresql.idleTimeout,
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
+
+// Log database connection attempt
+logger.info(`Attempting to connect to PostgreSQL with DATABASE_URL`);
+if (process.env.DATABASE_URL) {
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    logger.info(`Database host is: ${url.hostname}`);
+    logger.info(`Database port is: ${url.port}`);
+    logger.info(`Database name is: ${url.pathname.substring(1)}`);
+  } catch (error) {
+    logger.error('Error parsing DATABASE_URL:', error);
+  }
+}
 
 // Event handlers for the pool
 pool.on('connect', () => {
-  logger.debug('New PostgreSQL client connected');
+  logger.info('Successfully connected to PostgreSQL database');
 });
 
 pool.on('error', (err) => {
@@ -36,7 +64,7 @@ export const getClient = async (): Promise<PoolClient> => {
   }
 };
 
-// Helper function to execute a query and release the client
+// Helper function to execute a query
 export const query = async <T>(text: string, params: any[] = []): Promise<T[]> => {
   const client = await getClient();
   try {
@@ -116,7 +144,8 @@ export const initDatabase = async (): Promise<void> => {
 // Function to check database connectivity
 export const checkDatabaseConnection = async (): Promise<boolean> => {
   try {
-    await query('SELECT NOW()');
+    const result = await query<{ now: Date }>('SELECT NOW()');
+    logger.info(`Database connection successful, server time: ${result[0]?.now}`);
     return true;
   } catch (error) {
     logger.error('Database connection check failed:', error);

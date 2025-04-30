@@ -1,0 +1,36 @@
+# Use Node.js v23 as the base image
+FROM node:23-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files and tsconfig first
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Copy the source code before installing dependencies
+# This is crucial because the postinstall script needs the src directory
+COPY src/ ./src/
+
+# Now install dependencies
+RUN npm ci
+
+# Copy any remaining files
+COPY . .
+
+# Clean up dev dependencies to reduce image size
+RUN npm prune --production
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Expose the application port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start the application
+CMD ["node", "dist/server.js"]

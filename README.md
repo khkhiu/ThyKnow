@@ -1,220 +1,151 @@
-# ThyKnow - Express.js Implementation with PostgreSQL
+# ThyKnow Telegram Bot - Railway Deployment Guide
 
-ThyKnow is a Telegram bot designed to foster self-awareness and build meaningful connections through guided journaling prompts. This implementation uses Express.js, TypeScript, and PostgreSQL to provide a robust and scalable solution.
+This guide provides comprehensive instructions for deploying the ThyKnow Telegram bot to Railway, a modern platform optimized for full-stack applications with excellent support for long-running processes like Telegram bots.
 
-## 📋 Features
+## Architecture Overview
 
-- 🤔 **Self-awareness prompts**: Questions to help users reflect on their emotions, values, and personal growth.
-- 🤝 **Connection-building prompts**: Questions focusing on relationships and meaningful interactions.
-- 📅 **Weekly schedule**: Sends prompts every Monday at 9 AM (Singapore timezone).
-- 📝 **Personal journal**: Saves all responses for users to review later.
-- 📊 **Analytics ready**: Architecture designed to support advanced analytics features.
-- 💰 **Payment integration ready**: Structure supports adding donation features.
-- 🧠 **AI integration ready**: Prepared for Vertex AI integration.
+The deployed architecture consists of the following components:
 
-## 🚀 Getting Started
+1. **Railway Service**: Hosts the ThyKnow Express application
+2. **Railway PostgreSQL**: Managed PostgreSQL database
+3. **Telegram Bot API**: External service for bot functionality
 
-### Prerequisites
+## Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [PostgreSQL](https://www.postgresql.org/) (v14 or higher)
-- A [Telegram Bot Token](https://core.telegram.org/bots#how-do-i-create-a-bot) from BotFather
+Before starting the deployment, ensure you have:
 
-### Installation
+1. **Railway Account**: Sign up at [railway.app](https://railway.app)
+2. **Railway CLI**: Install with `npm i -g @railway/cli`
+3. **Telegram Bot**: Created via BotFather with its API token
+4. **Node.js**: Version 18.x or higher installed locally
 
-1. **Clone the repository**
+## Step 1: Project Preparation
 
-```bash
-git clone https://github.com/your-username/thyknow-express.git
-cd thyknow-express
-```
-
-2. **Install dependencies**
+### 1.1 Clone the Repository
 
 ```bash
-npm install
+git clone https://github.com/your-username/thyknow.git
+cd thyknow
 ```
 
-3. **Configure environment variables**
-
-Create a `.env` file in the root directory with the following content:
-
-```
-# Server configuration
-PORT=3000
-NODE_ENV=development
-BASE_URL=http://localhost:3000
-
-# Telegram Bot configuration
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-
-# PostgreSQL connection
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=thyknow
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_SSL=false
-DB_POOL_SIZE=10
-DB_IDLE_TIMEOUT=30000
-
-# Scheduler settings
-PROMPT_DAY=1  # Monday
-PROMPT_HOUR=9  # 9 AM
-TIMEZONE=Asia/Singapore
-
-# Maximum history entries to show
-MAX_HISTORY=5
-```
-
-4. **Set up PostgreSQL database**
-
-Create a PostgreSQL database:
+### 1.2 Log in to Railway CLI
 
 ```bash
-psql -U postgres -c "CREATE DATABASE thyknow;"
+railway login
 ```
 
-5. **Initialize the database schema**
+## Step 2: Project Setup on Railway
+
+### 2.1 Initialize a New Railway Project
 
 ```bash
-npm run init-db
+railway init
 ```
 
-Or if you prefer to use the migration system:
+Follow the prompts to create a new project or select an existing one.
+
+### 2.2 Add PostgreSQL to Your Project
 
 ```bash
-npm run migrate
+railway add postgresql
 ```
 
-6. **Build and run the application**
+This will provision a PostgreSQL database for your project.
+
+### 2.3 Set Environment Variables
 
 ```bash
-# Build TypeScript
-npm run build
-
-# Start the server
-npm start
+railway vars set TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+railway vars set NODE_ENV=production
+railway vars set TIMEZONE=Asia/Singapore
+railway vars set PROMPT_DAY=1
+railway vars set PROMPT_HOUR=9
+railway vars set MAX_HISTORY=5
 ```
 
-For development with hot reload:
+Railway automatically provides the `DATABASE_URL` environment variable.
+
+## Step 3: Deployment
+
+### 3.1 Deploy to Railway
 
 ```bash
-npm run dev
+railway up
 ```
 
-## 🔧 Bot Commands
+This command builds and deploys your application to Railway.
 
-| Command    | Description                             |
-|------------|-----------------------------------------|
-| /start     | Initialize the bot and get started      |
-| /prompt    | Get a new reflection prompt             |
-| /history   | View your recent journal entries        |
-| /timezone  | Check prompt timings                    |
-| /help      | Show available commands and usage       |
+### 3.2 Set Up the Webhook
 
-## 🚢 Deployment
-
-### Docker Deployment
-
-You can use Docker Compose for an easy deployment:
+After deployment, set up the Telegram webhook using the provided script:
 
 ```bash
-# Start the application with PostgreSQL
-docker-compose up -d
+npm run railway:webhook
 ```
 
-### Google Cloud Run & Cloud SQL Deployment
+This script uses your Railway domain to configure the Telegram webhook.
+
+## Step 4: Monitoring and Management
+
+### 4.1 View Logs
 
 ```bash
-# Set required environment variables
-export PROJECT_ID=your-gcp-project-id
-export TELEGRAM_BOT_TOKEN=your-telegram-bot-token
-export DB_PASSWORD=your-secure-password
-
-# Run the deployment script
-bash cloud-run-deploy.sh
+railway logs
 ```
 
-## 📋 Database Information
+### 4.2 Open the Railway Dashboard
 
-This implementation uses PostgreSQL to store:
-
-1. **Users**: Basic user information and scheduling preferences
-2. **Last Prompts**: The most recent prompt sent to each user
-3. **Journal Entries**: All user responses to prompts
-
-### Database Schema
-
-Here's a simplified version of the database schema:
-
-```sql
--- Users table
-CREATE TABLE users (
-  id VARCHAR(50) PRIMARY KEY,         -- Telegram user ID
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  prompt_count INTEGER NOT NULL DEFAULT 0,
-  schedule_day INTEGER NOT NULL DEFAULT 1,      -- Default: Monday
-  schedule_hour INTEGER NOT NULL DEFAULT 9,     -- Default: 9 AM
-  schedule_enabled BOOLEAN NOT NULL DEFAULT TRUE
-);
-
--- Last Prompt table
-CREATE TABLE last_prompts (
-  user_id VARCHAR(50) PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  text TEXT NOT NULL,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('self_awareness', 'connections')),
-  timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
--- Journal Entry table
-CREATE TABLE journal_entries (
-  id SERIAL PRIMARY KEY,
-  user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  prompt TEXT NOT NULL,
-  prompt_type VARCHAR(20) NOT NULL CHECK (prompt_type IN ('self_awareness', 'connections')),
-  response TEXT NOT NULL,
-  timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
+```bash
+railway open
 ```
 
-## 🏗️ Project Structure
+This opens the Railway dashboard for your project, where you can monitor your application and database.
 
-```
-thyknow-express/
-├── src/
-│   ├── config/           # Configuration files
-│   ├── constants/        # App constants
-│   ├── controllers/      # Express route controllers
-│   ├── database/         # Database connection and utilities
-│   ├── handlers/         # Bot command handlers
-│   ├── middleware/       # Express middleware
-│   ├── models/           # Database models
-│   ├── routes/           # Express routes
-│   ├── services/         # Business logic
-│   ├── types/            # TypeScript type definitions
-│   ├── utils/            # Utility functions
-│   ├── app.ts            # Express app setup
-│   └── server.ts         # Server entry point
-├── scripts/              # Utility scripts
-│   ├── init-database.ts  # Database initialization
-│   ├── migrate-db.ts     # Database migration tool
-│   └── migrations/       # SQL migration files
-├── terraform/            # Terraform IaC for GCP
-├── docker-compose.yml    # Docker Compose configuration
-├── Dockerfile            # Docker configuration
-├── package.json          # Dependencies and scripts
-└── tsconfig.json         # TypeScript configuration
-```
+## Database Information
 
-## 📄 License
+Railway provides a managed PostgreSQL database with the following benefits:
 
-This project is licensed under the MIT License.
+- Automatic backups
+- SSL connection
+- Web-based database administration
+- Scaling options as your user base grows
 
-## 🙏 Acknowledgements
+## Common Issues and Troubleshooting
 
-- [Telegraf](https://github.com/telegraf/telegraf) for the elegant Telegram Bot API
-- [Express.js](https://expressjs.com/) for the web framework
-- [PostgreSQL](https://www.postgresql.org/) for the database
-- [node-pg](https://node-postgres.com/) for PostgreSQL client
-- [node-cron](https://github.com/node-cron/node-cron) for scheduling
+### 1. Webhook Setup Failure
+
+**Solution**:
+1. Check that your application is running successfully on Railway
+2. Verify that the `RAILWAY_PRIVATE_DOMAIN` environment variable is set correctly
+3. Try setting the webhook manually using the Telegram API
+
+### 2. Database Connection Issues
+
+**Solution**:
+1. Check Railway dashboard for database status
+2. Verify that the application is using the `DATABASE_URL` environment variable
+
+## Performance Optimization
+
+To optimize your application for Railway, consider:
+
+1. Setting up autoscaling for handling traffic spikes
+2. Enabling the "Always On" feature for mission-critical applications
+3. Using Railway's built-in metrics to monitor performance
+
+## Additional Railway Features You Can Use
+
+1. **Cron Jobs**: For scheduling tasks without implementing your own scheduler
+2. **Custom Domains**: For a professional URL for your webhook
+3. **Metrics and Alerts**: For monitoring application health
+4. **Deploy from GitHub**: For automatic deployments on code changes
+
+## Resources
+
+- [Railway Documentation](https://docs.railway.app/)
+- [Telegraf.js Documentation](https://telegraf.js.org/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+
+---
+
+Happy deploying! Your ThyKnow Telegram bot should now be running smoothly on Railway. If you encounter any issues, please refer to the Railway documentation or open an issue in this repository.
