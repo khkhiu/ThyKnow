@@ -1,5 +1,5 @@
 // src/server.ts
-// Server startup optimized for Railway with IP address resolution fix
+// Server startup with improved Railway webhook configuration
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -13,107 +13,86 @@ import { initDatabase, checkDatabaseConnection, closePool } from './database';
 // Helper function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Print Railway-specific environment information for debugging
-function logRailwayEnvironment() {
-  logger.info('=== Railway Environment Variables ===');
-  // List important environment variables for Railway
-  const railwayVars = [
-    'PORT',
-    'RAILWAY_PRIVATE_DOMAIN', 
-    'RAILWAY_PUBLIC_DOMAIN',
-    'RAILWAY_SERVICE_NAME',
-    'RAILWAY_PROJECT_NAME',
-    'RAILWAY_ENVIRONMENT_NAME',
-    'NODE_ENV'
-  ];
-  
-  for (const varName of railwayVars) {
-    logger.info(`${varName}: ${process.env[varName] || 'not set'}`);
+// Get the correct webhook URL for Railway
+function getWebhookUrl(): string {
+  // Priority: 1. Custom domain 2. Public domain 3. Static URL 4. Fallback to baseUrl
+  if (process.env.CUSTOM_DOMAIN) {
+    return `https://${process.env.CUSTOM_DOMAIN}/webhook`;
   }
   
-  // Log if DATABASE_URL exists (without showing the actual value for security)
-  logger.info(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
-  if (process.env.DATABASE_URL) {
-    try {
-      const url = new URL(process.env.DATABASE_URL);
-      logger.info(`Database host: ${url.hostname} (will use ${url.hostname === 'localhost' ? '127.0.0.1' : url.hostname})`);
-      logger.info(`Database port: ${url.port}`);
-      logger.info(`Database name: ${url.pathname.substring(1)}`);
-      logger.info(`Database user: ${url.username}`);
-      // Don't log password
-    } catch (error) {
-      logger.error('Error parsing DATABASE_URL:', error);
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/webhook`;
+  }
+  
+  if (process.env.RAILWAY_STATIC_URL) {
+    return `${process.env.RAILWAY_STATIC_URL}/webhook`;
+  }
+  
+  // Fallback to config.baseUrl (which should be set correctly in config)
+  return `${config.baseUrl}/webhook`;
+}
+
+// Log environment information
+function logEnvironmentInfo() {
+  logger.info('=== Environment Info ===');
+  logger.info(`Node Environment: ${config.nodeEnv}`);
+  logger.info(`Timezone: ${config.timezone}`);
+  logger.info(`Server Port: ${config.port}`);
+  
+  // Log Railway-specific variables
+  if (process.env.RAILWAY_SERVICE_NAME) {
+    logger.info('Running on Railway platform');
+    logger.info(`Railway Service: ${process.env.RAILWAY_SERVICE_NAME}`);
+    logger.info(`Railway Environment: ${process.env.RAILWAY_ENVIRONMENT_NAME || 'unknown'}`);
+    logger.info(`Railway Project: ${process.env.RAILWAY_PROJECT_NAME || 'unknown'}`);
+    
+    // Log domains without showing possible credentials
+    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+      logger.info(`Railway Public Domain: ${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+    }
+    if (process.env.RAILWAY_PRIVATE_DOMAIN) {
+      logger.info(`Railway Private Domain: ${process.env.RAILWAY_PRIVATE_DOMAIN}`);
+    }
+    if (process.env.RAILWAY_STATIC_URL) {
+      logger.info(`Railway Static URL: ${process.env.RAILWAY_STATIC_URL}`);
     }
   }
   
-  // Log network configuration test
-  try {
-    const dns = require('dns');
-    dns.lookup('localhost', (err: any, address: string) => {
-      if (err) {
-        logger.error('DNS lookup for localhost failed:', err);
-      } else {
-        logger.info(`localhost resolves to: ${address}`);
-      }
-    });
-  } catch (error) {
-    logger.error('Error testing DNS resolution:', error);
-  }
-  
-  logger.info('=====================================');
+  logger.info('======================');
 }
 
 // Main function to start the server
 async function startServer() {
   try {
-    // Log startup info
-    logger.info(`Starting ThyKnow server in ${config.nodeEnv} mode`);
-    logger.info(`Using timezone: ${config.timezone}`);
+    // Log startup and environment info
+    logger.info('Starting ThyKnow server...');
+    logEnvironmentInfo();
     
-    // Log database configuration
-    logger.info(`Database host configured as: ${config.postgresql.host}`);
-    logger.info(`Database port configured as: ${config.postgresql.port}`);
-    logger.info(`Database name configured as: ${config.postgresql.database}`);
-    
-    // Log Railway-specific environment info
-    if (process.env.RAILWAY_SERVICE_NAME) {
-      logger.info('Running on Railway platform');
-      logRailwayEnvironment();
-    }
-    
-    // Initialize and connect to PostgreSQL with retry logic for Railway startup
+    // Initialize and connect to PostgreSQL with retry logic
     logger.info('Connecting to PostgreSQL database...');
     
     let isConnected = false;
     let retryCount = 0;
-    const maxRetries = 10; // Increase max retries
-    const initialRetryDelay = 5000; // Initial delay of 5 seconds
+    const maxRetries = 10;
+    const initialRetryDelay = 5000; // 5 seconds
     
     while (!isConnected && retryCount < maxRetries) {
       try {
-        // First check if we can connect before trying to initialize
         isConnected = await checkDatabaseConnection();
         
         if (isConnected) {
           logger.info('Connected to PostgreSQL database successfully');
-          // Now initialize the database schema
           await initDatabase();
           logger.info('Database schema initialized successfully');
         } else {
           retryCount++;
-          // Exponential backoff with randomization
-          const retryDelay = initialRetryDelay * Math.pow(1.5, retryCount - 1) 
-            * (0.9 + Math.random() * 0.2); // Add ±10% jitter
-          
+          const retryDelay = initialRetryDelay * Math.pow(1.5, retryCount - 1) * (0.9 + Math.random() * 0.2);
           logger.warn(`Database connection attempt ${retryCount}/${maxRetries} failed. Retrying in ${Math.round(retryDelay/1000)} seconds...`);
           await delay(retryDelay);
         }
       } catch (error) {
         retryCount++;
-        // Exponential backoff with randomization
-        const retryDelay = initialRetryDelay * Math.pow(1.5, retryCount - 1) 
-          * (0.9 + Math.random() * 0.2); // Add ±10% jitter
-        
+        const retryDelay = initialRetryDelay * Math.pow(1.5, retryCount - 1) * (0.9 + Math.random() * 0.2);
         logger.error(`Database connection attempt ${retryCount}/${maxRetries} failed with error:`, error);
         logger.warn(`Retrying in ${Math.round(retryDelay/1000)} seconds...`);
         await delay(retryDelay);
@@ -122,12 +101,10 @@ async function startServer() {
     
     if (!isConnected) {
       logger.error(`Failed to connect to PostgreSQL database after ${maxRetries} attempts`);
-      // In production (Railway), we'll continue without DB for minimal health checks
       if (config.nodeEnv !== 'production') {
         process.exit(1);
       } else {
-        logger.warn('*** CONTINUING STARTUP DESPITE DATABASE CONNECTION FAILURE (PRODUCTION MODE) ***');
-        logger.warn('The application will run with limited functionality');
+        logger.warn('Continuing startup despite database connection failure (production mode)');
       }
     }
     
@@ -135,15 +112,17 @@ async function startServer() {
     const server = app.listen(config.port, () => {
       logger.info(`Server running on port ${config.port}`);
       
-      // Set up bot webhook if in production
+      // Set up bot webhook or polling based on environment
       if (config.nodeEnv === 'production') {
-        const webhookUrl = `${config.baseUrl}/webhook`;
+        // Get the correct webhook URL for Railway
+        const webhookUrl = getWebhookUrl();
         logger.info(`Setting webhook URL to: ${webhookUrl}`);
         
         bot.telegram.setWebhook(webhookUrl)
           .then(() => logger.info(`Webhook set to ${webhookUrl}`))
           .catch(error => {
             logger.error('Failed to set webhook:', error);
+            logger.error('You should run the webhook setup script manually');
             // Don't exit in production
             if (config.nodeEnv !== 'production') {
               process.exit(1);
@@ -160,7 +139,7 @@ async function startServer() {
           });
       }
       
-      // Set up scheduler for weekly prompts only if database is connected
+      // Set up scheduler for weekly prompts
       if (isConnected) {
         setupScheduler();
         logger.info('Prompt scheduler initialized');
@@ -173,11 +152,9 @@ async function startServer() {
     const shutdown = async (signal: string) => {
       logger.info(`Received ${signal}. Shutting down server...`);
       
-      // First stop accepting new requests
       server.close(() => {
         logger.info('HTTP server closed');
         
-        // Then close database connections
         closePool().then(() => {
           logger.info('Database connections closed');
           process.exit(0);
@@ -194,13 +171,12 @@ async function startServer() {
       }, 10000);
     };
     
-    // Handle various termination signals
+    // Handle termination signals
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
     
   } catch (error) {
     logger.error('Error starting server:', error);
-    // In production, log the error but don't terminate
     if (config.nodeEnv !== 'production') {
       process.exit(1);
     } else {

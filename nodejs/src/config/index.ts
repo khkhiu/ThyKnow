@@ -1,5 +1,5 @@
 // src/config/index.ts
-// Configuration with Railway support and IP address fix
+// Configuration optimized for Railway deployment
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -44,6 +44,25 @@ const parseDbUrl = (url: string | undefined): PostgreSQLConfig | null => {
 // Parse Railway's DATABASE_URL if available
 const railwayDbConfig = parseDbUrl(process.env.DATABASE_URL);
 
+// Get base URL based on environment variables
+function getBaseUrl(): string {
+  // Priority order: Custom domain, Railway public domain, Railway static URL, Local URL
+  if (process.env.CUSTOM_DOMAIN) {
+    return `https://${process.env.CUSTOM_DOMAIN}`;
+  }
+  
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+  
+  if (process.env.RAILWAY_STATIC_URL) {
+    return process.env.RAILWAY_STATIC_URL;
+  }
+  
+  // Fallback to BASE_URL or localhost
+  return process.env.BASE_URL || 'http://localhost:3000';
+}
+
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -60,15 +79,24 @@ const config = {
       ? { rejectUnauthorized: false } 
       : false,
     maxPoolSize: parseInt(process.env.DB_POOL_SIZE || '10', 10),
-    idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10) // 30 seconds
+    idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10) 
   } as PostgreSQLConfig,
   timezone: process.env.TIMEZONE || 'Asia/Singapore',
-  baseUrl: process.env.RAILWAY_PRIVATE_DOMAIN || process.env.BASE_URL || 'http://localhost:3000',
+  baseUrl: getBaseUrl(),
+  railway: {
+    service: process.env.RAILWAY_SERVICE_NAME || null,
+    environment: process.env.RAILWAY_ENVIRONMENT_NAME || null,
+    project: process.env.RAILWAY_PROJECT_NAME || null,
+    publicDomain: process.env.RAILWAY_PUBLIC_DOMAIN || null,
+    privateDomain: process.env.RAILWAY_PRIVATE_DOMAIN || null,
+    staticUrl: process.env.RAILWAY_STATIC_URL || null,
+  },
   scheduler: {
     promptDay: parseInt(process.env.PROMPT_DAY || '1', 10), // Monday
     promptHour: parseInt(process.env.PROMPT_HOUR || '9', 10), // 9 AM
   },
   maxHistory: parseInt(process.env.MAX_HISTORY || '5', 10),
+  logLevel: process.env.LOG_LEVEL || 'info',
 };
 
 // Validate critical config
