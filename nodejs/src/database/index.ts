@@ -1,59 +1,56 @@
 // src/database/index.ts
-// PostgreSQL Database Connection with explicit IP address for Railway
+// PostgreSQL Database Connection specifically for Railway
 
 import { Pool, PoolClient } from 'pg';
 import config from '../config';
 import { logger } from '../utils/logger';
 
-// Create connection configuration
+// Log the DATABASE_URL (with sensitive parts masked) for debugging
+function logDatabaseUrl() {
+  if (process.env.DATABASE_URL) {
+    try {
+      const url = new URL(process.env.DATABASE_URL);
+      // Mask password for security
+      const maskedUrl = `postgresql://${url.username}:****@${url.hostname}:${url.port}${url.pathname}`;
+      logger.info(`DATABASE_URL format: ${maskedUrl}`);
+    } catch (error) {
+      logger.error('Error parsing DATABASE_URL for logging:', error);
+    }
+  } else {
+    logger.warn('DATABASE_URL environment variable is not set');
+  }
+}
+
+// Create connection pool
 let pool: Pool;
 
-// Initialize the pool based on environment
+// Log connection information (with sensitive parts masked)
+logDatabaseUrl();
+
+// Initialize the pool using DATABASE_URL directly for Railway
 if (process.env.DATABASE_URL) {
-  // Parse and modify the DATABASE_URL to use 127.0.0.1 instead of localhost
-  try {
-    let connectionString = process.env.DATABASE_URL;
-    
-    // Replace localhost with 127.0.0.1 if present
-    if (connectionString.includes('localhost')) {
-      connectionString = connectionString.replace('localhost', '127.0.0.1');
-      logger.info('Modified DATABASE_URL to use 127.0.0.1 instead of localhost');
-    }
-    
-    // Log the host part of the connection string (without credentials)
-    const urlObj = new URL(connectionString);
-    logger.info(`Using DATABASE_URL with host: ${urlObj.hostname}`);
-    
-    // Use direct DATABASE_URL for Railway
-    pool = new Pool({
-      connectionString: connectionString,
-      ssl: {
-        rejectUnauthorized: false // Required for Railway PostgreSQL
-      },
-      max: 10, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 10000 // Return an error after 10 seconds if connection not established
-    });
-  } catch (error) {
-    logger.error('Error parsing DATABASE_URL:', error);
-    throw error;
-  }
-} else {
-  // Use config object for local development, ensuring we use 127.0.0.1 not localhost
-  const dbHost = config.postgresql.host === 'localhost' ? '127.0.0.1' : config.postgresql.host;
-  logger.info(`Configuring database connection to ${dbHost}:${config.postgresql.port}/${config.postgresql.database}`);
-  
+  logger.info('Using DATABASE_URL for PostgreSQL connection');
   pool = new Pool({
-    host: dbHost,
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false // Required for Railway PostgreSQL
+    }
+  });
+  
+  logger.info('PostgreSQL pool initialized with DATABASE_URL');
+} else {
+  // Fallback for local development
+  logger.info('DATABASE_URL not found, using config values for PostgreSQL connection');
+  pool = new Pool({
+    host: config.postgresql.host,
     port: config.postgresql.port,
     database: config.postgresql.database,
     user: config.postgresql.user,
     password: config.postgresql.password,
-    ssl: config.postgresql.ssl,
-    max: config.postgresql.maxPoolSize,
-    idleTimeoutMillis: config.postgresql.idleTimeout,
-    connectionTimeoutMillis: 10000
+    ssl: config.postgresql.ssl
   });
+  
+  logger.info(`PostgreSQL pool initialized with host: ${config.postgresql.host}`);
 }
 
 // Event handlers for the pool
@@ -63,7 +60,6 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
   logger.error('PostgreSQL pool error:', err);
-  // Don't crash on connection errors, let the retry logic handle it
 });
 
 // Export a function to get a client from the pool
