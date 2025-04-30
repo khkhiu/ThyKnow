@@ -1,5 +1,5 @@
 // src/server.ts
-// Server startup optimized for Railway with improved error handling
+// Server startup optimized for Railway with improved diagnostics
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -13,6 +13,41 @@ import { initDatabase, checkDatabaseConnection, closePool } from './database';
 // Helper function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Print Railway-specific environment information for debugging
+function logRailwayEnvironment() {
+  logger.info('=== Railway Environment Variables ===');
+  // List important environment variables for Railway
+  const railwayVars = [
+    'PORT',
+    'RAILWAY_STATIC_URL', 
+    'RAILWAY_PUBLIC_DOMAIN',
+    'RAILWAY_SERVICE_NAME',
+    'RAILWAY_PROJECT_NAME',
+    'RAILWAY_ENVIRONMENT_NAME',
+    'NODE_ENV'
+  ];
+  
+  for (const varName of railwayVars) {
+    logger.info(`${varName}: ${process.env[varName] || 'not set'}`);
+  }
+  
+  // Log if DATABASE_URL exists (without showing the actual value for security)
+  logger.info(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
+  if (process.env.DATABASE_URL) {
+    try {
+      const url = new URL(process.env.DATABASE_URL);
+      logger.info(`Database host: ${url.hostname}`);
+      logger.info(`Database port: ${url.port}`);
+      logger.info(`Database name: ${url.pathname.substring(1)}`);
+      logger.info(`Database user: ${url.username}`);
+      // Don't log password
+    } catch (error) {
+      logger.error('Error parsing DATABASE_URL:', error);
+    }
+  }
+  logger.info('=====================================');
+}
+
 // Main function to start the server
 async function startServer() {
   try {
@@ -20,44 +55,59 @@ async function startServer() {
     logger.info(`Starting ThyKnow server in ${config.nodeEnv} mode`);
     logger.info(`Using timezone: ${config.timezone}`);
     
-    // Log database configuration (sanitized)
-    logger.info(`Database host: ${config.postgresql.host}`);
-    logger.info(`Database name: ${config.postgresql.database}`);
-    logger.info(`SSL enabled: ${Boolean(config.postgresql.ssl)}`);
+    // Log Railway-specific environment info
+    if (process.env.RAILWAY_SERVICE_NAME) {
+      logger.info('Running on Railway platform');
+      logRailwayEnvironment();
+    }
     
     // Initialize and connect to PostgreSQL with retry logic for Railway startup
     logger.info('Connecting to PostgreSQL database...');
     
     let isConnected = false;
     let retryCount = 0;
-    const maxRetries = 5;
+    const maxRetries = 10; // Increase max retries
+    const initialRetryDelay = 5000; // Initial delay of 5 seconds
     
     while (!isConnected && retryCount < maxRetries) {
       try {
-        await initDatabase();
+        // First check if we can connect before trying to initialize
         isConnected = await checkDatabaseConnection();
         
         if (isConnected) {
           logger.info('Connected to PostgreSQL database successfully');
+          // Now initialize the database schema
+          await initDatabase();
+          logger.info('Database schema initialized successfully');
         } else {
           retryCount++;
-          logger.warn(`Database connection attempt ${retryCount}/${maxRetries} failed. Retrying...`);
-          await delay(5000); // Wait 5 seconds before retry
+          // Exponential backoff with randomization
+          const retryDelay = initialRetryDelay * Math.pow(1.5, retryCount - 1) 
+            * (0.9 + Math.random() * 0.2); // Add ±10% jitter
+          
+          logger.warn(`Database connection attempt ${retryCount}/${maxRetries} failed. Retrying in ${Math.round(retryDelay/1000)} seconds...`);
+          await delay(retryDelay);
         }
       } catch (error) {
         retryCount++;
+        // Exponential backoff with randomization
+        const retryDelay = initialRetryDelay * Math.pow(1.5, retryCount - 1) 
+          * (0.9 + Math.random() * 0.2); // Add ±10% jitter
+        
         logger.error(`Database connection attempt ${retryCount}/${maxRetries} failed with error:`, error);
-        await delay(5000); // Wait 5 seconds before retry
+        logger.warn(`Retrying in ${Math.round(retryDelay/1000)} seconds...`);
+        await delay(retryDelay);
       }
     }
     
     if (!isConnected) {
       logger.error(`Failed to connect to PostgreSQL database after ${maxRetries} attempts`);
-      // In production (Railway), we'll continue and hope the database connects later
+      // In production (Railway), we'll continue without DB for minimal health checks
       if (config.nodeEnv !== 'production') {
         process.exit(1);
       } else {
-        logger.warn('Continuing startup despite database connection failure (production mode)');
+        logger.warn('*** CONTINUING STARTUP DESPITE DATABASE CONNECTION FAILURE (PRODUCTION MODE) ***');
+        logger.warn('The application will run with limited functionality');
       }
     }
     
@@ -90,9 +140,13 @@ async function startServer() {
           });
       }
       
-      // Set up scheduler for weekly prompts
-      setupScheduler();
-      logger.info('Prompt scheduler initialized');
+      // Set up scheduler for weekly prompts only if database is connected
+      if (isConnected) {
+        setupScheduler();
+        logger.info('Prompt scheduler initialized');
+      } else {
+        logger.warn('Prompt scheduler not initialized due to database connection failure');
+      }
     });
     
     // Graceful shutdown

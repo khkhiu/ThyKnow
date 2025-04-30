@@ -1,30 +1,42 @@
 // src/database/index.ts
-// PostgreSQL Database Connection optimized for Railway
+// PostgreSQL Database Connection specifically for Railway
+// Uses direct DATABASE_URL connection for maximum compatibility
 
 import { Pool, PoolClient } from 'pg';
 import config from '../config';
 import { logger } from '../utils/logger';
 
 // Create connection configuration
-const connectionConfig = {
-  host: config.postgresql.host,
-  port: config.postgresql.port,
-  database: config.postgresql.database,
-  user: config.postgresql.user,
-  password: config.postgresql.password,
-  // Always enable SSL for Railway with rejectUnauthorized: false
-  ssl: config.postgresql.ssl,
-  max: config.postgresql.maxPoolSize,
-  idleTimeoutMillis: config.postgresql.idleTimeout,
-  connectionTimeoutMillis: 10000, // Add a timeout to prevent hanging connections
-};
+let pool: Pool;
 
-// Log the database configuration (without sensitive info)
-logger.info(`Configuring database connection to ${connectionConfig.host}:${connectionConfig.port}/${connectionConfig.database}`);
-logger.debug(`SSL enabled: ${Boolean(connectionConfig.ssl)}`);
-
-// Create a connection pool
-const pool = new Pool(connectionConfig);
+// Initialize the pool based on environment
+if (process.env.DATABASE_URL) {
+  // Use direct DATABASE_URL for Railway
+  logger.info('Using direct DATABASE_URL connection string for Railway');
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false // Required for Railway PostgreSQL
+    },
+    max: 10, // Maximum number of clients in the pool
+    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+    connectionTimeoutMillis: 10000 // Return an error after 10 seconds if connection not established
+  });
+} else {
+  // Use config object for local development
+  logger.info(`Configuring database connection to ${config.postgresql.host}:${config.postgresql.port}/${config.postgresql.database}`);
+  pool = new Pool({
+    host: config.postgresql.host,
+    port: config.postgresql.port,
+    database: config.postgresql.database,
+    user: config.postgresql.user,
+    password: config.postgresql.password,
+    ssl: config.postgresql.ssl,
+    max: config.postgresql.maxPoolSize,
+    idleTimeoutMillis: config.postgresql.idleTimeout,
+    connectionTimeoutMillis: 10000
+  });
+}
 
 // Event handlers for the pool
 pool.on('connect', () => {
@@ -33,6 +45,7 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
   logger.error('PostgreSQL pool error:', err);
+  // Don't crash on connection errors, let the retry logic handle it
 });
 
 // Export a function to get a client from the pool
