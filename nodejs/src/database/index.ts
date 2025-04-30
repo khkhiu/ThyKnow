@@ -1,6 +1,5 @@
 // src/database/index.ts
-// PostgreSQL Database Connection specifically for Railway
-// Uses direct DATABASE_URL connection for maximum compatibility
+// PostgreSQL Database Connection with explicit IP address for Railway
 
 import { Pool, PoolClient } from 'pg';
 import config from '../config';
@@ -11,22 +10,41 @@ let pool: Pool;
 
 // Initialize the pool based on environment
 if (process.env.DATABASE_URL) {
-  // Use direct DATABASE_URL for Railway
-  logger.info('Using direct DATABASE_URL connection string for Railway');
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false // Required for Railway PostgreSQL
-    },
-    max: 10, // Maximum number of clients in the pool
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 10000 // Return an error after 10 seconds if connection not established
-  });
+  // Parse and modify the DATABASE_URL to use 127.0.0.1 instead of localhost
+  try {
+    let connectionString = process.env.DATABASE_URL;
+    
+    // Replace localhost with 127.0.0.1 if present
+    if (connectionString.includes('localhost')) {
+      connectionString = connectionString.replace('localhost', '127.0.0.1');
+      logger.info('Modified DATABASE_URL to use 127.0.0.1 instead of localhost');
+    }
+    
+    // Log the host part of the connection string (without credentials)
+    const urlObj = new URL(connectionString);
+    logger.info(`Using DATABASE_URL with host: ${urlObj.hostname}`);
+    
+    // Use direct DATABASE_URL for Railway
+    pool = new Pool({
+      connectionString: connectionString,
+      ssl: {
+        rejectUnauthorized: false // Required for Railway PostgreSQL
+      },
+      max: 10, // Maximum number of clients in the pool
+      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+      connectionTimeoutMillis: 10000 // Return an error after 10 seconds if connection not established
+    });
+  } catch (error) {
+    logger.error('Error parsing DATABASE_URL:', error);
+    throw error;
+  }
 } else {
-  // Use config object for local development
-  logger.info(`Configuring database connection to ${config.postgresql.host}:${config.postgresql.port}/${config.postgresql.database}`);
+  // Use config object for local development, ensuring we use 127.0.0.1 not localhost
+  const dbHost = config.postgresql.host === 'localhost' ? '127.0.0.1' : config.postgresql.host;
+  logger.info(`Configuring database connection to ${dbHost}:${config.postgresql.port}/${config.postgresql.database}`);
+  
   pool = new Pool({
-    host: config.postgresql.host,
+    host: dbHost,
     port: config.postgresql.port,
     database: config.postgresql.database,
     user: config.postgresql.user,

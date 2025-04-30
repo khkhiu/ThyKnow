@@ -1,5 +1,5 @@
 // src/server.ts
-// Server startup optimized for Railway with improved diagnostics
+// Server startup optimized for Railway with IP address resolution fix
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -36,7 +36,7 @@ function logRailwayEnvironment() {
   if (process.env.DATABASE_URL) {
     try {
       const url = new URL(process.env.DATABASE_URL);
-      logger.info(`Database host: ${url.hostname}`);
+      logger.info(`Database host: ${url.hostname} (will use ${url.hostname === 'localhost' ? '127.0.0.1' : url.hostname})`);
       logger.info(`Database port: ${url.port}`);
       logger.info(`Database name: ${url.pathname.substring(1)}`);
       logger.info(`Database user: ${url.username}`);
@@ -45,6 +45,21 @@ function logRailwayEnvironment() {
       logger.error('Error parsing DATABASE_URL:', error);
     }
   }
+  
+  // Log network configuration test
+  try {
+    const dns = require('dns');
+    dns.lookup('localhost', (err: any, address: string) => {
+      if (err) {
+        logger.error('DNS lookup for localhost failed:', err);
+      } else {
+        logger.info(`localhost resolves to: ${address}`);
+      }
+    });
+  } catch (error) {
+    logger.error('Error testing DNS resolution:', error);
+  }
+  
   logger.info('=====================================');
 }
 
@@ -54,6 +69,11 @@ async function startServer() {
     // Log startup info
     logger.info(`Starting ThyKnow server in ${config.nodeEnv} mode`);
     logger.info(`Using timezone: ${config.timezone}`);
+    
+    // Log database configuration
+    logger.info(`Database host configured as: ${config.postgresql.host}`);
+    logger.info(`Database port configured as: ${config.postgresql.port}`);
+    logger.info(`Database name configured as: ${config.postgresql.database}`);
     
     // Log Railway-specific environment info
     if (process.env.RAILWAY_SERVICE_NAME) {

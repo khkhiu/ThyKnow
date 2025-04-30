@@ -1,5 +1,5 @@
 // src/config/index.ts
-// Configuration with Railway support - improved database URL parsing
+// Configuration with Railway support and IP address fix
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -22,8 +22,11 @@ const parseDbUrl = (url: string | undefined): PostgreSQLConfig | null => {
   
   try {
     const dbUrl = new URL(url);
+    // Replace localhost with 127.0.0.1 for container compatibility
+    const hostname = dbUrl.hostname === 'localhost' ? '127.0.0.1' : dbUrl.hostname;
+    
     return {
-      host: dbUrl.hostname,
+      host: hostname,
       port: parseInt(dbUrl.port, 10) || 5432,
       database: dbUrl.pathname.substring(1), // Remove leading slash
       user: dbUrl.username,
@@ -47,7 +50,8 @@ const config = {
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
   postgresql: railwayDbConfig || {
     // Fallback to individual environment variables if DATABASE_URL is not provided
-    host: process.env.DB_HOST || 'localhost',
+    // Replace localhost with 127.0.0.1 for container compatibility
+    host: (process.env.DB_HOST === 'localhost' ? '127.0.0.1' : process.env.DB_HOST) || '127.0.0.1',
     port: parseInt(process.env.DB_PORT || '5432', 10),
     database: process.env.DB_NAME || 'thyknow',
     user: process.env.DB_USER || 'postgres',
