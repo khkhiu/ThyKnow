@@ -13,7 +13,7 @@ import { stream } from './utils/logger';
 import dotenv from 'dotenv';
 import pubSubRoutes from './routes/pubSubRoutes';
 import miniAppRoutes from './routes/miniAppRoutes';
-import miniAppApiRoutes from './routes/miniAppApiRoutes';
+import miniAppApiRouter from './routes/miniAppApiRoutes';  // Use named import
 
 // Import health check controllers
 import { healthCheck } from './controllers/healthController';
@@ -68,9 +68,7 @@ app.use('/pubsub', pubSubRoutes);
 
 // Set up Mini-App routes
 app.use('/miniapp', miniAppRoutes);
-
-// Set up Mini-App API routes
-app.use('/api/miniapp', miniAppApiRoutes);
+app.use('/api/miniapp', miniAppApiRouter);  // Use the named import
 
 // Health check endpoints (required for Railway)
 app.get('/health', minimalHealthCheck); // Fast endpoint for Railway's health checks

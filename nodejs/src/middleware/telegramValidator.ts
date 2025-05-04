@@ -4,10 +4,6 @@ import { validateTelegramWebAppRequest, extractTelegramUserId } from '../utils/t
 import { logger } from '../utils/logger';
 import config from '../config';
 
-/**
- * Middleware to validate requests from Telegram Web App
- * This ensures that requests to our API endpoints are legitimate
- */
 export function validateTelegramRequest(req: Request, res: Response, next: NextFunction): void {
   try {
     // Skip validation in development mode if configured to do so
