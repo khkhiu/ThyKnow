@@ -8,9 +8,11 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Copy the source code before installing dependencies
-# This is crucial because the postinstall script needs the src directory
+# Copy the source code
 COPY src/ ./src/
+
+# Copy public files (necessary for mini-app)
+COPY public/ ./public/
 
 # Now install dependencies
 RUN npm ci

@@ -18,7 +18,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: Dockerfile.dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,12 +33,14 @@ services:
       - DB_SSL=false
       - TIMEZONE=Asia/Singapore
       - VALIDATE_TELEGRAM_REQUESTS=false
+      - LOG_LEVEL=debug
     ports:
       - "3000:3000"
     volumes:
       - ./src:/app/src
       - ./public:/app/public
-      - ./dist:/app/dist
+      - ./nodemon.json:/app/nodemon.json
+    command: npm run dev
 
 volumes:
   postgres-data:
