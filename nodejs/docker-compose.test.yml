@@ -32,13 +32,8 @@ services:
       - DB_PASSWORD=postgres
       - DB_SSL=false
       - TIMEZONE=Asia/Singapore
-      - VALIDATE_TELEGRAM_REQUESTS=false
     ports:
       - "3000:3000"
-    volumes:
-      - ./src:/app/src
-      - ./public:/app/public
-      - ./dist:/app/dist
 
 volumes:
   postgres-data:
