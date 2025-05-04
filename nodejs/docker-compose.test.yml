@@ -22,23 +22,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=development
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=thyknow
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_SSL=false
-      - TIMEZONE=Asia/Singapore
-      - VALIDATE_TELEGRAM_REQUESTS=false
     ports:
       - "3000:3000"
     volumes:
       - ./src:/app/src
       - ./public:/app/public
       - ./dist:/app/dist
+      - ./.env:/app/.env
 
 volumes:
   postgres-data:
