@@ -9,9 +9,9 @@ npm-debug.log
 yarn-debug.log
 yarn-error.log
 
-# Do NOT ignore environment files to allow loading from root
-# .env
-# .env.*
+# Environment files
+.env
+.env.*
 
 # Build outputs
 dist
