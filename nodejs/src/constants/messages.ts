@@ -14,15 +14,17 @@ export const MESSAGES = {
     "/history - View your recent journal entries\n" +
     "/schedule - Manage your prompt schedule\n" +
     "/timezone - Check prompt timings\n" +
+    "/miniapp - Open our interactive mini app\n" +
     "/help - Shows all available commands\n\n" +
     "So buckle up, friend! It's time to RAWR into personal development! 🚀🦕",
   
-  HELP:
+    HELP:
     "🦕 Available Commands 🦖\n\n" +
     "• /start - Initialize the bot and get started\n" +
     "• /prompt - Get a new reflection prompt\n" +
     "• /choose - Select a specific type of prompt\n" +
     "• /history - View your recent journal entries\n" +
+    "• /webapp - Open our interactive mini app\n" +
     "• /timezone - Check prompt timings\n" +
     "• /help - Show this help message\n\n" +
     "📅 Schedule Management:\n" +
@@ -34,9 +36,10 @@ export const MESSAGES = {
     "1. Use /start to begin your prehistoric journey\n" +
     "2. Get prompts with /prompt or choose a specific type with /choose\n" +
     "3. View your entries with /history\n" +
-    "4. Set your preferred schedule with /schedule\n\n" +
+    "4. Try our mini app experience with /webapp\n" +
+    "5. Set your preferred schedule with /schedule\n\n" +
     "✨ You will receive weekly prompts according to your schedule preferences.",
-  
+    
   NO_HISTORY:
     "You haven't made any journal entries yet. Use /prompt to start your dino-discovery journey!",
   

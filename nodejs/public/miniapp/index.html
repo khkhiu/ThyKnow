@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ThyKnow</title>
+    
+    <!-- Telegram Web App stylesheet and script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- App styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="logo">
+                <img src="assets/thyknow-logo.svg" alt="ThyKnow Logo" onerror="this.src='assets/thyknow-logo-fallback.png'">
+            </div>
+            <h1>ThyKnow</h1>
+            <p class="tagline">Discover you, Connect us.</p>
+        </header>
+        
+        <main>
+            <!-- Loading state -->
+            <div id="loading" class="loading-container">
+                <div class="spinner"></div>
+                <p>Loading your ThyKnow experience...</p>
+            </div>
+            
+            <!-- Main content (hidden until loaded) -->
+            <div id="content" class="content-container" style="display: none;">
+                <section class="prompt-section">
+                    <h2>Today's Reflection</h2>
+                    <div class="prompt-card">
+                        <div class="prompt-type"></div>
+                        <div class="prompt-text"></div>
+                        <div class="prompt-hint"></div>
+                    </div>
+                    
+                    <div class="response-area">
+                        <textarea id="response" placeholder="Share your thoughts here..."></textarea>
+                        <button id="submit-response" class="btn primary">Save Response</button>
+                    </div>
+                </section>
+                
+                <section class="history-section">
+                    <h2>Your Journey</h2>
+                    <div id="history-entries" class="history-container">
+                        <!-- History entries will be populated here -->
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Error state -->
+            <div id="error" class="error-container" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p class="error-message">Sorry, something went wrong.</p>
+                <button id="retry-button" class="btn secondary">Try Again</button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>© 2025 ThyKnow - Helping you evolve, one prompt at a time.</p>
+            <div class="theme-toggle">
+                <i class="fas fa-moon"></i>
+                <span class="toggle-label">Dark Mode</span>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- App scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

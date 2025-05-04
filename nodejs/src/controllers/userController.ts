@@ -33,9 +33,17 @@ export async function handleStart(ctx: Context): Promise<void> {
     // If this is the first start, also trigger the choose command
     if (isFirstStart) {
       logger.info(`First time user ${userId}, triggering choose command`);
+      
       // Add a small delay to ensure welcome message is seen first
       setTimeout(() => {
         handleChooseCommand(ctx);
+        
+        // After another small delay, introduce the mini app
+        setTimeout(async () => {
+          // Import dynamically to avoid circular dependencies
+          const { handleWebAppCommand } = require('./miniAppController');
+          await handleWebAppCommand(ctx);
+        }, 2000);
       }, 500);
     }
   } catch (error) {
