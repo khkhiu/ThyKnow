@@ -25,13 +25,11 @@ services:
     environment:
       - NODE_ENV=development
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=thyknow
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_SSL=false
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/thyknow
       - TIMEZONE=Asia/Singapore
+      - VALIDATE_TELEGRAM_REQUESTS=false
+      - BASE_URL=http://localhost:3000
     ports:
       - "3000:3000"
 

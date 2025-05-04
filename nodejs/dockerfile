@@ -1,22 +1,24 @@
-# Use Node.js v23 as the base image
+# Use Node.js v20 (more stable than v23) as the base image
 FROM node:23-slim
 
 # Set working directory
 WORKDIR /app
 
+# Verify Node.js and npm are available
+RUN node --version && npm --version
+
 # Copy package files and tsconfig first
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Copy the source code before installing dependencies
-# This is crucial because the postinstall script needs the src directory
-COPY src/ ./src/
-
-# Now install dependencies
+# Install dependencies
 RUN npm ci
 
-# Copy any remaining files
+# Copy the entire codebase
 COPY . .
+
+# Build the application
+RUN npm run build
 
 # Clean up dev dependencies to reduce image size
 RUN npm prune --production
