@@ -4,9 +4,9 @@ import { logger } from '../utils/logger';
 import config from '../config';
 
 /**
- * Handle the /webapp command to launch the mini app
+ * Handle the /miniapp command to launch the mini app
  */
-export async function handleWebAppCommand(ctx: Context): Promise<void> {
+export async function handleMiniAppCommand(ctx: Context): Promise<void> {
   try {
     const userId = ctx.from?.id.toString();
     
@@ -41,7 +41,7 @@ export async function handleWebAppCommand(ctx: Context): Promise<void> {
     
     logger.info(`Mini app link sent to user ${userId}`);
   } catch (error) {
-    logger.error('Error handling web app command:', error);
+    logger.error('Error handling mini app command:', error);
     await ctx.reply('Sorry, there was an error launching the mini app. Please try again later.');
   }
 }

@@ -62,7 +62,7 @@ Follow these steps to configure your Telegram Web App:
 5️⃣ Send the menu button text when prompted:
    ThyKnow App
 
-6️⃣ Optionally, set the commands to include a webapp command:
+6️⃣ Optionally, set the commands to include a miniapp command:
    /setcommands
 
 7️⃣ Select your bot:
@@ -73,7 +73,7 @@ Follow these steps to configure your Telegram Web App:
    prompt - Get a new reflection prompt
    choose - Choose a specific type of prompt
    history - View your recent journal entries
-   webapp - Open the ThyKnow mini app
+   miniapp - Open the ThyKnow mini app
    timezone - Check prompt timings
    schedule - Manage your prompt schedule
    help - Show available commands and usage

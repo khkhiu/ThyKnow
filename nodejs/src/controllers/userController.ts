@@ -41,8 +41,8 @@ export async function handleStart(ctx: Context): Promise<void> {
         // After another small delay, introduce the mini app
         setTimeout(async () => {
           // Import dynamically to avoid circular dependencies
-          const { handleWebAppCommand } = require('./miniAppController');
-          await handleWebAppCommand(ctx);
+          const { handleMiniAppCommand } = require('./miniAppController');
+          await handleMiniAppCommand(ctx);
         }, 2000);
       }, 500);
     }
