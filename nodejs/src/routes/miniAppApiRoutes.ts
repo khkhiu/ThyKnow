@@ -89,8 +89,8 @@ function getHistory(req: Request, res: Response, next: NextFunction): void {
         id: entry.id,
         date: entry.timestamp.toISOString().split('T')[0],
         promptType: entry.promptType,
-        prompt: entry.prompt,
-        response: entry.response
+        prompt: entry.prompt, // Line breaks are preserved in the database
+        response: entry.response // Line breaks are preserved in the database
       }));
       
       res.json(formattedEntries);

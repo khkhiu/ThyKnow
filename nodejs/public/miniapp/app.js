@@ -241,11 +241,23 @@ function updateHistory(historyData) {
     const entryElement = document.createElement('div');
     entryElement.className = 'history-entry';
     
-    entryElement.innerHTML = `
-      <div class="history-date">${formatDate(entry.date)}</div>
-      <div class="history-prompt">${entry.prompt}</div>
-      <div class="history-response">${entry.response}</div>
-    `;
+    // Create elements instead of using innerHTML to better handle line breaks
+    const dateElement = document.createElement('div');
+    dateElement.className = 'history-date';
+    dateElement.textContent = formatDate(entry.date);
+    
+    const promptElement = document.createElement('div');
+    promptElement.className = 'history-prompt';
+    promptElement.textContent = entry.prompt; // textContent preserves line breaks
+    
+    const responseElement = document.createElement('div');
+    responseElement.className = 'history-response';
+    responseElement.textContent = entry.response; // textContent preserves line breaks
+    
+    // Append all elements to the entry
+    entryElement.appendChild(dateElement);
+    entryElement.appendChild(promptElement);
+    entryElement.appendChild(responseElement);
     
     historyContainer.appendChild(entryElement);
   });
