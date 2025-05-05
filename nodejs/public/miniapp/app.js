@@ -295,14 +295,28 @@ async function submitResponse() {
         throw new Error(errorData.error || 'Failed to save response');
       }
       
+      // Parse response data which includes the new prompt
+      const responseData = await response.json();
+      
       // Clear the response field
       document.getElementById('response').value = '';
       
       // Show success notification
-      showNotification('Response saved successfully!');
+      showNotification('Response saved successfully! A new prompt has been generated.');
       
       // Notify Telegram app (vibrate and show notification)
       tg.HapticFeedback.notificationOccurred('success');
+      
+      // Update the prompt with the new one
+      if (responseData.newPrompt) {
+        updatePrompt(responseData.newPrompt);
+        
+        // Scroll to the top to show the new prompt
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }
       
       // Refresh history
       const historyData = await fetchHistory();
@@ -312,7 +326,7 @@ async function submitResponse() {
       showNotification('Failed to save your response. Please try again.');
       tg.HapticFeedback.notificationOccurred('error');
     }
-  }
+}
 
 // Setup main button
 function setupMainButton() {

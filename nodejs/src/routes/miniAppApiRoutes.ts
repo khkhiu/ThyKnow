@@ -103,7 +103,7 @@ function getHistory(req: Request, res: Response, next: NextFunction): void {
 
 /**
  * Handler for POST /api/miniapp/responses
- * Save a journal entry response
+ * Save a journal entry response and generate a new prompt
  */
 function saveResponse(req: Request, res: Response, next: NextFunction): void {
   const { userId, response } = req.body;
@@ -114,7 +114,7 @@ function saveResponse(req: Request, res: Response, next: NextFunction): void {
   }
   
   userService.getUser(userId)
-    .then(user => {
+    .then(async user => {
       if (!user) {
         res.status(404).json({ error: 'User not found' });
         return;
@@ -135,16 +135,33 @@ function saveResponse(req: Request, res: Response, next: NextFunction): void {
         timestamp: new Date()
       };
       
-      // Save response
-      userService.saveResponse(userId, entry)
-        .then(entryId => {
-          res.status(201).json({
-            success: true,
-            message: 'Response saved successfully',
-            entryId
-          });
-        })
-        .catch(err => next(err));
+      try {
+        // Save response
+        const entryId = await userService.saveResponse(userId, entry);
+        
+        // Generate a new prompt for the user
+        const newPrompt = await promptService.getNextPromptForUser(userId);
+        
+        // Save the new prompt as the user's last prompt
+        await userService.saveLastPrompt(userId, newPrompt);
+        
+        // Return success with the new prompt data
+        res.status(201).json({
+          success: true,
+          message: 'Response saved successfully',
+          entryId,
+          newPrompt: {
+            type: newPrompt.type,
+            typeLabel: newPrompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
+            text: newPrompt.text,
+            hint: 'Reflect deeply on this prompt to gain new insights.'
+          }
+        });
+        
+        logger.info(`Saved response and generated new prompt for user ${userId}`);
+      } catch (err) {
+        next(err);
+      }
     })
     .catch(err => {
       logger.error('Error saving response:', err);
