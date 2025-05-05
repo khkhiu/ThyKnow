@@ -39,7 +39,7 @@ function getTodaysPrompt(req: Request, res: Response, next: NextFunction): void 
         const promptData = {
           type: userWithPrompt.lastPrompt.type,
           typeLabel: userWithPrompt.lastPrompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
-          text: userWithPrompt.lastPrompt.text,
+          text: userWithPrompt.lastPrompt.text, // The text is already preserved with line breaks
           hint: 'Reflect deeply on this prompt to gain new insights.'
         };
         res.json(promptData);
@@ -53,7 +53,7 @@ function getTodaysPrompt(req: Request, res: Response, next: NextFunction): void 
                 const promptData = {
                   type: prompt.type,
                   typeLabel: prompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
-                  text: prompt.text,
+                  text: prompt.text, // The text is already preserved with line breaks
                   hint: 'Reflect deeply on this prompt to gain new insights.'
                 };
                 res.json(promptData);

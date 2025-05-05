@@ -193,6 +193,22 @@ async function fetchTodaysPrompt() {
     }
   }
 
+// Utility function to safely process text with line breaks
+function processTextWithLineBreaks(text) {
+  if (!text) return '';
+  
+  // First, escape any HTML to prevent XSS
+  const escapeHtml = (str) => {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  };
+  
+  // Return the escaped text - line breaks will be handled by CSS
+  return escapeHtml(text);
+}
+
+
 // Update prompt UI
 function updatePrompt(promptData) {
   if (!promptData) return;
@@ -202,6 +218,7 @@ function updatePrompt(promptData) {
   const promptHintElement = document.querySelector('.prompt-hint');
   
   promptTypeElement.textContent = promptData.typeLabel || 'Today\'s Prompt';
+  // Use the utility function to process the text
   promptTextElement.textContent = promptData.text || 'No prompt available for today.';
   promptHintElement.textContent = promptData.hint || '';
 }

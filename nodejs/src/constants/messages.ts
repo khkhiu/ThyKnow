@@ -14,7 +14,7 @@ export const MESSAGES = {
     "/history - View your recent journal entries\n" +
     "/schedule - Manage your prompt schedule\n" +
     "/timezone - Check prompt timings\n" +
-    "/miniapp - Open our interactive mini app\n" +
+    "/webapp - Open our interactive mini app\n" +
     "/help - Shows all available commands\n\n" +
     "So buckle up, friend! It's time to RAWR into personal development! 🚀🦕",
   

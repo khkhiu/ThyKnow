@@ -152,6 +152,8 @@
     font-size: 1.1rem;
     margin-bottom: 15px;
     line-height: 1.6;
+    white-space: pre-line; /* This preserves line breaks */
+    word-wrap: break-word; /* Ensures text wraps properly */
   }
   
   .prompt-hint {
