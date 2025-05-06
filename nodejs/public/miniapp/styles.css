@@ -30,9 +30,11 @@
     --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   }
   
+  /* Make mini-app new prompt button pulse
   .pulse-attention {
     animation: pulse-button 1.5s infinite;
   }
+  */
 
   /* Base styles */
   * {

@@ -65,8 +65,19 @@ async function initApp() {
     // Get user data (if available)
     const userData = await fetchUserData();
     
-    // Get today's prompt
-    const promptData = await fetchTodaysPrompt();
+    // Check for timestamp parameter in URL - this indicates we should fetch a new prompt
+    const urlParams = new URLSearchParams(window.location.search);
+    const timestamp = urlParams.get('t');
+    
+    let promptData;
+    if (timestamp) {
+      // If timestamp parameter exists, force a new prompt instead of getting the current one
+      console.log('Timestamp found in URL, fetching new prompt');
+      promptData = await fetchNewPromptDirectly();
+    } else {
+      // Otherwise get today's prompt as usual
+      promptData = await fetchTodaysPrompt();
+    }
     
     // Get history entries
     const historyData = await fetchHistory();
@@ -544,4 +555,38 @@ function formatDate(dateString) {
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
   const date = new Date(dateString);
   return date.toLocaleDateString(undefined, options);
+}
+
+// Fetch a new prompt directly without button interaction when opening Telegram mini-app
+async function fetchNewPromptDirectly() {
+  try {
+    // Get user from Telegram WebApp
+    const telegramUser = tg.initDataUnsafe?.user;
+    
+    if (!telegramUser || !telegramUser.id) {
+      console.warn('No user data available from Telegram');
+      throw new Error('User data not available');
+    }
+    
+    // Fetch new prompt from our API
+    const response = await fetch(`/api/miniapp/prompts/new/${telegramUser.id}`, {
+      method: 'POST'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch new prompt: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching new prompt directly:', error);
+    
+    // Return a fallback prompt if the API call fails
+    return {
+      type: 'self_awareness',
+      typeLabel: '🧠 Self-Awareness',
+      text: '🦕 Screen-Free Safari! Spend an hour today without your phone or any screens—just like the good old prehistoric days! What did you do instead? How did it feel to step away from the digital jungle?',
+      hint: '🌿 Think about how your experience compared to your normal routine.'
+    };
+  }
 }

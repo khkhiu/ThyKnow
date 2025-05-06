@@ -39,8 +39,12 @@ export async function handleMiniAppCommand(ctx: Context): Promise<void> {
     // Build the mini app URL
     const miniAppUrl = `${config.baseUrl}/miniapp`;
     
+    // Add a timestamp parameter to force the mini-app to reload fresh content
+    const timeStamp = new Date().getTime();
+    const miniAppUrlWithTimestamp = `${miniAppUrl}?t=${timeStamp}`;
+    
     // Log the mini app URL for debugging
-    logger.debug(`Serving mini app URL: ${miniAppUrl}`);
+    logger.debug(`Serving mini app URL: ${miniAppUrlWithTimestamp}`);
     
     // Send a message with the web app button
     await ctx.reply(
@@ -54,7 +58,7 @@ export async function handleMiniAppCommand(ctx: Context): Promise<void> {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: "🦕 Open ThyKnow App", web_app: { url: miniAppUrl } }]
+            [{ text: "🦕 Open ThyKnow App", web_app: { url: miniAppUrlWithTimestamp } }]
           ]
         }
       }
