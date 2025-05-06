@@ -30,6 +30,10 @@
     --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   }
   
+  .pulse-attention {
+    animation: pulse-button 1.5s infinite;
+  }
+
   /* Base styles */
   * {
     margin: 0;
@@ -413,3 +417,54 @@
   }
 }
 
+
+/* Completed state styles */
+.prompt-card.completed {
+  position: relative;
+  border-left: 5px solid var(--success-color);
+  transition: all 0.3s ease;
+}
+
+.completed-message {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed var(--border-color);
+  text-align: center;
+}
+
+.completed-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background-color: var(--success-color);
+  color: white;
+  border-radius: 50%;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.completed-hint {
+  font-style: italic;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+/* Button pulse animation for attention */
+@keyframes pulse-button {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(var(--primary-color-rgb), 0);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0);
+    transform: scale(1);
+  }
+}

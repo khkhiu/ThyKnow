@@ -148,7 +148,7 @@ function getHistory(req: Request, res: Response, next: NextFunction): void {
 
 /**
  * Handler for POST /api/miniapp/responses
- * Save a journal entry response and generate a new prompt
+ * Save a journal entry response without generating a new prompt
  */
 function saveResponse(req: Request, res: Response, next: NextFunction): void {
   const { userId, response } = req.body;
@@ -184,26 +184,16 @@ function saveResponse(req: Request, res: Response, next: NextFunction): void {
         // Save response
         const entryId = await userService.saveResponse(userId, entry);
         
-        // Generate a new prompt for the user
-        const newPrompt = await promptService.getNextPromptForUser(userId);
-        
-        // Save the new prompt as the user's last prompt
-        await userService.saveLastPrompt(userId, newPrompt);
-        
-        // Return success with the new prompt data
+        // Return success without generating a new prompt
         res.status(201).json({
           success: true,
           message: 'Response saved successfully',
           entryId,
-          newPrompt: {
-            type: newPrompt.type,
-            typeLabel: newPrompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
-            text: newPrompt.text,
-            hint: 'Reflect deeply on this prompt to gain new insights.'
-          }
+          // Flag to indicate the user needs to press a button for a new prompt
+          needsNewPrompt: true
         });
         
-        logger.info(`Saved response and generated new prompt for user ${userId}`);
+        logger.info(`Saved response for user ${userId} - waiting for them to request a new prompt`);
       } catch (err) {
         next(err);
       }

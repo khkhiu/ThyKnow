@@ -187,6 +187,16 @@ async function fetchNewPrompt() {
     
     const promptData = await response.json();
     
+    // Clear completed state if it exists
+    const promptCard = document.querySelector('.prompt-card');
+    promptCard.classList.remove('completed');
+    
+    // Remove the completed message if it exists
+    const completedMessage = document.querySelector('.completed-message');
+    if (completedMessage) {
+      completedMessage.remove();
+    }
+    
     // Update the UI with the new prompt
     updatePrompt(promptData);
     
@@ -309,81 +319,106 @@ function updateHistory(historyData) {
   });
 }
 
+// Show completed state to encourage user to get a new prompt
+function showCompletedState() {
+  // Get prompt card and add a "completed" class
+  const promptCard = document.querySelector('.prompt-card');
+  promptCard.classList.add('completed');
+  
+  // Focus attention on the "New Prompt" button
+  const newPromptButton = document.getElementById('new-prompt-button');
+  newPromptButton.classList.add('pulse-attention');
+  
+  // Add a hint message inside the prompt card
+  const completedMessage = document.createElement('div');
+  completedMessage.className = 'completed-message';
+  completedMessage.innerHTML = `
+    <div class="completed-icon">✓</div>
+    <p>Great job! You've completed this prompt.</p>
+    <p class="completed-hint">Click "New Prompt" when you're ready for the next one.</p>
+  `;
+  
+  // Insert after the prompt hint
+  const promptHint = document.querySelector('.prompt-hint');
+  promptHint.insertAdjacentElement('afterend', completedMessage);
+  
+  // Scroll to make "New Prompt" button visible
+  newPromptButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  // Add a gentle pulse animation to the button
+  setTimeout(() => {
+    // Remove the pulse class after a few seconds
+    newPromptButton.classList.remove('pulse-attention');
+  }, 5000);
+}
+
 // Submit response
 async function submitResponse() {
-    const responseText = document.getElementById('response').value.trim();
+  const responseText = document.getElementById('response').value.trim();
+  
+  if (!responseText) {
+    showNotification('Please enter your response first');
+    return;
+  }
+  
+  try {
+    // Get user from Telegram WebApp
+    const telegramUser = tg.initDataUnsafe?.user;
     
-    if (!responseText) {
-      showNotification('Please enter your response first');
-      return;
+    if (!telegramUser || !telegramUser.id) {
+      throw new Error('User data not available');
     }
     
-    try {
-      // Get user from Telegram WebApp
-      const telegramUser = tg.initDataUnsafe?.user;
-      
-      if (!telegramUser || !telegramUser.id) {
-        throw new Error('User data not available');
-      }
-      
-      // Show loading state
-      const submitButton = document.getElementById('submit-response');
-      const originalButtonText = submitButton.textContent;
-      submitButton.textContent = 'Saving...';
-      submitButton.disabled = true;
-      
-      // Submit response to API
-      const response = await fetch('/api/miniapp/responses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId: telegramUser.id,
-          response: responseText
-        })
-      });
-      
-      // Reset button state
-      submitButton.textContent = originalButtonText;
-      submitButton.disabled = false;
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save response');
-      }
-      
-      // Parse response data which includes the new prompt
-      const responseData = await response.json();
-      
-      // Clear the response field
-      document.getElementById('response').value = '';
-      
-      // Show success notification
-      showNotification('Response saved successfully! A new prompt has been generated.');
-      
-      // Notify Telegram app (vibrate and show notification)
-      tg.HapticFeedback.notificationOccurred('success');
-      
-      // Update the prompt with the new one
-      if (responseData.newPrompt) {
-        updatePrompt(responseData.newPrompt);
-        
-        // Scroll to the top to show the new prompt
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      }
-      
-      // Refresh history
-      const historyData = await fetchHistory();
-      updateHistory(historyData);
-    } catch (error) {
-      console.error('Error submitting response:', error);
-      showNotification('Failed to save your response. Please try again.');
-      tg.HapticFeedback.notificationOccurred('error');
+    // Show loading state
+    const submitButton = document.getElementById('submit-response');
+    const originalButtonText = submitButton.textContent;
+    submitButton.textContent = 'Saving...';
+    submitButton.disabled = true;
+    
+    // Submit response to API
+    const response = await fetch('/api/miniapp/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId: telegramUser.id,
+        response: responseText
+      })
+    });
+    
+    // Reset button state
+    submitButton.textContent = originalButtonText;
+    submitButton.disabled = false;
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to save response');
     }
+    
+    // Parse response data
+    const responseData = await response.json();
+    
+    // Clear the response field
+    document.getElementById('response').value = '';
+    
+    // Show success notification
+    showNotification('Response saved successfully! Use the "New Prompt" button when you\'re ready for a new prompt.');
+    
+    // Notify Telegram app (vibrate and show notification)
+    tg.HapticFeedback.notificationOccurred('success');
+    
+    // Show the "completed" state to encourage using the New Prompt button
+    showCompletedState();
+    
+    // Refresh history
+    const historyData = await fetchHistory();
+    updateHistory(historyData);
+  } catch (error) {
+    console.error('Error submitting response:', error);
+    showNotification('Failed to save your response. Please try again.');
+    tg.HapticFeedback.notificationOccurred('error');
+  }
 }
 
 // Setup main button
