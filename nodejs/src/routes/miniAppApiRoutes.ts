@@ -70,6 +70,51 @@ function getTodaysPrompt(req: Request, res: Response, next: NextFunction): void 
 }
 
 /**
+ * Handler for POST /api/miniapp/prompts/new/:userId
+ * Generate a new prompt for a user
+ */
+function generateNewPrompt(req: Request, res: Response, next: NextFunction): void {
+  const { userId } = req.params;
+  
+  if (!userId) {
+    res.status(400).json({ error: 'User ID is required' });
+    return;
+  }
+  
+  userService.getUser(userId)
+    .then(user => {
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+      
+      // Generate a new prompt
+      promptService.getNextPromptForUser(userId)
+        .then(prompt => {
+          // Save as last prompt
+          userService.saveLastPrompt(userId, prompt)
+            .then(() => {
+              const promptData = {
+                type: prompt.type,
+                typeLabel: prompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
+                text: prompt.text, 
+                hint: 'Reflect deeply on this prompt to gain new insights.'
+              };
+              
+              logger.info(`Generated new prompt for user ${userId} via button click`);
+              res.json(promptData);
+            })
+            .catch(err => next(err));
+        })
+        .catch(err => next(err));
+    })
+    .catch(err => {
+      logger.error('Error generating new prompt:', err);
+      res.status(500).json({ error: 'An error occurred while generating a new prompt' });
+    });
+}
+
+/**
  * Handler for GET /api/miniapp/history/:userId
  * Get journal entry history for a user
  */
@@ -89,8 +134,8 @@ function getHistory(req: Request, res: Response, next: NextFunction): void {
         id: entry.id,
         date: entry.timestamp.toISOString().split('T')[0],
         promptType: entry.promptType,
-        prompt: entry.prompt, // Line breaks are preserved in the database
-        response: entry.response // Line breaks are preserved in the database
+        prompt: entry.prompt,
+        response: entry.response
       }));
       
       res.json(formattedEntries);
@@ -171,6 +216,7 @@ function saveResponse(req: Request, res: Response, next: NextFunction): void {
 
 // Register routes
 router.get('/prompts/today/:userId', getTodaysPrompt);
+router.post('/prompts/new/:userId', generateNewPrompt);
 router.get('/history/:userId', getHistory);
 router.post('/responses', saveResponse);
 

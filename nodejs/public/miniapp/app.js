@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle submit response
     document.getElementById('submit-response').addEventListener('click', submitResponse);
     
+    // Handle new prompt button
+    document.getElementById('new-prompt-button').addEventListener('click', fetchNewPrompt);
+    
     // Handle retry button
     document.getElementById('retry-button').addEventListener('click', initApp);
     
@@ -151,47 +154,102 @@ async function fetchTodaysPrompt() {
         hint: '🌿 Think about how your experience compared to your normal routine.'
       };
     }
-  }
-  
-  // Fetch history entries
-  async function fetchHistory() {
-    try {
-      // Get user from Telegram WebApp
-      const telegramUser = tg.initDataUnsafe?.user;
-      
-      if (!telegramUser || !telegramUser.id) {
-        console.warn('No user data available from Telegram');
-        throw new Error('User data not available');
-      }
-      
-      // Fetch history from our API
-      const response = await fetch(`/api/miniapp/history/${telegramUser.id}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch history: ${response.statusText}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching history:', error);
-      
-      // Return fallback data if the API call fails
-      return [
-        {
-          date: '2025-04-30',
-          promptType: 'connections',
-          prompt: '🦖 Fossilized Friendships Await! Reconnect with someone you have not spoken to in a while—send them a message and see what happens!',
-          response: 'Just reconnected with an old friend, and it felt really nice! Some bonds never really fade—just need a little nudge. If someone is on your mind, this is your sign to reach out!'
-        },
-        {
-          date: '2025-04-23',
-          promptType: 'self_awareness',
-          prompt: '🌋 Meteor Strike! Turn Chaos into Growth. Recall a recent failure or setback that felt like a meteor hit.',
-          response: 'Failed a presentation at work last week. Initially felt terrible, but realized I had not prepared enough and was trying to wing it. Lesson: preparation matters, and failures are just feedback.'
-        }
-      ];
+}
+
+// Fetch a new prompt 
+async function fetchNewPrompt() {
+  try {
+    // Get user from Telegram WebApp
+    const telegramUser = tg.initDataUnsafe?.user;
+    
+    if (!telegramUser || !telegramUser.id) {
+      console.warn('No user data available from Telegram');
+      throw new Error('User data not available');
     }
+    
+    // Show loading state on the button
+    const newPromptButton = document.getElementById('new-prompt-button');
+    newPromptButton.disabled = true;
+    newPromptButton.classList.add('loading');
+    
+    // Fetch new prompt from our API
+    const response = await fetch(`/api/miniapp/prompts/new/${telegramUser.id}`, {
+      method: 'POST'
+    });
+    
+    // Reset button state
+    newPromptButton.disabled = false;
+    newPromptButton.classList.remove('loading');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch new prompt: ${response.statusText}`);
+    }
+    
+    const promptData = await response.json();
+    
+    // Update the UI with the new prompt
+    updatePrompt(promptData);
+    
+    // Show notification
+    showNotification('New prompt generated!');
+    
+    // Provide haptic feedback
+    tg.HapticFeedback.notificationOccurred('success');
+    
+    // Scroll to the top to focus on the new prompt
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    // Clear any existing response
+    document.getElementById('response').value = '';
+  } catch (error) {
+    console.error('Error fetching new prompt:', error);
+    showNotification('Failed to get a new prompt. Please try again.', 'error');
+    tg.HapticFeedback.notificationOccurred('error');
   }
+}
+  
+// Fetch history entries
+async function fetchHistory() {
+  try {
+    // Get user from Telegram WebApp
+    const telegramUser = tg.initDataUnsafe?.user;
+    
+    if (!telegramUser || !telegramUser.id) {
+      console.warn('No user data available from Telegram');
+      throw new Error('User data not available');
+    }
+    
+    // Fetch history from our API
+    const response = await fetch(`/api/miniapp/history/${telegramUser.id}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch history: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching history:', error);
+    
+    // Return fallback data if the API call fails
+    return [
+      {
+        date: '2025-04-30',
+        promptType: 'connections',
+        prompt: '🦖 Fossilized Friendships Await! Reconnect with someone you have not spoken to in a while—send them a message and see what happens!',
+        response: 'Just reconnected with an old friend, and it felt really nice! Some bonds never really fade—just need a little nudge. If someone is on your mind, this is your sign to reach out!'
+      },
+      {
+        date: '2025-04-23',
+        promptType: 'self_awareness',
+        prompt: '🌋 Meteor Strike! Turn Chaos into Growth. Recall a recent failure or setback that felt like a meteor hit.',
+        response: 'Failed a presentation at work last week. Initially felt terrible, but realized I had not prepared enough and was trying to wing it. Lesson: preparation matters, and failures are just feedback.'
+      }
+    ];
+  }
+}
 
 // Utility function to safely process text with line breaks
 function processTextWithLineBreaks(text) {
@@ -241,23 +299,11 @@ function updateHistory(historyData) {
     const entryElement = document.createElement('div');
     entryElement.className = 'history-entry';
     
-    // Create elements instead of using innerHTML to better handle line breaks
-    const dateElement = document.createElement('div');
-    dateElement.className = 'history-date';
-    dateElement.textContent = formatDate(entry.date);
-    
-    const promptElement = document.createElement('div');
-    promptElement.className = 'history-prompt';
-    promptElement.textContent = entry.prompt; // textContent preserves line breaks
-    
-    const responseElement = document.createElement('div');
-    responseElement.className = 'history-response';
-    responseElement.textContent = entry.response; // textContent preserves line breaks
-    
-    // Append all elements to the entry
-    entryElement.appendChild(dateElement);
-    entryElement.appendChild(promptElement);
-    entryElement.appendChild(responseElement);
+    entryElement.innerHTML = `
+      <div class="history-date">${formatDate(entry.date)}</div>
+      <div class="history-prompt">${entry.prompt}</div>
+      <div class="history-response">${entry.response}</div>
+    `;
     
     historyContainer.appendChild(entryElement);
   });
