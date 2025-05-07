@@ -51,11 +51,30 @@
                 </section>
                 
                 <section class="history-section">
-                    <h2>Your Journey</h2>
-                    <div id="history-entries" class="history-container">
-                        <!-- History entries will be populated here -->
+                    <div class="section-header">
+                      <h2>Your Journey</h2>
+                      <div class="filter-controls">
+                        <label for="date-filter">Filter by:</label>
+                        <select id="date-filter" class="date-filter">
+                          <option value="all">All Time</option>
+                          <option value="today">Today</option>
+                          <option value="week">This Week</option>
+                          <option value="month">This Month</option>
+                          <option value="custom">Custom Date</option>
+                        </select>
+                        <div id="custom-date-container" style="display: none;">
+                          <input type="date" id="custom-date" class="custom-date-input">
+                          <button id="apply-date" class="btn secondary btn-small">Apply</button>
+                        </div>
+                      </div>
                     </div>
-                </section>
+                    <div id="history-entries" class="history-container">
+                      <!-- History entries will be populated here -->
+                    </div>
+                    <div id="empty-history" class="empty-history" style="display: none;">
+                      <p>No journal entries found for the selected date range.</p>
+                    </div>
+                  </section>
             </div>
             
             <!-- Error state -->

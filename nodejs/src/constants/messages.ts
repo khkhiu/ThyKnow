@@ -36,7 +36,7 @@ export const MESSAGES = {
     "1. Use /start to begin your prehistoric journey\n" +
     "2. Get prompts with /prompt or choose a specific type with /choose\n" +
     "3. View your entries with /history\n" +
-    "4. Try our mini app experience with /mini-app\n" +  // Changed from /webapp to /miniapp
+    "4. Try our mini app experience with /miniapp\n" +  // Changed from /webapp to /miniapp
     "5. Set your preferred schedule with /schedule\n\n" +
     "✨ You will receive weekly prompts according to your schedule preferences.",
     

@@ -116,7 +116,7 @@ function generateNewPrompt(req: Request, res: Response, next: NextFunction): voi
 
 /**
  * Handler for GET /api/miniapp/history/:userId
- * Get journal entry history for a user
+ * Get journal entry history for a user with optional limit
  */
 function getHistory(req: Request, res: Response, next: NextFunction): void {
   const { userId } = req.params;

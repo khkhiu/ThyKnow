@@ -470,3 +470,97 @@
     transform: scale(1);
   }
 }
+
+/* History section filter controls */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.section-header h2 {
+  margin-bottom: 0;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-filter {
+  padding: 6px 10px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  background-color: var(--card-color);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-family: var(--font-family);
+  cursor: pointer;
+}
+
+.date-filter:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.custom-date-input {
+  padding: 6px 10px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  background-color: var(--card-color);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-family: var(--font-family);
+}
+
+.custom-date-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.btn-small {
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+/* Empty state for filtered history */
+.empty-history {
+  padding: 30px;
+  text-align: center;
+  background-color: var(--card-color);
+  border-radius: var(--border-radius);
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .filter-controls {
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  .date-filter {
+    flex-grow: 1;
+  }
+  
+  #custom-date-container {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+  
+  .custom-date-input {
+    flex-grow: 1;
+  }
+}

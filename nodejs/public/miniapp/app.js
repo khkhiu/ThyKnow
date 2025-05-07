@@ -3,53 +3,56 @@
 // Initialize Telegram WebApp
 const tg = window.Telegram.WebApp;
 
+// Global variable to store all history entries
+let allHistoryEntries = [];
+
 // Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
-    // Expand the WebApp to full height
-    tg.expand();
+  // Expand the WebApp to full height
+  tg.expand();
+  
+  // Set the theme
+  updateTheme();
+  
+  // Initialize app
+  initApp();
+  
+  // Handle theme toggle
+  document.querySelector('.theme-toggle').addEventListener('click', toggleTheme);
+  
+  // Handle submit response
+  document.getElementById('submit-response').addEventListener('click', submitResponse);
+  
+  // Handle new prompt button
+  document.getElementById('new-prompt-button').addEventListener('click', fetchNewPrompt);
+  
+  // Handle retry button
+  document.getElementById('retry-button').addEventListener('click', initApp);
+  
+  // Log initialization data for debugging
+  console.debug('Telegram Init Data:', tg.initData);
+  
+  // Create a global fetch wrapper that includes Telegram init data
+  window.originalFetch = window.fetch;
+  window.fetch = function(url, options = {}) {
+    // Create new options object to avoid modifying the original
+    const newOptions = { ...options };
     
-    // Set the theme
-    updateTheme();
+    // Initialize headers if not present
+    newOptions.headers = newOptions.headers || {};
     
-    // Initialize app
-    initApp();
+    // Add Telegram init data to headers
+    if (tg.initData) {
+      newOptions.headers = {
+        ...newOptions.headers,
+        'X-Telegram-Init-Data': tg.initData
+      };
+    }
     
-    // Handle theme toggle
-    document.querySelector('.theme-toggle').addEventListener('click', toggleTheme);
-    
-    // Handle submit response
-    document.getElementById('submit-response').addEventListener('click', submitResponse);
-    
-    // Handle new prompt button
-    document.getElementById('new-prompt-button').addEventListener('click', fetchNewPrompt);
-    
-    // Handle retry button
-    document.getElementById('retry-button').addEventListener('click', initApp);
-    
-    // Log initialization data for debugging
-    console.debug('Telegram Init Data:', tg.initData);
-    
-    // Create a global fetch wrapper that includes Telegram init data
-    window.originalFetch = window.fetch;
-    window.fetch = function(url, options = {}) {
-      // Create new options object to avoid modifying the original
-      const newOptions = { ...options };
-      
-      // Initialize headers if not present
-      newOptions.headers = newOptions.headers || {};
-      
-      // Add Telegram init data to headers
-      if (tg.initData) {
-        newOptions.headers = {
-          ...newOptions.headers,
-          'X-Telegram-Init-Data': tg.initData
-        };
-      }
-      
-      // Call original fetch with updated options
-      return window.originalFetch(url, newOptions);
-    };
-  });
+    // Call original fetch with updated options
+    return window.originalFetch(url, newOptions);
+  };
+});
 
 // Initialize the app
 async function initApp() {
@@ -244,18 +247,21 @@ async function fetchHistory() {
     }
     
     // Fetch history from our API
-    const response = await fetch(`/api/miniapp/history/${telegramUser.id}`);
+    const response = await fetch(`/api/miniapp/history/${telegramUser.id}?limit=50`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch history: ${response.statusText}`);
     }
     
-    return await response.json();
+    // Store all entries in the global variable
+    allHistoryEntries = await response.json();
+    
+    return allHistoryEntries;
   } catch (error) {
     console.error('Error fetching history:', error);
     
     // Return fallback data if the API call fails
-    return [
+    allHistoryEntries = [
       {
         date: '2025-04-30',
         promptType: 'connections',
@@ -269,6 +275,8 @@ async function fetchHistory() {
         response: 'Failed a presentation at work last week. Initially felt terrible, but realized I had not prepared enough and was trying to wing it. Lesson: preparation matters, and failures are just feedback.'
       }
     ];
+    
+    return allHistoryEntries;
   }
 }
 
@@ -304,6 +312,15 @@ function updatePrompt(promptData) {
 
 // Update history UI
 function updateHistory(historyData) {
+  // Store all entries in the global variable
+  allHistoryEntries = historyData || [];
+  
+  // Initial display with all entries
+  updateHistoryDisplay(allHistoryEntries);
+    
+  // Initialize the date filtering controls
+  initDateFiltering();
+
   const historyContainer = document.getElementById('history-entries');
   historyContainer.innerHTML = '';
   
@@ -589,4 +606,159 @@ async function fetchNewPromptDirectly() {
       hint: '🌿 Think about how your experience compared to your normal routine.'
     };
   }
+}
+
+function initDateFiltering() {
+  const dateFilter = document.getElementById('date-filter');
+  const customDateContainer = document.getElementById('custom-date-container');
+  const customDateInput = document.getElementById('custom-date');
+  const applyDateButton = document.getElementById('apply-date');
+  
+  // Set today's date as the default for custom date
+  const today = new Date();
+  const formattedDate = formatDateForInput(today);
+  customDateInput.value = formattedDate;
+  
+  // Handle filter change
+  dateFilter.addEventListener('change', () => {
+    if (dateFilter.value === 'custom') {
+      customDateContainer.style.display = 'flex';
+    } else {
+      customDateContainer.style.display = 'none';
+      // Apply filter immediately for non-custom options
+      filterHistoryByDate(dateFilter.value);
+    }
+  });
+  
+  // Handle apply button click
+  applyDateButton.addEventListener('click', () => {
+    filterHistoryByDate('custom', customDateInput.value);
+  });
+  
+  // Also filter when pressing enter in date input
+  customDateInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      filterHistoryByDate('custom', customDateInput.value);
+    }
+  });
+}
+
+// Format date as YYYY-MM-DD for date input
+function formatDateForInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Parse ISO date string to local date object
+function parseISODate(dateString) {
+  return new Date(dateString);
+}
+
+// Check if a date is today
+function isToday(date) {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+         date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear();
+}
+
+// Check if a date is within this week
+function isThisWeek(date) {
+  const today = new Date();
+  const firstDayOfWeek = new Date(today);
+  firstDayOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+  
+  const lastDayOfWeek = new Date(firstDayOfWeek);
+  lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6); // End of week (Saturday)
+  
+  return date >= firstDayOfWeek && date <= lastDayOfWeek;
+}
+
+// Check if a date is within this month
+function isThisMonth(date) {
+  const today = new Date();
+  return date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear();
+}
+
+// Filter history entries by date
+function filterHistoryByDate(filterType, customDate = null) {
+  if (!allHistoryEntries || allHistoryEntries.length === 0) {
+    return;
+  }
+  
+  let filteredEntries = [];
+  
+  switch (filterType) {
+    case 'all':
+      filteredEntries = [...allHistoryEntries];
+      break;
+      
+    case 'today':
+      filteredEntries = allHistoryEntries.filter(entry => {
+        const entryDate = parseISODate(entry.date);
+        return isToday(entryDate);
+      });
+      break;
+      
+    case 'week':
+      filteredEntries = allHistoryEntries.filter(entry => {
+        const entryDate = parseISODate(entry.date);
+        return isThisWeek(entryDate);
+      });
+      break;
+      
+    case 'month':
+      filteredEntries = allHistoryEntries.filter(entry => {
+        const entryDate = parseISODate(entry.date);
+        return isThisMonth(entryDate);
+      });
+      break;
+      
+    case 'custom':
+      if (customDate) {
+        const selectedDate = new Date(customDate);
+        filteredEntries = allHistoryEntries.filter(entry => {
+          const entryDate = parseISODate(entry.date);
+          return entryDate.getDate() === selectedDate.getDate() &&
+                 entryDate.getMonth() === selectedDate.getMonth() &&
+                 entryDate.getFullYear() === selectedDate.getFullYear();
+        });
+      }
+      break;
+  }
+  
+  // Update the UI with filtered entries
+  updateHistoryDisplay(filteredEntries);
+}
+
+// Update the history display with filtered entries
+function updateHistoryDisplay(entries) {
+  const historyContainer = document.getElementById('history-entries');
+  const emptyHistory = document.getElementById('empty-history');
+  
+  if (entries.length === 0) {
+    historyContainer.style.display = 'none';
+    emptyHistory.style.display = 'block';
+    return;
+  }
+  
+  historyContainer.style.display = 'block';
+  emptyHistory.style.display = 'none';
+  historyContainer.innerHTML = '';
+  
+  entries.forEach(entry => {
+    const entryElement = document.createElement('div');
+    entryElement.className = 'history-entry';
+    
+    entryElement.innerHTML = `
+      <div class="history-date">${formatDate(entry.date)}</div>
+      <div class="history-prompt">${entry.prompt}</div>
+      <div class="history-response">${entry.response}</div>
+    `;
+    
+    historyContainer.appendChild(entryElement);
+  });
 }
