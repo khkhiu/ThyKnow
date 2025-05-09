@@ -36,29 +36,34 @@ export async function handleMiniAppCommand(ctx: Context): Promise<void> {
     
     logger.info(`Generated new prompt for user ${userId} before launching mini-app`);
     
-    // Build the mini app URL
+    // Build the mini app URL - added option to launch the pet page directly
     const miniAppUrl = `${config.baseUrl}/miniapp`;
     
     // Add a timestamp parameter to force the mini-app to reload fresh content
     const timeStamp = new Date().getTime();
     const miniAppUrlWithTimestamp = `${miniAppUrl}?t=${timeStamp}`;
     
+    // Create pet page URL
+    const petUrl = `${config.baseUrl}/miniapp/pet?t=${timeStamp}`;
+    
     // Log the mini app URL for debugging
     logger.debug(`Serving mini app URL: ${miniAppUrlWithTimestamp}`);
     
-    // Send a message with the web app button
+    // Send a message with the web app buttons
     await ctx.reply(
       "📱 *ThyKnow Mini App*\n\n" +
       "Experience ThyKnow right inside Telegram with our interactive mini app!\n\n" +
       "• A fresh new prompt has been generated for you! 🦕\n" +
       "• View and respond to your prompt\n" +
-      "• Browse your previous journal entries\n\n" +
-      "Tap the button below to launch the app:",
+      "• Browse your previous journal entries\n" +
+      "• Get daily pet from your dino friend\n\n" +
+      "Tap one of the buttons below to launch the app:",
       {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: "🦕 Open ThyKnow App", web_app: { url: miniAppUrlWithTimestamp } }]
+            [{ text: "🦕 Open ThyKnow App", web_app: { url: miniAppUrlWithTimestamp } }],
+            [{ text: "⭐ Daily pet", web_app: { url: petUrl } }]
           ]
         }
       }

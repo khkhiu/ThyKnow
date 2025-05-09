@@ -1,0 +1,236 @@
+/* ThyKnow pet Page Specific Styles */
+
+.background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.95;
+}
+
+.affirmation-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px 20px;
+    position: relative;
+    text-align: center;
+}
+
+.header {
+    padding: 15px;
+    border-radius: var(--border-radius);
+    background-color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 20px;
+    box-shadow: var(--box-shadow);
+}
+
+.dark-theme .header {
+    background-color: rgba(51, 51, 51, 0.8);
+}
+
+.affirmation-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    max-width: 500px;
+    margin: 0 auto;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transform-origin: center;
+}
+
+.dark-theme .affirmation-card {
+    background-color: rgba(51, 51, 51, 0.9);
+}
+
+.affirmation-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+}
+
+.affirmation-text {
+    font-size: 1.3rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.affirmation-author {
+    font-style: italic;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.dino-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.dino-image {
+    width: 150px;
+    height: auto;
+    transition: transform 0.5s ease;
+    cursor: pointer;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2));
+}
+
+.dino-image:hover {
+    transform: scale(1.1);
+}
+
+.dino-image:active {
+    transform: scale(0.95);
+}
+
+.speech-bubble {
+    position: absolute;
+    top: -60px;
+    background-color: white;
+    border-radius: 20px;
+    padding: 10px 15px;
+    box-shadow: var(--box-shadow);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    max-width: 200px;
+    z-index: 10;
+}
+
+.dark-theme .speech-bubble {
+    background-color: var(--card-color);
+}
+
+.speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 10px 10px 0;
+    border-style: solid;
+    border-color: white transparent transparent;
+}
+
+.dark-theme .speech-bubble::after {
+    border-color: var(--card-color) transparent transparent;
+}
+
+.speech-bubble.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.nav-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.dark-theme .nav-bar {
+    background-color: rgba(51, 51, 51, 0.9);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-color);
+    padding: 5px 10px;
+    border-radius: var(--border-radius);
+    transition: background-color 0.3s ease;
+}
+
+.nav-item:hover {
+    background-color: rgba(108, 99, 255, 0.1);
+}
+
+.nav-item.active {
+    color: var(--primary-color);
+}
+
+.nav-icon {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+}
+
+.nav-label {
+    font-size: 0.8rem;
+}
+
+/* Loading spinner */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 1000;
+}
+
+.dark-theme .loading {
+    background-color: rgba(34, 34, 34, 0.8);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(108, 99, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.8s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+    .affirmation-container {
+        padding: 15px;
+    }
+
+    .affirmation-text {
+        font-size: 1.1rem;
+    }
+
+    .dino-image {
+        width: 120px;
+    }
+}

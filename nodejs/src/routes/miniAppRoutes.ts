@@ -22,6 +22,21 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 /**
+ * GET /miniapp/pet
+ * Serves the mini-app pet page
+ */
+router.get('/pet', (req: Request, res: Response) => {
+  try {
+    const petPath = path.join(__dirname, '../../public/miniapp/pet.html');
+    res.sendFile(petPath);
+    logger.debug(`Served pet page at ${req.originalUrl}`);
+  } catch (error) {
+    logger.error('Error serving pet page:', error);
+    res.status(500).send('Error loading pet page');
+  }
+});
+
+/**
  * GET /miniapp/config
  * Provides configuration data for the mini-app
  */
@@ -36,7 +51,8 @@ router.get('/config', (req: Request, res: Response) => {
       features: {
         selfAwareness: true,
         connections: true,
-        history: true
+        history: true,
+        pet: true
       }
     };
     
