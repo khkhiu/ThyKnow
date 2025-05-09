@@ -23,16 +23,16 @@ router.get('/', (req: Request, res: Response) => {
 
 /**
  * GET /miniapp/pet
- * Serves the mini-app pet page
+ * Serves the mini-app dino friend page
  */
 router.get('/pet', (req: Request, res: Response) => {
   try {
     const petPath = path.join(__dirname, '../../public/miniapp/pet.html');
     res.sendFile(petPath);
-    logger.debug(`Served pet page at ${req.originalUrl}`);
+    logger.debug(`Served dino friend page at ${req.originalUrl}`);
   } catch (error) {
-    logger.error('Error serving pet page:', error);
-    res.status(500).send('Error loading pet page');
+    logger.error('Error serving dino friend page:', error);
+    res.status(500).send('Error loading dino friend page');
   }
 });
 
@@ -52,6 +52,7 @@ router.get('/config', (req: Request, res: Response) => {
         selfAwareness: true,
         connections: true,
         history: true,
+        affirmations: true,
         pet: true
       }
     };

@@ -1,4 +1,4 @@
-// ThyKnow pet Page JavaScript
+// ThyKnow Dino Friend Page JavaScript
 
 // Initialize Telegram WebApp
 const tg = window.Telegram.WebApp;
@@ -12,50 +12,6 @@ function updateTheme() {
         document.body.classList.remove('dark-theme');
     }
 }
-
-// pet database
-const pet = [
-    {
-        text: "You don't have to be perfect to be amazing. Even T-Rex had tiny arms and still ruled the Earth!",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "Your potential is as vast as the prehistoric skies. Embrace every opportunity to grow today.",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "You are stronger than you think, braver than you believe, and smarter than you imagine.",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "Small steps lead to big changes. Dinosaurs didn't evolve in a day!",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "Be kind to yourself today. Self-compassion is the foundation of all growth.",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "Your challenges don't define you—how you respond to them does. Face today with a RAWR!",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "Like fossils buried in rock, your greatest qualities are sometimes hidden from view. They're still there!",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "You have survived 100% of your worst days so far. You've got prehistoric-level resilience!",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "It's okay to take a break. Even the mightiest dinosaurs needed rest!",
-        author: "ThyKnow Dino"
-    },
-    {
-        text: "Your journey is uniquely yours. Embrace your path—after all, no two dinosaur tracks are exactly alike!",
-        author: "ThyKnow Dino"
-    }
-];
 
 // Dino speech bubbles
 const dinoSpeech = [
@@ -87,13 +43,6 @@ function getRandomItem(array) {
     return array[Math.floor(Math.random() * array.length)];
 }
 
-// Display a random affirmation
-function displayRandomAffirmation() {
-    const affirmation = getRandomItem(pet);
-    document.getElementById('affirmation-text').textContent = affirmation.text;
-    document.getElementById('affirmation-author').textContent = affirmation.author;
-}
-
 // Show dino speech bubble
 function showSpeechBubble() {
     const speechBubble = document.getElementById('speech-bubble');
@@ -110,24 +59,6 @@ function showSpeechBubble() {
     }
 }
 
-// Share affirmation
-function shareAffirmation() {
-    const affirmationText = document.getElementById('affirmation-text').textContent;
-    
-    if (tg.HapticFeedback) {
-        tg.HapticFeedback.impactOccurred('medium');
-    }
-    
-    // Share to Telegram chat
-    tg.sendData(JSON.stringify({
-        action: 'share_affirmation',
-        affirmation: affirmationText
-    }));
-    
-    // Show confirmation
-    alert('Affirmation shared to your Telegram chat!');
-}
-
 // Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
     // Expand the WebApp to full height
@@ -140,26 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setBackgroundImage();
     setDinoImage();
     
-    // Display initial random affirmation
-    displayRandomAffirmation();
-    
     // Show a speech bubble when the page loads
     setTimeout(showSpeechBubble, 1500);
     
     // Handle dino image click
     document.getElementById('dino-image').addEventListener('click', showSpeechBubble);
-    
-    // Handle new affirmation button
-    document.getElementById('new-affirmation-button').addEventListener('click', () => {
-        displayRandomAffirmation();
-        
-        if (tg.HapticFeedback) {
-            tg.HapticFeedback.impactOccurred('medium');
-        }
-    });
-    
-    // Handle share button
-    document.getElementById('share-button').addEventListener('click', shareAffirmation);
     
     // Hide loading spinner
     setTimeout(() => {

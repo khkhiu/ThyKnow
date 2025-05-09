@@ -8,6 +8,7 @@ import { promptService } from '../services/promptService';
 /**
  * Handle the /miniapp command to launch the mini app
  * Now generates a new prompt before launching the mini app
+ * and offers options for the main app, dino friend, or affirmations
  */
 export async function handleMiniAppCommand(ctx: Context): Promise<void> {
   try {
@@ -36,40 +37,37 @@ export async function handleMiniAppCommand(ctx: Context): Promise<void> {
     
     logger.info(`Generated new prompt for user ${userId} before launching mini-app`);
     
-    // Build the mini app URL - added option to launch the pet page directly
-    const miniAppUrl = `${config.baseUrl}/miniapp`;
-    
     // Add a timestamp parameter to force the mini-app to reload fresh content
     const timeStamp = new Date().getTime();
-    const miniAppUrlWithTimestamp = `${miniAppUrl}?t=${timeStamp}`;
     
-    // Create pet page URL
+    // Build URLs for all mini-app pages
+    const miniAppUrl = `${config.baseUrl}/miniapp?t=${timeStamp}`;
     const petUrl = `${config.baseUrl}/miniapp/pet?t=${timeStamp}`;
     
     // Log the mini app URL for debugging
-    logger.debug(`Serving mini app URL: ${miniAppUrlWithTimestamp}`);
+    logger.debug(`Serving mini app URLs: ${miniAppUrl}, ${petUrl}`);
     
     // Send a message with the web app buttons
     await ctx.reply(
       "📱 *ThyKnow Mini App*\n\n" +
       "Experience ThyKnow right inside Telegram with our interactive mini app!\n\n" +
       "• A fresh new prompt has been generated for you! 🦕\n" +
+      "• Meet your dino friend for encouragement\n" +
       "• View and respond to your prompt\n" +
-      "• Browse your previous journal entries\n" +
-      "• Get daily pet from your dino friend\n\n" +
+      "• Get daily affirmations\n\n" +
       "Tap one of the buttons below to launch the app:",
       {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: "🦕 Open ThyKnow App", web_app: { url: miniAppUrlWithTimestamp } }],
-            [{ text: "⭐ Daily pet", web_app: { url: petUrl } }]
+            [{ text: "🦕 Open ThyKnow App", web_app: { url: miniAppUrl } }],
+            [{ text: "🦖 Meet Dino Friend", web_app: { url: petUrl } }],
           ]
         }
       }
     );
     
-    logger.info(`Mini app link sent to user ${userId}`);
+    logger.info(`Mini app links sent to user ${userId}`);
   } catch (error) {
     logger.error('Error handling mini app command:', error);
     await ctx.reply('Sorry, there was an error launching the mini app. Please try again later.');
