@@ -217,9 +217,9 @@ function makeDinoDraggable() {
         const maxX = containerRect.width - dinoRect.width;
         const maxY = containerRect.height - dinoRect.height;
         
-        // Apply constraints
-        currentX = Math.max(-maxX/2, Math.min(currentX, maxX/2));
-        currentY = Math.max(-maxY/2, Math.min(currentY, maxY/2));
+        // Apply constraints - THIS CONTROLS HOW CLOSE DINO CAN GET TO EDGES
+        currentX = Math.max(-maxX* 0.9, Math.min(currentX, maxX* 0.9));
+        currentY = Math.max(-maxY* 0.9, Math.min(currentY, maxY* 0.9));
         
         xOffset = currentX;
         yOffset = currentY;

@@ -50,7 +50,7 @@
 .dino-image {
     width: 200px;
     height: auto;
-    transition: transform 0.2s ease;
+    transition: transform 0.015s ease; /* <-- THIS CONTROLS DRAG SPEED/SMOOTHNESS */
     cursor: grab;
     filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2));
     touch-action: none;
@@ -71,7 +71,7 @@
 
 .speech-bubble {
     position: absolute;
-    top: -70px;
+    top: -15px; /* <-- THIS CONTROLS VERTICAL DISTANCE ABOVE DINO */
     background-color: white;
     border-radius: 20px;
     padding: 15px 20px;
@@ -91,7 +91,7 @@
 .speech-bubble::after {
     content: '';
     position: absolute;
-    bottom: -15px;
+    bottom: -15px; /* <-- CONTROLS POSITION OF SPEECH BUBBLE TIP */
     left: 50%;
     transform: translateX(-50%);
     border-width: 15px 15px 0;
