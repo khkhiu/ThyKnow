@@ -3,6 +3,9 @@
 // Initialize Telegram WebApp
 const tg = window.Telegram.WebApp;
 
+// Track dino eye state
+let eyesOpen = true;
+
 // Set theme based on Telegram color scheme
 function updateTheme() {
     const isDarkMode = tg.colorScheme === 'dark';
@@ -33,9 +36,28 @@ function setBackgroundImage() {
     document.getElementById('background').style.backgroundImage = "url('/miniapp/images/ThyKnow_background.png')";
 }
 
-// Set dino image from server
-function setDinoImage() {
-    document.getElementById('dino-image').src = "/miniapp/images/ThyKnow_dino.png";
+// Set initial dino image (eyes open)
+function setInitialDinoImage() {
+    document.getElementById('dino-image').src = "/miniapp/images/ThyKnow_dino-eyes-open.png";
+    eyesOpen = true;
+}
+
+// Toggle dino eyes (open/closed)
+function toggleDinoEyes() {
+    const dinoImage = document.getElementById('dino-image');
+    
+    if (eyesOpen) {
+        dinoImage.src = "/miniapp/images/ThyKnow_dino-eyes-close.png";
+        eyesOpen = false;
+    } else {
+        dinoImage.src = "/miniapp/images/ThyKnow_dino-eyes-open.png";
+        eyesOpen = true;
+    }
+    
+    // Provide haptic feedback if available
+    if (tg.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('light');
+    }
 }
 
 // Get random item from array
@@ -75,6 +97,7 @@ function makeDinoDraggable() {
     let yOffset = 0;
     let dragStartTime = 0;
     let dragDistance = 0;
+    let isTap = false; // Track if the interaction was a tap
     
     // Set the container to relative positioning if not already
     if (getComputedStyle(dinoContainer).position !== 'relative') {
@@ -99,9 +122,26 @@ function makeDinoDraggable() {
     dinoImage.addEventListener('click', function(e) {
         // Only trigger if it wasn't a drag
         if (dragDistance < 5 && (Date.now() - dragStartTime < 200)) {
+            // Toggle dino eyes
+            toggleDinoEyes();
+            
+            // Show speech bubble
             showSpeechBubble();
+            
+            // Blink eyes back open after a short delay (unless dragging starts)
+            if (!eyesOpen) {
+                setTimeout(() => {
+                    if (!isDragging) {
+                        const dinoImage = document.getElementById('dino-image');
+                        dinoImage.src = "/miniapp/images/ThyKnow_dino-eyes-open.png";
+                        eyesOpen = true;
+                    }
+                }, 300);
+            }
+            
+            // Prevent default but don't stop propagation
+            // This allows the tap to be processed without interfering with position
             e.preventDefault();
-            e.stopPropagation();
         }
     });
     
@@ -120,8 +160,9 @@ function makeDinoDraggable() {
         // Reset drag metrics
         dragStartTime = Date.now();
         dragDistance = 0;
+        isTap = true; // Assume it's a tap until proven otherwise
         
-        // Continue to show tap effect
+        // Get current position
         if (e.type === 'touchstart') {
             if (e.touches.length > 1) {
                 return; // Ignore if more than one touch (pinch)
@@ -174,12 +215,8 @@ function makeDinoDraggable() {
         isDragging = false;
         dinoImage.style.cursor = 'grab';
         
-        // If the drag distance is very small, treat it as a tap
-        if (dragDistance < 10) {
-            showSpeechBubble();
-        }
-        
-        // Provide haptic feedback if available
+        // Only provide haptic feedback, but don't change position or trigger blink on small drags
+        // This prevents position resetting with small movements
         if (tg.HapticFeedback) {
             tg.HapticFeedback.impactOccurred('light');
         }
@@ -206,6 +243,11 @@ function makeDinoDraggable() {
         const dy = currentClientY - (initialY + yOffset);
         dragDistance = Math.sqrt(dx*dx + dy*dy);
         
+        // If the movement is more than the threshold, it's not a tap
+        if (dragDistance > 10) {
+            isTap = false;
+        }
+        
         currentX = currentClientX - initialX;
         currentY = currentClientY - initialY;
         
@@ -230,6 +272,12 @@ function makeDinoDraggable() {
         if (speechBubble) {
             speechBubble.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
         }
+        
+        // If dragging starts, ensure eyes are open for better user experience
+        if (dragDistance > 20 && !eyesOpen) {
+            dinoImage.src = "/miniapp/images/ThyKnow_dino-eyes-open.png";
+            eyesOpen = true;
+        }
     }
 }
 
@@ -243,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Set background and dino images
     setBackgroundImage();
-    setDinoImage();
+    setInitialDinoImage();
     
     // Wait for images to load before making draggable
     const dinoImage = document.getElementById('dino-image');

@@ -35,6 +35,20 @@
     background-color: rgba(51, 51, 51, 0.8);
 }
 
+/* Hint text for the blinking feature */
+.hint-text {
+    font-size: 0.9rem;
+    margin-top: 10px;
+    color: var(--primary-color);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
 .dino-container {
     display: flex;
     justify-content: center;
@@ -51,6 +65,7 @@
     width: 200px;
     height: auto;
     transition: transform 0.015s ease; /* <-- THIS CONTROLS DRAG SPEED/SMOOTHNESS */
+    transition: filter 0.2s ease; /* <-- SMOOTH TRANSITION FOR VISUAL CHANGES */
     cursor: grab;
     filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2));
     touch-action: none;
@@ -62,11 +77,23 @@
 
 .dino-image:hover {
     transform: scale(1.1);
+    filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.3));
 }
 
 .dino-image:active {
     transform: scale(0.95);
     cursor: grabbing;
+}
+
+/* Add animation for the eye blink effect */
+.blink {
+    animation: blinkAnimation 0.3s ease;
+}
+
+@keyframes blinkAnimation {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
 }
 
 .speech-bubble {
