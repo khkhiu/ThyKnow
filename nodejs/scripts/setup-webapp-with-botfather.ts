@@ -74,7 +74,6 @@ Follow these steps to configure your Telegram Web App:
    choose - Choose a specific type of prompt
    history - View your recent journal entries
    miniapp - Open the ThyKnow mini app
-   timezone - Check prompt timings
    schedule - Manage your prompt schedule
    help - Show available commands and usage
 

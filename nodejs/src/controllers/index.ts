@@ -72,7 +72,6 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     { command: 'history', description: 'View your recent journal entries' },
     { command: 'miniapp', description: 'Open the ThyKnow mini app' },
     { command: 'feedback', description: 'Share your thoughts with us' },
-    { command: 'timezone', description: 'Check prompt timings' },
     { command: 'schedule', description: 'Manage your prompt schedule' },
     { command: 'help', description: 'Show available commands and usage' }
   ]);
