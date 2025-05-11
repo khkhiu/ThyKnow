@@ -8,5 +8,7 @@ export const COMMAND_DESCRIPTIONS = {
   HISTORY: "View your recent journal entries",
   MINIAPP: "Open the ThyKnow mini app",
   HELP: "Show available commands and usage",
-  SCHEDULE: "Manage your prompt schedule and check timezone"
+  SCHEDULE: "Manage your prompt schedule",
+  FEEDBACK: "Share your thoughts with us",
+  CANCEL: "Cancel current operation"
 };

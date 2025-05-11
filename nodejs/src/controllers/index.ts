@@ -1,4 +1,4 @@
-// src/controllers/index.ts
+// src/controllers/index.ts (Updated with Mini App Support)
 import { Telegraf, Context } from 'telegraf';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { handleStart, handleShowHelp } from './userController';
@@ -13,7 +13,8 @@ import {
 } from './scheduleController';
 import { handleResponseCallback } from './responseController';
 import { handleChooseCommand, handleChooseCallback } from './chooseController';
-import { handleMiniAppCommand } from './miniAppController'; // Renamed from handleWebAppCommand
+import { handleMiniAppCommand } from './miniAppController';
+import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText } from './feedbackController';
 import { logger } from '../utils/logger';
 import { MESSAGES } from '../constants';
 
@@ -31,7 +32,9 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.command('schedule_time', handleScheduleTimeCommand);
   bot.command('schedule_toggle', handleScheduleToggleCommand);
   bot.command('choose', handleChooseCommand);
-  bot.command('miniapp', handleMiniAppCommand);  // Changed from webapp to miniapp
+  bot.command('miniapp', handleMiniAppCommand);
+  bot.command('feedback', handleFeedbackCommand);
+  bot.command('cancel', handleCancelCommand);
   
   // Register callback query handlers
   bot.on('callback_query', (ctx) => {
@@ -52,8 +55,8 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     }
   });
   
-  // Register text message handler
-  bot.on('text', handleTextMessage);
+  // Middleware for handling text - try feedback first, then fall back to regular text handling
+  bot.on('text', handleFeedbackText, handleTextMessage);
   
   // Register error handler
   bot.catch((err, ctx) => {
@@ -68,7 +71,9 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     { command: 'choose', description: 'Choose a specific type of prompt' },
     { command: 'history', description: 'View your recent journal entries' },
     { command: 'miniapp', description: 'Open the ThyKnow mini app' },
-    { command: 'schedule', description: 'Manage your prompt schedule and check timezone' },
+    { command: 'feedback', description: 'Share your thoughts with us' },
+    { command: 'timezone', description: 'Check prompt timings' },
+    { command: 'schedule', description: 'Manage your prompt schedule' },
     { command: 'help', description: 'Show available commands and usage' }
   ]);
 }

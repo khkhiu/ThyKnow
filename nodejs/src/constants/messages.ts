@@ -14,6 +14,7 @@ export const MESSAGES = {
     "/history - View your recent journal entries\n" +
     "/schedule - Manage your prompt schedule\n" +
     "/miniapp - Open our interactive mini-app\n" +
+    "/feedback - Share your thoughts with us\n" +
     "/help - Shows all available commands\n\n" +
     "So buckle up, friend! It's time to RAWR into personal development! 🚀🦕",
   
@@ -24,21 +25,22 @@ export const MESSAGES = {
     "• /choose - Select a specific type of prompt\n" +
     "• /history - View your recent journal entries\n" +
     "• /miniapp - Open our interactive mini-app\n" +
-    "• /schedule - Manage your prompt schedule\n" +
+    "• /feedback - Share your thoughts with us\n" +
     "• /help - Show this help message\n\n" +
     "📅 Schedule Management:\n" +
     "• /schedule - View your current prompt schedule\n" +
     "• /schedule_day - Set the day to receive prompts\n" +
-    "• /schedule_time - Set the hour to receive prompts\n" +
+    "• /schedule_time - Set the time to receive prompts\n" +
     "• /schedule_toggle - Turn weekly prompts on/off\n\n" +
     "📝 How to use:\n" +
     "1. Use /start to begin your prehistoric journey\n" +
     "2. Get prompts with /prompt or choose a specific type with /choose\n" +
     "3. View your entries with /history\n" +
     "4. Try our mini app experience with /miniapp\n" +
-    "5. Set your preferred schedule with /schedule\n\n" +
+    "5. Set your preferred schedule with /schedule\n" +
+    "6. Share your feedback with us using /feedback\n\n" +
     "✨ You will receive weekly prompts according to your schedule preferences.",
-    
+
   NO_HISTORY:
     "You haven't made any journal entries yet. Use /prompt to start your dino-discovery journey!",
   
@@ -86,5 +88,22 @@ export const MESSAGES = {
       "Which type of prompt would you like to receive?\n\n" +
       "🧠 Self-Awareness: Reflect on your thoughts, feelings, and personal growth.\n\n" +
       "🤝 Connections: Focus on building and strengthening relationships with others."
+  },
+  FEEDBACK: {
+    INTRO:
+      "🦕 We'd love to hear your thoughts on ThyKnow!\n\n" +
+      "Please share your feedback, suggestions, bug reports, or anything else that would help us improve ThyKnow and make it more valuable for you.\n\n" +
+      "Just type your message below, or use /cancel to exit feedback mode.",
+    
+    THANK_YOU:
+      "🦖 Thank you for your feedback!\n\n" +
+      "We really appreciate you taking the time to share your thoughts with us. " +
+      "Your input helps us evolve ThyKnow into an even better tool for self-awareness and building connections.",
+    
+    CANCELED:
+      "Feedback submission canceled. You can always use /feedback again when you're ready to share your thoughts with us.",
+    
+    ERROR:
+      "Sorry, there was an error saving your feedback. Please try again later, or contact our support team."
   }
 };
