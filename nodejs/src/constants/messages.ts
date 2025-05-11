@@ -13,8 +13,7 @@ export const MESSAGES = {
     "/choose - Select a specific type of prompt\n" +
     "/history - View your recent journal entries\n" +
     "/schedule - Manage your prompt schedule\n" +
-    "/timezone - Check prompt timings\n" +
-    "/miniapp - Open our interactive mini-app\n" +  // Changed from /webapp to /miniapp
+    "/miniapp - Open our interactive mini-app\n" +
     "/help - Shows all available commands\n\n" +
     "So buckle up, friend! It's time to RAWR into personal development! 🚀🦕",
   
@@ -24,19 +23,19 @@ export const MESSAGES = {
     "• /prompt - Get a new reflection prompt\n" +
     "• /choose - Select a specific type of prompt\n" +
     "• /history - View your recent journal entries\n" +
-    "• /miniapp - Open our interactive mini-app\n" +  // Changed from /webapp to /miniapp
-    "• /timezone - Check prompt timings\n" +
+    "• /miniapp - Open our interactive mini-app\n" +
+    "• /schedule - Manage your prompt schedule\n" +
     "• /help - Show this help message\n\n" +
     "📅 Schedule Management:\n" +
     "• /schedule - View your current prompt schedule\n" +
     "• /schedule_day - Set the day to receive prompts\n" +
-    "• /schedule_time - Set the time to receive prompts\n" +
+    "• /schedule_time - Set the hour to receive prompts\n" +
     "• /schedule_toggle - Turn weekly prompts on/off\n\n" +
     "📝 How to use:\n" +
     "1. Use /start to begin your prehistoric journey\n" +
     "2. Get prompts with /prompt or choose a specific type with /choose\n" +
     "3. View your entries with /history\n" +
-    "4. Try our mini app experience with /miniapp\n" +  // Changed from /webapp to /miniapp
+    "4. Try our mini app experience with /miniapp\n" +
     "5. Set your preferred schedule with /schedule\n\n" +
     "✨ You will receive weekly prompts according to your schedule preferences.",
     
@@ -59,6 +58,8 @@ export const MESSAGES = {
       "Day: {day}\n" +
       "Time: {hour}:00\n" +
       "Status: {status}\n\n" +
+      "⏰ Timezone information: {timezone}\n" +
+      "Current time: {currentTime}\n\n" +
       "To change your schedule, use one of these commands:\n\n" +
       "/schedule_day - Set the day of the week\n" +
       "/schedule_time - Set the hour of the day\n" +
@@ -83,7 +84,7 @@ export const MESSAGES = {
   CHOOSE: {
     INTRO:
       "Which type of prompt would you like to receive?\n\n" +
-      "🧠 *Self-Awareness*: Reflect on your thoughts, feelings, and personal growth.\n\n" +
-      "🤝 *Connections*: Focus on building and strengthening relationships with others."
+      "🧠 Self-Awareness: Reflect on your thoughts, feelings, and personal growth.\n\n" +
+      "🤝 Connections: Focus on building and strengthening relationships with others."
   }
 };

@@ -1,7 +1,7 @@
-// src/controllers/index.ts (Updated with Mini App Support)
+// src/controllers/index.ts
 import { Telegraf, Context } from 'telegraf';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
-import { handleStart, handleShowTimezone, handleShowHelp } from './userController';
+import { handleStart, handleShowHelp } from './userController';
 import { handleSendPrompt, handleTextMessage } from './promptController';
 import { handleShowHistory } from './historyController';
 import { 
@@ -25,7 +25,6 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.start(handleStart);
   bot.command('prompt', handleSendPrompt);
   bot.command('history', handleShowHistory);
-  bot.command('timezone', handleShowTimezone);
   bot.command('help', handleShowHelp);
   bot.command('schedule', handleScheduleCommand);
   bot.command('schedule_day', handleScheduleDayCommand);
@@ -68,9 +67,8 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     { command: 'prompt', description: 'Get a new reflection prompt' },
     { command: 'choose', description: 'Choose a specific type of prompt' },
     { command: 'history', description: 'View your recent journal entries' },
-    { command: 'miniapp', description: 'Open the ThyKnow mini app' }, // Changed from webapp to miniapp
-    { command: 'timezone', description: 'Check prompt timings' },
-    { command: 'schedule', description: 'Manage your prompt schedule' },
+    { command: 'miniapp', description: 'Open the ThyKnow mini app' },
+    { command: 'schedule', description: 'Manage your prompt schedule and check timezone' },
     { command: 'help', description: 'Show available commands and usage' }
   ]);
 }
