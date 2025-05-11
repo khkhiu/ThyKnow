@@ -52,7 +52,7 @@ export async function handleMiniAppCommand(ctx: Context): Promise<void> {
       "📱 *ThyKnow Mini App*\n\n" +
       "Experience ThyKnow right inside Telegram with our interactive mini app!\n\n" +
       "• A fresh new prompt has been generated for you! 🦕\n" +
-      "• Meet your dino friend (drag & tap for fun)\n" +
+      "• Meet your dino friend (tap to see it blink and get encouragement!) 👀\n" +
       "• View and respond to your prompt\n" +
       "• Get daily affirmations\n\n" +
       "Tap one of the buttons below to launch the app:",
