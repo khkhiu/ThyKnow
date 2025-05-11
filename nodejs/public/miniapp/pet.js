@@ -105,18 +105,19 @@ function handleDinoTap(e) {
     dinoImage.classList.add('blink');
     
     // Remove blink animation class after animation completes
+    // Now using a longer duration (800ms instead of 300ms)
     setTimeout(() => {
         dinoImage.classList.remove('blink');
-    }, 300);
+    }, 800);
     
-    // Blink eyes back open after a short delay
+    // Blink eyes back open after a longer delay (800ms instead of 300ms)
     if (!eyesOpen) {
         setTimeout(() => {
             const dinoImage = document.getElementById('dino-image');
             dinoImage.src = "/miniapp/images/ThyKnow_dino-eyes-open.png";
             eyesOpen = true;
             console.log("Auto-opened eyes after delay");
-        }, 300);
+        }, 800);
     }
 }
 

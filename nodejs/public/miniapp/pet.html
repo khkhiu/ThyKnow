@@ -36,6 +36,10 @@
             <p class="hint-text"><i class="fas fa-hand-point-up"></i> Tap to see different messages too!</p>
         </div>
 
+        <!-- Spacer to push dino closer to nav bar -->
+        <div style="flex-grow: 1;"></div>
+        
+        <!-- Dino container positioned just above nav bar -->
         <div class="dino-container fade-in" style="animation-delay: 0.6s">
             <div class="speech-bubble" id="speech-bubble">Rawr! That means "You've got this!" in dinosaur.</div>
             <img src="#" alt="Friendly dinosaur" class="dino-image" id="dino-image" role="button" tabindex="0" aria-label="Interactive dinosaur. Tap to make it blink and show messages">
@@ -52,39 +56,7 @@
             </a>
         </div>
     </div>
-
-    <!-- Debug overlay for development -->
-    <div id="debug-overlay" style="display: none; position: fixed; bottom: 0; left: 0; background: rgba(0,0,0,0.7); color: white; padding: 10px; font-size: 12px; max-height: 30vh; overflow-y: auto; width: 100%; z-index: 9999;"></div>
-
     <!-- App scripts -->
-    <script>
-        // Optional debug logger
-        function debug(message) {
-            const overlay = document.getElementById('debug-overlay');
-            if (overlay) {
-                const timestamp = new Date().toISOString().substr(11, 8);
-                const logEntry = document.createElement('div');
-                logEntry.textContent = `[${timestamp}] ${message}`;
-                overlay.appendChild(logEntry);
-                overlay.scrollTop = overlay.scrollHeight;
-            }
-            console.log(message);
-        }
-
-        // Show debug overlay in development
-        function toggleDebug() {
-            const overlay = document.getElementById('debug-overlay');
-            if (overlay.style.display === 'none') {
-                overlay.style.display = 'block';
-                debug('Debug overlay enabled');
-            } else {
-                overlay.style.display = 'none';
-            }
-        }
-
-        // Uncomment to enable debug mode during testing
-        // setTimeout(toggleDebug, 2000);
-    </script>
     <script src="pet.js"></script>
 </body>
 </html>

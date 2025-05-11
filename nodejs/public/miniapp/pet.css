@@ -49,56 +49,61 @@
     100% { opacity: 0.7; }
 }
 
+/* Repositioned dino container to be just above the nav bar */
 .dino-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 50vh;
-    margin-top: 10px;
-    margin-bottom: 20px;
     position: relative;
-    overflow: hidden;
-    touch-action: none; /* Prevent browser handling of touch actions */
+    /* Changed from min-height to a fixed height to control position better */
+    height: auto;
+    /* Remove top margin */
+    margin-top: 0;
+    /* Add auto margin to push content to top and bottom */
+    margin: auto 0;
+    padding-bottom: 20px; /* Space between dino and nav bar */
 }
 
 .dino-image {
-    width: 200px;
+    width: 200px; /* Slightly reduced size to fit better above nav */
     height: auto;
-    transition: transform 0.015s ease; /* <-- THIS CONTROLS DRAG SPEED/SMOOTHNESS */
-    transition: filter 0.2s ease; /* <-- SMOOTH TRANSITION FOR VISUAL CHANGES */
-    cursor: grab;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    cursor: pointer;
     filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2));
-    touch-action: none;
     user-select: none;
     -webkit-user-drag: none;
     position: relative;
     z-index: 5;
+    /* Important for mobile tapping - ensure a large enough tap target */
+    padding: 10px;
+    /* Improve tap visual feedback */
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
 .dino-image:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
     filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.3));
 }
 
 .dino-image:active {
     transform: scale(0.95);
-    cursor: grabbing;
 }
 
-/* Add animation for the eye blink effect */
+/* Updated animation for longer blink effect */
 .blink {
-    animation: blinkAnimation 0.3s ease;
+    animation: blinkAnimation 0.8s ease;
 }
 
 @keyframes blinkAnimation {
     0% { opacity: 1; }
-    50% { opacity: 0.8; }
+    40% { opacity: 0.8; }
+    60% { opacity: 0.8; }
     100% { opacity: 1; }
 }
 
 .speech-bubble {
     position: absolute;
-    top: -15px; /* <-- THIS CONTROLS VERTICAL DISTANCE ABOVE DINO */
+    top: -70px;
     background-color: white;
     border-radius: 20px;
     padding: 15px 20px;
@@ -109,6 +114,9 @@
     max-width: 250px;
     z-index: 10;
     font-size: 1.1rem;
+    /* Center the speech bubble */
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
 }
 
 .dark-theme .speech-bubble {
@@ -118,7 +126,7 @@
 .speech-bubble::after {
     content: '';
     position: absolute;
-    bottom: -15px; /* <-- CONTROLS POSITION OF SPEECH BUBBLE TIP */
+    bottom: -15px;
     left: 50%;
     transform: translateX(-50%);
     border-width: 15px 15px 0;
@@ -132,7 +140,14 @@
 
 .speech-bubble.show {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Added extra styles for the nav-bar to ensure proper spacing */
+.nav-bar {
+    margin-top: 0;
+    width: 100%;
+    border-radius: var(--border-radius);
 }
 
 /* Loading spinner */
@@ -176,28 +191,3 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
-/*
-/* Drag hint styles 
-.drag-hint {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: var(--border-radius);
-    padding: 10px 15px;
-    margin: 15px auto;
-    max-width: 300px;
-    box-shadow: var(--box-shadow);
-    text-align: center;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    transition: opacity 0.5s ease;
-}
-
-.dark-theme .drag-hint {
-    background-color: rgba(51, 51, 51, 0.9);
-}
-
-.drag-hint i {
-    margin-right: 5px;
-    color: var(--primary-color);
-}
-    */
