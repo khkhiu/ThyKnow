@@ -120,7 +120,7 @@ const config = {
     promptDay: parseInt(process.env.PROMPT_DAY || '1', 10), // Monday
     promptHour: parseInt(process.env.PROMPT_HOUR || '9', 10), // 9 AM
   },
-  maxHistory: parseInt(process.env.MAX_HISTORY || '5', 10),
+  maxHistory: parseInt(process.env.MAX_HISTORY || '10', 10),
   logLevel: process.env.LOG_LEVEL || 'info',
   validateTelegramRequests: process.env.VALIDATE_TELEGRAM_REQUESTS !== 'false',
 } as AppConfig;
