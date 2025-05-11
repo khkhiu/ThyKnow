@@ -5,6 +5,8 @@ const tg = window.Telegram.WebApp;
 
 // Track dino eye state
 let eyesOpen = true;
+// Flag to prevent multiple taps while animation is in progress
+let isAnimating = false;
 
 // Set theme based on Telegram color scheme
 function updateTheme() {
@@ -41,6 +43,7 @@ function setInitialDinoImage() {
     const dinoImage = document.getElementById('dino-image');
     dinoImage.src = "/miniapp/images/ThyKnow_dino-eyes-open.png";
     eyesOpen = true;
+    isAnimating = false;
     
     // Debug log
     console.log("Initial dino image set to eyes open");
@@ -94,6 +97,15 @@ function handleDinoTap(e) {
     console.log("Dino tapped!");
     e.preventDefault();
     
+    // Prevent multiple taps during animation
+    if (isAnimating) {
+        console.log("Animation in progress, ignoring tap");
+        return;
+    }
+    
+    // Set animation flag
+    isAnimating = true;
+    
     // Toggle dino eyes
     toggleDinoEyes();
     
@@ -105,18 +117,24 @@ function handleDinoTap(e) {
     dinoImage.classList.add('blink');
     
     // Remove blink animation class after animation completes
-    // Now using a longer duration (800ms instead of 300ms)
     setTimeout(() => {
         dinoImage.classList.remove('blink');
     }, 800);
     
-    // Blink eyes back open after a longer delay (800ms instead of 300ms)
+    // Blink eyes back open after a delay
     if (!eyesOpen) {
         setTimeout(() => {
             const dinoImage = document.getElementById('dino-image');
             dinoImage.src = "/miniapp/images/ThyKnow_dino-eyes-open.png";
             eyesOpen = true;
+            // Reset animation flag after everything is done
+            isAnimating = false;
             console.log("Auto-opened eyes after delay");
+        }, 800);
+    } else {
+        // Reset animation flag if we started with eyes closed
+        setTimeout(() => {
+            isAnimating = false;
         }, 800);
     }
 }
