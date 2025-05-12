@@ -1,7 +1,7 @@
 /* ThyKnow Mini App Styles */
 
 :root {
-    --primary-color: #6c63ff;
+    --primary-color: rgb(60, 130, 66);
     --secondary-color: #4ec9b0;
     --accent-color: #ff6347;
     --background-color: #f8f9fa;
@@ -19,7 +19,7 @@
   
   /* Dark theme variables */
   .dark-theme {
-    --primary-color: #7069fb;
+    --primary-color: rgb(60, 130, 66);
     --secondary-color: #52dfbf;
     --accent-color: #ff7a59;
     --background-color: #222;
