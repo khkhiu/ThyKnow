@@ -8,7 +8,7 @@ import { NotificationType } from '../types';
  * Show element by ID
  */
 export function showElement(id: string): void {
-  const element = document.getElementById(id) as HTMLElement;
+  const element = document.getElementById(id);
   if (element) {
     element.style.display = 'block';
   }
@@ -18,7 +18,7 @@ export function showElement(id: string): void {
  * Hide element by ID
  */
 export function hideElement(id: string): void {
-  const element = document.getElementById(id) as HTMLElement;
+  const element = document.getElementById(id);
   if (element) {
     element.style.display = 'none';
   }
@@ -84,7 +84,7 @@ export function showError(message: string): void {
   hideElement('loading');
   hideElement('content');
   
-  const errorMessage = document.querySelector('.error-message') as HTMLElement;
+  const errorMessage = document.querySelector('.error-message');
   if (errorMessage) {
     errorMessage.textContent = message;
   }

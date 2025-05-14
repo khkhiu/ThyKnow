@@ -29,7 +29,7 @@ const dinoSpeech = [
  */
 function setBackgroundImage(): void {
   // In a production environment, this would reference the actual images
-  const background = document.getElementById('background') as HTMLElement;
+  const background = document.getElementById('background');
   if (background) {
     background.style.backgroundImage = "url('/miniapp/images/ThyKnow_background.png')";
   }
@@ -82,7 +82,7 @@ function getRandomItem<T>(array: T[]): T {
  * Show dino speech bubble
  */
 async function showSpeechBubble(): Promise<void> {
-  const speechBubble = document.getElementById('speech-bubble') as HTMLElement;
+  const speechBubble = document.getElementById('speech-bubble');
   if (!speechBubble) return;
   
   try {
@@ -194,7 +194,7 @@ function setupDinoInteraction(): void {
  */
 function centerDinoImage(): void {
   const dinoImage = document.getElementById('dino-image') as HTMLImageElement;
-  const dinoContainer = document.querySelector('.dino-container') as HTMLElement;
+  const dinoContainer = document.querySelector('.dino-container');
   
   if (!dinoImage || !dinoContainer) return;
   
@@ -250,7 +250,7 @@ function initDinoFriend(): void {
   
   // Hide loading spinner
   setTimeout(() => {
-    const loading = document.getElementById('loading') as HTMLElement;
+    const loading = document.getElementById('loading');
     if (loading) {
       loading.style.display = 'none';
     }
