@@ -1,8 +1,8 @@
 // pet.js - Main entry point for the ThyKnow dino friend page
 // This file imports from the modular files and initializes the app
 
-import { initApp } from './js/app.js';
-import { toggleTheme } from './js/theme.js';
+import { initApp } from './js/pet/app.js';
+import { toggleTheme } from './js/pet/theme.js';
 
 // Initialize when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
