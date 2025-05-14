@@ -1,7 +1,7 @@
-// src/controllers/index.ts
+// src/controllers/index.ts (Updated with Mini App Support)
 import { Telegraf, Context } from 'telegraf';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
-import { handleStart, handleShowTimezone, handleShowHelp } from './userController';
+import { handleStart, handleShowHelp } from './userController';
 import { handleSendPrompt, handleTextMessage } from './promptController';
 import { handleShowHistory } from './historyController';
 import { 
@@ -13,6 +13,8 @@ import {
 } from './scheduleController';
 import { handleResponseCallback } from './responseController';
 import { handleChooseCommand, handleChooseCallback } from './chooseController';
+import { handleMiniAppCommand } from './miniAppController';
+import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText } from './feedbackController';
 import { logger } from '../utils/logger';
 import { MESSAGES } from '../constants';
 
@@ -24,13 +26,15 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.start(handleStart);
   bot.command('prompt', handleSendPrompt);
   bot.command('history', handleShowHistory);
-  bot.command('timezone', handleShowTimezone);
   bot.command('help', handleShowHelp);
   bot.command('schedule', handleScheduleCommand);
   bot.command('schedule_day', handleScheduleDayCommand);
   bot.command('schedule_time', handleScheduleTimeCommand);
   bot.command('schedule_toggle', handleScheduleToggleCommand);
-  bot.command('choose', handleChooseCommand); // Add the new choose command
+  bot.command('choose', handleChooseCommand);
+  bot.command('miniapp', handleMiniAppCommand);
+  bot.command('feedback', handleFeedbackCommand);
+  bot.command('cancel', handleCancelCommand);
   
   // Register callback query handlers
   bot.on('callback_query', (ctx) => {
@@ -51,8 +55,8 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     }
   });
   
-  // Register text message handler
-  bot.on('text', handleTextMessage);
+  // Middleware for handling text - try feedback first, then fall back to regular text handling
+  bot.on('text', handleFeedbackText, handleTextMessage);
   
   // Register error handler
   bot.catch((err, ctx) => {
@@ -66,7 +70,8 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     { command: 'prompt', description: 'Get a new reflection prompt' },
     { command: 'choose', description: 'Choose a specific type of prompt' },
     { command: 'history', description: 'View your recent journal entries' },
-    { command: 'timezone', description: 'Check prompt timings' },
+    { command: 'miniapp', description: 'Open the ThyKnow mini app' },
+    { command: 'feedback', description: 'Share your thoughts with us' },
     { command: 'schedule', description: 'Manage your prompt schedule' },
     { command: 'help', description: 'Show available commands and usage' }
   ]);

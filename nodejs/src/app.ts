@@ -1,8 +1,9 @@
-// src/app.ts (Updated for Railway)
+// src/app.ts (Updated with Mini-App Support)
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan'; // Add Morgan for logging HTTP requests
+import morgan from 'morgan';
+import path from 'path';
 import { Telegraf } from 'telegraf';
 import { setupBotCommands } from './controllers/index';
 import { errorHandler } from './middleware/errorHandler';
@@ -11,6 +12,12 @@ import { logger } from './utils/logger';
 import { stream } from './utils/logger';
 import dotenv from 'dotenv';
 import pubSubRoutes from './routes/pubSubRoutes';
+import miniAppRoutes from './routes/miniAppRoutes';
+import miniAppApiRouter from './routes/miniAppApiRoutes';  // Use named import
+
+// Import health check controllers
+import { healthCheck } from './controllers/healthController';
+import { minimalHealthCheck } from './controllers/minimalHealthCheck';
 
 // Load environment variables
 dotenv.config();
@@ -22,13 +29,27 @@ const app = express();
 export const bot = new Telegraf(config.telegramBotToken);
 
 // Setup middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "telegram.org", "*.telegram.org", "unpkg.com", "cdnjs.cloudflare.com"],
+      connectSrc: ["'self'", "telegram.org", "*.telegram.org"],
+      frameSrc: ["'self'", "telegram.org", "*.telegram.org"],
+      imgSrc: ["'self'", "data:", "telegram.org", "*.telegram.org"],
+      styleSrc: ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com"]
+    }
+  }
+}));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Add Morgan request logging middleware
 app.use(morgan('combined', { stream }));
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Setup bot commands and handlers
 setupBotCommands(bot);
@@ -45,9 +66,9 @@ app.use('/webhook', express.json(), (req, res) => {
 // Set up Pub/Sub routes (used for scheduled messages)
 app.use('/pubsub', pubSubRoutes);
 
-// Import health check controllers
-import { healthCheck } from './controllers/healthController';
-import { minimalHealthCheck } from './controllers/minimalHealthCheck';
+// Set up Mini-App routes
+app.use('/miniapp', miniAppRoutes);
+app.use('/api/miniapp', miniAppApiRouter);  // Use the named import
 
 // Health check endpoints (required for Railway)
 app.get('/health', minimalHealthCheck); // Fast endpoint for Railway's health checks
@@ -81,6 +102,7 @@ app.get('/', (req, res) => {
           <p>This is the ThyKnow API server. It's working correctly!</p>
           <p>Check <a href="/health">health status</a> or <a href="/api/info">API info</a>.</p>
           <p>To interact with ThyKnow, please visit our <a href="https://t.me/your_bot_username">Telegram Bot</a>.</p>
+          <p>Our <a href="/miniapp">Telegram Mini App</a> is also available.</p>
         </div>
       </body>
     </html>

@@ -6,7 +6,9 @@ export const COMMAND_DESCRIPTIONS = {
   PROMPT: "Get a new reflection prompt",
   CHOOSE: "Choose a specific type of prompt",
   HISTORY: "View your recent journal entries",
+  MINIAPP: "Open the ThyKnow mini app",
   HELP: "Show available commands and usage",
-  TIMEZONE: "Check prompt timings",
-  SCHEDULE: "Manage your prompt schedule"
+  SCHEDULE: "Manage your prompt schedule",
+  FEEDBACK: "Share your thoughts with us",
+  CANCEL: "Cancel current operation"
 };

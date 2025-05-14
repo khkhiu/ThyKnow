@@ -16,6 +16,31 @@ interface PostgreSQLConfig {
   idleTimeout: number;
 }
 
+// Define application config interface
+interface AppConfig {
+  port: number;
+  nodeEnv: string;
+  telegramBotToken: string;
+  postgresql: PostgreSQLConfig;
+  timezone: string;
+  baseUrl: string;
+  railway: {
+    service: string | null;
+    environment: string | null;
+    project: string | null;
+    publicDomain: string | null;
+    privateDomain: string | null;
+    staticUrl: string | null;
+  };
+  scheduler: {
+    promptDay: number;
+    promptHour: number;
+  };
+  maxHistory: number;
+  logLevel: string;
+  validateTelegramRequests: boolean;
+}
+
 // Parse DATABASE_URL from Railway if available
 const parseDbUrl = (url: string | undefined): PostgreSQLConfig | null => {
   if (!url) return null;
@@ -95,9 +120,10 @@ const config = {
     promptDay: parseInt(process.env.PROMPT_DAY || '1', 10), // Monday
     promptHour: parseInt(process.env.PROMPT_HOUR || '9', 10), // 9 AM
   },
-  maxHistory: parseInt(process.env.MAX_HISTORY || '5', 10),
+  maxHistory: parseInt(process.env.MAX_HISTORY || '10', 10),
   logLevel: process.env.LOG_LEVEL || 'info',
-};
+  validateTelegramRequests: process.env.VALIDATE_TELEGRAM_REQUESTS !== 'false',
+} as AppConfig;
 
 // Validate critical config
 if (!config.telegramBotToken) {

@@ -126,11 +126,23 @@ export const initDatabase = async (): Promise<void> => {
         timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
 
+      -- Create Feedback table
+      CREATE TABLE IF NOT EXISTS feedback (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        is_resolved BOOLEAN NOT NULL DEFAULT FALSE
+      );
+
       -- Create indices for efficient querying
       CREATE INDEX IF NOT EXISTS idx_journal_entries_user_id ON journal_entries(user_id);
       CREATE INDEX IF NOT EXISTS idx_journal_entries_timestamp ON journal_entries(timestamp);
       CREATE INDEX IF NOT EXISTS idx_journal_entries_user_timestamp ON journal_entries(user_id, timestamp DESC);
-    `;
+      CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);
+      CREATE INDEX IF NOT EXISTS idx_feedback_timestamp ON feedback(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_feedback_is_resolved ON feedback(is_resolved);
+      `;
     
     // Execute schema creation
     await query(schema);

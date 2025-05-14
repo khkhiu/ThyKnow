@@ -3,6 +3,8 @@ import { Context, NarrowedContext } from 'telegraf';
 import { Update, CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { userService } from '../services/userService';
 import { logger } from '../utils/logger';
+import moment from 'moment-timezone';
+import config from '../config';
 
 // Define a type for callback query context
 type CallbackContext = NarrowedContext<Context, Update.CallbackQueryUpdate>;
@@ -34,16 +36,75 @@ export async function handleScheduleCommand(ctx: Context): Promise<void> {
     
     const statusText = currentEnabled ? "enabled" : "disabled";
     
-    const message = 
+    // Get current Singapore time
+    const now = moment().tz(config.timezone);
+    const currentDayName = dayNames[now.day()];
+    const currentHour24 = now.hour();
+    const currentMinute = now.minute();
+    
+    // Calculate time until next prompt
+    let nextPromptDay = user.schedulePreference.day;
+    let daysToAdd = 0;
+    
+    // If today is the scheduled day but the hour has passed, next prompt is next week
+    if (now.day() === user.schedulePreference.day && 
+        (currentHour24 > currentHour || (currentHour24 === currentHour && currentMinute > 0))) {
+      daysToAdd = 7;
+    } 
+    // If today is before the scheduled day, calculate days until that day
+    else if (now.day() < user.schedulePreference.day) {
+      daysToAdd = user.schedulePreference.day - now.day();
+    } 
+    // If today is after the scheduled day, calculate days until next week
+    else if (now.day() > user.schedulePreference.day) {
+      daysToAdd = 7 - (now.day() - user.schedulePreference.day);
+    }
+    
+    // If it's the scheduled day and hour hasn't passed yet
+    if (now.day() === user.schedulePreference.day && currentHour24 < currentHour) {
+      daysToAdd = 0;
+    }
+    
+    // Calculate next prompt time
+    const nextPromptTime = now.clone()
+      .add(daysToAdd, 'days')
+      .hour(currentHour)
+      .minute(0)
+      .second(0);
+    
+    // Format the time until next prompt in a human-readable way
+    const diffHours = nextPromptTime.diff(now, 'hours');
+    const diffDays = Math.floor(diffHours / 24);
+    const remainingHours = diffHours % 24;
+    
+    // Create the message with timezone info included - fix Markdown formatting
+    let message = 
       `📅 Your current prompt schedule:\n\n` +
       `Day: ${currentDay}\n` +
       `Time: ${currentHour}:00\n` +
       `Status: ${statusText}\n\n` +
+      `⏰ Timezone Information\n` +
+      `This bot operates on ${config.timezone} timezone.\n` +
+      `Current time: ${now.format('dddd, MMMM D, YYYY HH:mm')}\n\n`;
+    
+    if (currentEnabled) {
+      if (diffDays > 0) {
+        message += `Your next prompt will be sent in approximately ${diffDays} day${diffDays > 1 ? 's' : ''} and ${remainingHours} hour${remainingHours > 1 ? 's' : ''}.\n\n`;
+      } else {
+        message += `Your next prompt will be sent in approximately ${remainingHours} hour${remainingHours > 1 ? 's' : ''}.\n\n`;
+      }
+    } else {
+      message += `⚠️ Your weekly prompts are currently disabled.\n`;
+      message += `Use /schedule_toggle to enable them.\n\n`;
+    }
+    
+    message += 
       `To change your schedule, use one of these commands:\n\n` +
       `/schedule_day - Set the day of the week\n` +
       `/schedule_time - Set the hour of the day\n` +
       `/schedule_toggle - Turn weekly prompts on/off`;
     
+    // Send without Markdown to avoid parsing errors
     await ctx.reply(message);
     
   } catch (error) {

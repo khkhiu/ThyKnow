@@ -39,10 +39,9 @@ export async function handleChooseCommand(ctx: Context): Promise<void> {
     
     await ctx.reply(
       "Which type of prompt would you like to receive?\n\n" +
-      "🧠 *Self-Awareness*: Reflect on your thoughts, feelings, and personal growth.\n\n" +
-      "🤝 *Connections*: Focus on building and strengthening relationships with others.",
+      "🧠 Self-Awareness: Reflect on your thoughts, feelings, and personal growth.\n\n" +
+      "🤝 Connections: Focus on building and strengthening relationships with others.",
       {
-        parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: keyboard
         }
