@@ -1,4 +1,4 @@
-// notifications.js - Notification system
+// js/app/ui/notifications.js - Notification system
 
 import { TIMING } from '../config.js';
 

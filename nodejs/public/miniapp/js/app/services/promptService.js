@@ -1,8 +1,8 @@
-// promptService.js - Prompt operations
+// js/app/services/promptService.js - Prompt operations
 
 import { fetchTodaysPrompt, fetchNewPromptDirectly } from '../api.js';
 import { updatePrompt, resetPromptUI } from '../ui/prompt.js';
-import { getElementValue, clearElementValue } from '../utils/elements.js';
+import { getElementValue, clearElementValue, scrollIntoView } from '../utils/elements.js';
 import { showNotification } from '../ui/notifications.js';
 
 /**

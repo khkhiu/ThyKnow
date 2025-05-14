@@ -1,4 +1,4 @@
-// elements.js - DOM element helper functions
+// js/app/utils/elements.js - DOM element helper functions
 
 import { ELEMENTS } from '../config.js';
 

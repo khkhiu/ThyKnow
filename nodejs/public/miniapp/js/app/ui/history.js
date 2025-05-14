@@ -1,9 +1,10 @@
-// history.js - History UI operations
+// js/app/ui/history.js - History UI operations
 
 import { ELEMENTS } from '../config.js';
 import { setInnerHTML, showElement, hideElement } from '../utils/elements.js';
 import { 
   formatDate, 
+  formatDateForInput,
   parseISODate, 
   isToday, 
   isThisWeek, 

@@ -1,4 +1,4 @@
-// historyService.js - History operations
+// js/app/services/historyService.js - History operations
 
 import { fetchHistory } from '../api.js';
 import { updateHistory } from '../ui/history.js';

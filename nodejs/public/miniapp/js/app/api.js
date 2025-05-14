@@ -1,4 +1,4 @@
-// api.js - API calls to the backend
+// js/app/api.js - API calls to the backend
 
 import { API, FALLBACKS } from './config.js';
 

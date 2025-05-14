@@ -1,13 +1,20 @@
-// main.js - Main entry point
+// js/app/main.js - Main entry point
 
-import { ELEMENTS } from './config.js';
-import { initTelegramApp, getTelegramUser, setupBackButton, provideHapticFeedback, notifyAppReady } from './services/telegramApp.js';
+import { ELEMENTS, TIMING } from './config.js';
+import { 
+  initTelegramApp, 
+  getTelegramUser, 
+  setupBackButton, 
+  provideHapticFeedback, 
+  notifyAppReady 
+} from './services/telegramApp.js';
 import { updateTheme, setupThemeListener, toggleTheme } from './ui/theme.js';
 import { showElement, hideElement } from './utils/elements.js';
 import { showError } from './ui/notifications.js';
 import { fetchConfig, fetchUserData } from './api.js';
 import { getTodaysPrompt, getNewPrompt, submitPromptResponse } from './services/promptService.js';
 import { getHistoryEntries } from './services/historyService.js';
+
 
 /**
  * Main entry point - initialize the application

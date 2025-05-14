@@ -1,4 +1,4 @@
-// formatters.js - Utility functions for formatting dates and text
+// js/app/utils/formatters.js - Date and text formatting functions
 
 /**
  * Format a date as a readable string

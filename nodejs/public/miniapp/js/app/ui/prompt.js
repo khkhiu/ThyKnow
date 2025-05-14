@@ -1,8 +1,7 @@
-// prompt.js - Prompt UI operations
+// js/app/ui/prompt.js - Prompt UI operations
 
 import { ELEMENTS } from '../config.js';
 import { setElementText, scrollIntoView, addElementClass, removeElementClass } from '../utils/elements.js';
-import { processTextWithLineBreaks } from '../utils/formatters.js';
 
 /**
  * Update prompt UI with new prompt data

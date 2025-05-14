@@ -1,4 +1,4 @@
-// telegramApp.js - Telegram WebApp integration
+// js/app/services/telegramApp.js - Telegram WebApp integration
 
 /**
  * Initialize Telegram WebApp

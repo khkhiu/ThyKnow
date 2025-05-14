@@ -1,4 +1,4 @@
-// theme.js - Theme management
+// js/app/ui/theme.js - Theme management
 
 /**
  * Update theme based on Telegram color scheme
