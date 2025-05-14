@@ -6,20 +6,22 @@
   "scripts": {
     "start": "node dist/src/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
-    "build": "npm run build:backend && npm run build:frontend && npm run copy-public",
+    "build": "npm run build:backend && npm run build:frontend && node scripts/fix-html-imports.js && node scripts/copy-images.js && npm run copy-public",
     "build:backend": "tsc -p tsconfig.json",
     "build:frontend": "tsc -p tsconfig.frontend.json",
-    "copy-public": "cp -r public dist/",
+    "copy-public": "cp -r public dist/ && mkdir -p dist/public/miniapp/dist && cp -r public/miniapp/dist/* dist/public/miniapp/dist/",
     "railway:up": "railway up",
     "railway:status": "railway status",
     "railway:logs": "railway logs",
     "setup-webhook": "ts-node scripts/setup-railway-webhook.ts",
-    "railway:webhook": "railway run ts-node scripts/setup-railway-webhook.ts",
+    "railway:webhook": "railway run ts-node scripts/setup-railway-webpack.ts",
     "lint": "eslint --ext .ts src/",
     "lint:fix": "eslint --ext .ts src/ --fix",
     "test": "mocha --require ts-node/register test/**/*.test.ts",
     "test:coverage": "nyc --reporter=lcov --reporter=text npm test",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "fix-imports": "node scripts/fix-html-imports.js",
+    "copy-images": "node scripts/copy-images.js"
   },
   "keywords": [
     "telegram",

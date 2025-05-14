@@ -12,10 +12,7 @@
     "strictNullChecks": true,
     "lib": ["es2020", "dom"],
     "outDir": "./public/miniapp/dist",
-    "baseUrl": "./",
-    "paths": {
-      "@types/*": ["src/types/*", "public/miniapp/types/*"]
-    }
+    "rootDir": "./public/miniapp"
   },
   "include": ["public/miniapp/**/*.ts"],
   "exclude": ["node_modules", "dist"]

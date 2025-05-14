@@ -11,22 +11,26 @@ RUN node --version && npm --version
 COPY package*.json ./
 COPY tsconfig*.json ./
 
+# Copy scripts needed for build
+COPY scripts/fix-html-imports.js ./scripts/
+COPY scripts/copy-images.js ./scripts/
+
 # Install dependencies 
 RUN npm ci
 
 # Copy the entire codebase
 COPY . .
 
+# Create default image directories so the build doesn't fail
+RUN mkdir -p public/miniapp/images
+
 # Build the application
-RUN npm run build
+RUN npm run build:backend && npm run build:frontend && node ./scripts/fix-html-imports.js && node ./scripts/copy-images.js
 
 # Ensure the public directory is properly structured
-RUN if [ ! -d "/app/dist/public" ]; then \
-      mkdir -p /app/dist/public; \
-    fi
-
-# Copy the public directory to ensure it's available in both locations
-RUN cp -r public/* dist/public/ || echo "No files to copy from public/"
+RUN mkdir -p /app/dist/public/miniapp/dist
+RUN cp -r public/* dist/public/
+RUN cp -r public/miniapp/dist/* dist/public/miniapp/dist/
 
 # Clean up dev dependencies to reduce image size
 RUN npm prune --production
@@ -36,7 +40,7 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Create a script to check files on startup
-RUN echo '#!/bin/sh\necho "Checking directory structure..."\nls -la\necho "\nPublic directory:"\nls -la public\necho "\nDist directory:"\nls -la dist\necho "\nDist/public directory:"\nls -la dist/public\necho "\nStarting application..."\nnode dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
+RUN echo '#!/bin/sh\necho "Checking directory structure..."\nls -la\necho "\nPublic directory:"\nls -la public\necho "\nDist directory:"\nls -la dist\necho "\nDist/public directory:"\nls -la dist/public\necho "\nDist/public/miniapp directory:"\nls -la dist/public/miniapp\necho "\nDist/public/miniapp/dist directory:"\nls -la dist/public/miniapp/dist\necho "\nStarting application..."\nnode dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose the application port
 EXPOSE 3000
