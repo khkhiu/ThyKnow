@@ -1,5 +1,5 @@
 // public/miniapp/js/app/services/historyService.ts
-import { JournalEntry } from '../../../../../src/types/miniapp';
+import { JournalEntry } from '../../../types/miniapp';
 import { fetchHistory } from '../api';
 import { updateHistory } from '../ui/history';
 

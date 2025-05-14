@@ -1,5 +1,5 @@
 // public/miniapp/js/app/main.ts
-import { TelegramWebApp, TelegramUser } from '../../../../src/types/miniapp';
+import { TelegramWebApp, TelegramUser } from '../../types/miniapp';
 import { ELEMENTS, TIMING } from './config';
 import { 
   initTelegramApp, 

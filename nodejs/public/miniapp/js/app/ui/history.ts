@@ -1,5 +1,5 @@
 // public/miniapp/js/app/ui/history.ts
-import { JournalEntry } from '../../../../../src/types/miniapp';
+import { JournalEntry } from '../../../types/miniapp';
 import { ELEMENTS } from '../config';
 import { setInnerHTML, showElement, hideElement } from '../utils/elements';
 import { 

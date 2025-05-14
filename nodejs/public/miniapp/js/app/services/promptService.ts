@@ -1,5 +1,5 @@
 // public/miniapp/js/app/services/promptService.ts
-import { PromptData, ResponseData, TelegramWebApp } from '../../../../../src/types/miniapp';
+import { PromptData, ResponseData, TelegramWebApp } from '../../../types/miniapp';
 import { fetchTodaysPrompt, fetchNewPromptDirectly } from '../api';
 import { updatePrompt, resetPromptUI } from '../ui/prompt';
 import { getElementValue, clearElementValue, scrollIntoView } from '../utils/elements';

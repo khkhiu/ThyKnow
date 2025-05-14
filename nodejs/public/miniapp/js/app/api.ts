@@ -6,7 +6,7 @@ import {
   JournalEntry, 
   UserData, 
   ResponseData 
-} from '../../../../src/types/miniapp';
+} from '../../types/miniapp';
 
 /**
  * Fetch app configuration
