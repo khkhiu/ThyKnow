@@ -1,5 +1,5 @@
 // src/server.ts
-// Server startup with improved Railway webhook configuration
+// Server startup with improved Railway deployment support
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -9,6 +9,7 @@ import config from './config';
 import { setupScheduler } from './services/schedulerService';
 import { logger } from './utils/logger';
 import { initDatabase, checkDatabaseConnection, closePool } from './database';
+import { ensurePublicDirectory } from './utils/ensurePublicDir';
 
 // Helper function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -38,6 +39,7 @@ function logEnvironmentInfo() {
   logger.info(`Node Environment: ${config.nodeEnv}`);
   logger.info(`Timezone: ${config.timezone}`);
   logger.info(`Server Port: ${config.port}`);
+  logger.info(`Current Working Directory: ${process.cwd()}`);
   
   // Log Railway-specific variables
   if (process.env.RAILWAY_SERVICE_NAME) {
@@ -67,6 +69,9 @@ async function startServer() {
     // Log startup and environment info
     logger.info('Starting ThyKnow server...');
     logEnvironmentInfo();
+    
+    // Ensure public directory exists with proper structure for Railway deployment
+    ensurePublicDirectory();
     
     // Initialize and connect to PostgreSQL with retry logic
     logger.info('Connecting to PostgreSQL database...');

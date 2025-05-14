@@ -1,4 +1,4 @@
-# Use node:23. previous versions contain vulnerabilities
+# Use Node.js v23 as the base image
 FROM node:23-slim
 
 # Set working directory
@@ -7,11 +7,11 @@ WORKDIR /app
 # Verify Node.js and npm are available
 RUN node --version && npm --version
 
-# Copy package files and tsconfig first for better caching
+# Copy package files and tsconfig first
 COPY package*.json ./
 COPY tsconfig*.json ./
 
-# Install dependencies
+# Install dependencies 
 RUN npm ci
 
 # Copy the entire codebase
@@ -20,12 +20,23 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Ensure the public directory is properly structured
+RUN if [ ! -d "/app/dist/public" ]; then \
+      mkdir -p /app/dist/public; \
+    fi
+
+# Copy the public directory to ensure it's available in both locations
+RUN cp -r public/* dist/public/ || echo "No files to copy from public/"
+
 # Clean up dev dependencies to reduce image size
 RUN npm prune --production
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
+
+# Create a script to check files on startup
+RUN echo '#!/bin/sh\necho "Checking directory structure..."\nls -la\necho "\nPublic directory:"\nls -la public\necho "\nDist directory:"\nls -la dist\necho "\nDist/public directory:"\nls -la dist/public\necho "\nStarting application..."\nnode dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose the application port
 EXPOSE 3000
@@ -34,5 +45,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application
-CMD ["node", "dist/src/server.js"]
+# Start the application with our check script
+CMD ["/app/start.sh"]
