@@ -75,7 +75,7 @@ app.get('/health', minimalHealthCheck); // Fast endpoint for Railway's health ch
 app.get('/health/detailed', healthCheck); // Detailed health check for monitoring
 
 // API version and info endpoint
-app.get('/api/info', (req, res) => {
+app.get('/api/info', (_req, res) => {
   res.status(200).json({
     name: 'ThyKnow API',
     version: '1.0.0',
@@ -85,7 +85,7 @@ app.get('/api/info', (req, res) => {
 });
 
 // Simple home page
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.status(200).send(`
     <html>
       <head>
