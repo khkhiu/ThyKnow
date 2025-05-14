@@ -7,7 +7,7 @@ import config from '../config';
  * This is used by Railway for automated health checks
  * It works even when the database is down
  */
-export const minimalHealthCheck = (req: Request, res: Response): void => {
+export const minimalHealthCheck = (_req: Request, res: Response): void => {
   // Always return 200 for Railway's health checks
   // This ensures the service stays up even if the database is temporarily down
   res.status(200).json({

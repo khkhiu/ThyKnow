@@ -40,7 +40,7 @@ router.get('/pet', (req: Request, res: Response) => {
  * GET /miniapp/config
  * Provides configuration data for the mini-app
  */
-router.get('/config', (req: Request, res: Response) => {
+router.get('/config', (_req: Request, res: Response) => {
   try {
     // Provide necessary configuration to the mini-app front-end
     // Avoid exposing sensitive information
