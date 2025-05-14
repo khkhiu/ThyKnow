@@ -1,32 +1,40 @@
 {
-  "name": "thyknow-express",
+  "name": "thyknow-telegram-app",
   "version": "1.0.0",
-  "description": "ThyKnow Telegram bot for self-awareness and connections",
+  "description": "ThyKnow - A Telegram Mini App for self-awareness and building connections",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
-    "build": "tsc",
+    "build": "tsc && npm run build:miniapp",
+    "build:server": "tsc",
+    "build:miniapp": "tsc -p tsconfig.miniapp.json",
+    "watch:miniapp": "tsc -p tsconfig.miniapp.json --watch",
+    "clean:miniapp": "rimraf public/miniapp/dist/*",
     "railway:up": "railway up",
     "railway:status": "railway status",
     "railway:logs": "railway logs",
     "setup-webhook": "ts-node scripts/setup-railway-webhook.ts",
     "railway:webhook": "railway run ts-node scripts/setup-railway-webhook.ts",
-    "lint": "eslint --ext .ts src/",
-    "lint:fix": "eslint --ext .ts src/ --fix",
+    "setup-webapp": "ts-node scripts/setup-webapp-with-botfather.ts",
+    "lint": "eslint --ext .ts src/ public/miniapp/src/",
+    "lint:fix": "eslint --ext .ts src/ public/miniapp/src/ --fix",
     "test": "mocha --require ts-node/register test/**/*.test.ts",
     "test:coverage": "nyc --reporter=lcov --reporter=text npm test",
+    "db:test": "node scripts/railway-db-test.js",
     "postinstall": "npm run build"
   },
   "keywords": [
     "telegram",
     "bot",
+    "mini-app",
     "journaling",
     "self-awareness",
     "connections",
-    "railway"
+    "railway",
+    "typescript"
   ],
-  "author": "",
+  "author": "ThyKnow Team",
   "license": "ISC",
   "engines": {
     "node": ">=18.0.0"
@@ -44,7 +52,6 @@
     "moment-timezone": "^0.5.48",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
-    "npm-check-updates": "^18.0.1",
     "pg": "^8.15.6",
     "railway": "^2.0.17",
     "telegraf": "^4.16.3",
@@ -73,12 +80,19 @@
     "eslint-plugin-prettier": "^5.2.6",
     "mocha": "^11.1.0",
     "nodemon": "^3.1.10",
+    "npm-check-updates": "^18.0.1",
     "nyc": "^17.1.0",
     "prettier": "^3.5.3",
+    "rimraf": "^5.0.5",
     "sinon": "^20.0.0",
     "sinon-chai": "^4.0.0",
     "supertest": "^7.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
-  }
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ]
 }
