@@ -66,3 +66,6 @@ declare global {
     originalFetch: typeof fetch;
   }
 }
+
+// Export file as a module
+export {};
