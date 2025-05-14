@@ -39,23 +39,23 @@ export function initializeTelegram(): void {
   
   // Create a global fetch wrapper that includes Telegram init data
   window.originalFetch = window.fetch;
-  window.fetch = function(url: RequestInfo, options: RequestInit = {}): Promise<Response> {
+  window.fetch = function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     // Create new options object to avoid modifying the original
-    const newOptions: RequestInit = { ...options };
+    const newInit: RequestInit = init ? { ...init } : {};
     
     // Initialize headers if not present
-    newOptions.headers = newOptions.headers || {};
+    newInit.headers = newInit.headers || {};
     
     // Add Telegram init data to headers
     if (tg.initData) {
-      newOptions.headers = {
-        ...newOptions.headers,
+      newInit.headers = {
+        ...newInit.headers,
         'X-Telegram-Init-Data': tg.initData
       };
     }
     
     // Call original fetch with updated options
-    return window.originalFetch(url, newOptions);
+    return window.originalFetch(input, newInit);
   };
   
   // Listen for theme changes
