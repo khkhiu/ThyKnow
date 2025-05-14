@@ -1,151 +1,116 @@
-// src/app.ts (Static File Configuration Update)
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
+// src/routes/miniAppRoutes.ts
+import { Router, Request, Response } from 'express';
 import path from 'path';
-import { Telegraf } from 'telegraf';
-import { setupBotCommands } from '@/controllers';
-import { errorHandler } from '@/middleware/errorHandler';
-import config from '@/config';
-import { logger } from '@/utils/logger';
-import { stream } from '@/utils/logger';
-import dotenv from 'dotenv';
-import pubSubRoutes from '@/routes/pubSubRoutes';
-import miniAppRoutes from '@/routes/miniAppRoutes';
-import miniAppApiRouter from '@/routes/miniAppApiRoutes';
+import config from '../config';
+import { logger } from '../utils/logger';
 
-// Import health check controllers
-import { healthCheck } from '@/controllers/healthController';
-import { minimalHealthCheck } from '@/controllers/minimalHealthCheck';
+const router = Router();
 
-// Load environment variables
-dotenv.config();
-
-// Create Express app
-const app = express();
-
-// Create Telegram bot instance
-export const bot = new Telegraf(config.telegramBotToken);
-
-// Setup middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "telegram.org", "*.telegram.org", "unpkg.com", "cdnjs.cloudflare.com"],
-      connectSrc: ["'self'", "telegram.org", "*.telegram.org"],
-      frameSrc: ["'self'", "telegram.org", "*.telegram.org"],
-      imgSrc: ["'self'", "data:", "telegram.org", "*.telegram.org"],
-      styleSrc: ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com"]
-    }
+// Helper function to resolve the correct file path depending on environment
+function resolvePublicPath(relativePath: string): string {
+  // In production (Railway), the files will be in a different location after build
+  if (config.nodeEnv === 'production') {
+    // First try the path relative to the current directory
+    const prodPath = path.join(process.cwd(), 'public', relativePath);
+    logger.debug(`Resolved production path: ${prodPath}`);
+    return prodPath;
+  } else {
+    // In development, use the path relative to the src directory
+    const devPath = path.join(__dirname, '../../public', relativePath);
+    logger.debug(`Resolved development path: ${devPath}`);
+    return devPath;
   }
-}));
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+}
 
-// Add Morgan request logging middleware
-app.use(morgan('combined', { stream }));
-
-// Serve static files - updated for Railway deployment
-// Using process.cwd() to ensure correct paths in production
-const publicPath = path.join(process.cwd(), 'public');
-logger.info(`Serving static files from: ${publicPath}`);
-app.use(express.static(publicPath));
-
-// Add a path logging middleware to help debug file paths
-app.use((req, _res, next) => {
-  logger.debug(`Request path: ${req.path}`);
-  next();
-});
-
-// Setup bot commands and handlers
-setupBotCommands(bot);
-
-// Set up webhook endpoint for Telegram
-app.use('/webhook', express.json(), (req, res) => {
-  logger.debug('Received webhook request:', {
-    body: req.body,
-    headers: req.headers
-  });
-  bot.handleUpdate(req.body, res);
-});
-
-// Set up Pub/Sub routes (used for scheduled messages)
-app.use('/pubsub', pubSubRoutes);
-
-// Set up Mini-App routes
-app.use('/miniapp', miniAppRoutes);
-app.use('/api/miniapp', miniAppApiRouter);
-
-// Health check endpoints (required for Railway)
-app.get('/health', minimalHealthCheck); // Fast endpoint for Railway's health checks
-app.get('/health/detailed', healthCheck); // Detailed health check for monitoring
-
-// API version and info endpoint
-app.get('/api/info', (_req, res) => {
-  res.status(200).json({
-    name: 'ThyKnow API',
-    version: '1.0.0',
-    description: 'API for ThyKnow Telegram bot',
-    environment: config.nodeEnv
-  });
-});
-
-// Simple home page with file path information for debugging
-app.get('/', (_req, res) => {
-  res.status(200).send(`
-    <html>
-      <head>
-        <title>ThyKnow - API Server</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-          h1 { color: #333; }
-          .container { max-width: 800px; margin: 0 auto; }
-          .debug { background: #f0f0f0; padding: 10px; border-radius: 5px; font-family: monospace; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>ThyKnow API Server</h1>
-          <p>This is the ThyKnow API server. It's working correctly!</p>
-          <p>Check <a href="/health">health status</a> or <a href="/api/info">API info</a>.</p>
-          <p>To interact with ThyKnow, please visit our <a href="https://t.me/your_bot_username">Telegram Bot</a>.</p>
-          <p>Our <a href="/miniapp">Telegram Mini App</a> is also available.</p>
-          
-          <div class="debug">
-            <h3>Debug Information:</h3>
-            <p>Environment: ${config.nodeEnv}</p>
-            <p>Current Directory: ${process.cwd()}</p>
-            <p>Public Path: ${publicPath}</p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `);
-});
-
-// Error handling middleware
-app.use(errorHandler);
-
-// Handle 404 errors
-app.use((req, res) => {
-  logger.debug(`404 Not Found: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({ error: 'Not found', path: req.originalUrl });
-});
-
-// Global error handlers
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  // Don't exit the process in production, as Railway will just restart it
-  if (config.nodeEnv !== 'production') {
-    process.exit(1);
+/**
+ * GET /miniapp
+ * Serves the mini-app main entry point
+ */
+router.get('/', (req: Request, res: Response) => {
+  try {
+    const indexPath = resolvePublicPath('miniapp/index.html');
+    logger.debug(`Serving mini-app at ${req.originalUrl} from ${indexPath}`);
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        logger.error(`Error sending file ${indexPath}:`, err);
+        res.status(500).send(`Error loading mini-app: ${err.message}`);
+      }
+    });
+  } catch (error) {
+    logger.error('Error serving mini-app:', error);
+    res.status(500).send('Error loading mini-app');
   }
 });
 
-export default app;
+/**
+ * GET /miniapp/pet
+ * Serves the mini-app dino friend page
+ */
+router.get('/pet', (req: Request, res: Response) => {
+  try {
+    const petPath = resolvePublicPath('miniapp/pet.html');
+    logger.debug(`Serving dino friend page at ${req.originalUrl} from ${petPath}`);
+    res.sendFile(petPath, (err) => {
+      if (err) {
+        logger.error(`Error sending file ${petPath}:`, err);
+        res.status(500).send(`Error loading dino friend page: ${err.message}`);
+      }
+    });
+  } catch (error) {
+    logger.error('Error serving dino friend page:', error);
+    res.status(500).send('Error loading dino friend page');
+  }
+});
+
+/**
+ * GET /miniapp/config
+ * Provides configuration data for the mini-app
+ */
+router.get('/config', (_req: Request, res: Response) => {
+  try {
+    // Provide necessary configuration to the mini-app front-end
+    // Avoid exposing sensitive information
+    const miniAppConfig = {
+      appName: 'ThyKnow',
+      version: '1.0.0', 
+      timezone: config.timezone,
+      features: {
+        selfAwareness: true,
+        connections: true,
+        history: true,
+        affirmations: true,
+        pet: true
+      }
+    };
+    
+    res.json(miniAppConfig);
+  } catch (error) {
+    logger.error('Error serving mini-app config:', error);
+    res.status(500).json({ error: 'Failed to load configuration' });
+  }
+});
+
+/**
+ * GET /miniapp/user/:userId
+ * Provides user data for the mini-app
+ */
+router.get('/user/:userId', (req: Request, res: Response) => {
+  try {
+    // In a real implementation, you would validate the request
+    // and fetch actual user data
+    const userData = {
+      userId: req.params.userId,
+      // Don't include sensitive data here
+      preferences: {
+        // Public preferences only
+      }
+    };
+    
+    res.json(userData);
+  } catch (error) {
+    logger.error(`Error serving user data for ${req.params.userId}:`, error);
+    res.status(500).json({ error: 'Failed to load user data' });
+  }
+});
+
+export default router;
