@@ -1,4 +1,4 @@
-# Use Node.js v20 (more stable than v23) as the base image
+# Use node:23. previous versions contain vulnerabilities
 FROM node:23-slim
 
 # Set working directory
@@ -7,9 +7,9 @@ WORKDIR /app
 # Verify Node.js and npm are available
 RUN node --version && npm --version
 
-# Copy package files and tsconfig first
+# Copy package files and tsconfig first for better caching
 COPY package*.json ./
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 
 # Install dependencies
 RUN npm ci
@@ -35,4 +35,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # Start the application
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/src/server.js"]
