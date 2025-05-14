@@ -17,7 +17,7 @@ const state: DinoState = {
 export function setBackgroundImage(): void {
     const backgroundElement = document.getElementById(ELEMENTS.BACKGROUND);
     if (backgroundElement) {
-        backgroundElement.style.backgroundImage = `url('${IMAGES.BACKGROUND}')`;
+        (backgroundElement as HTMLElement).style.backgroundImage = `url('${IMAGES.BACKGROUND}')`;
         console.log("Background image set");
     }
 }
@@ -162,13 +162,13 @@ function centerDinoImage(): void {
     }
     
     // Ensure the container is properly set up for centering
-    dinoContainer.style.display = 'flex';
-    dinoContainer.style.justifyContent = 'center';
-    dinoContainer.style.alignItems = 'center';
+    (dinoContainer as HTMLElement).style.display = 'flex';
+    (dinoContainer as HTMLElement).style.justifyContent = 'center';
+    (dinoContainer as HTMLElement).style.alignItems = 'center';
     
     // Style the dino image for interaction
-    dinoImage.style.position = 'static';
-    dinoImage.style.cursor = 'pointer';
+    (dinoImage as HTMLElement).style.position = 'static';
+    (dinoImage as HTMLElement).style.cursor = 'pointer';
     
     console.log("Dino image centered");
 }
