@@ -1,5 +1,5 @@
 // public/miniapp/js/pet/speechBubble.ts
-import { TelegramWebApp } from '../../../../src/types/miniapp';
+import { TelegramWebApp } from '../../types/miniapp';
 import { DINO_SPEECH, TIMING, ELEMENTS } from './config';
 import { provideHapticFeedback } from './telegramApp';
 

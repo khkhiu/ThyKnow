@@ -1,5 +1,5 @@
 // public/miniapp/js/pet/app.ts
-import { TelegramWebApp } from '../../../../src/types/miniapp';
+import { TelegramWebApp } from '../../types/miniapp';
 import { TIMING, ELEMENTS } from './config';
 import { initTelegramApp, notifyAppReady } from './telegramApp';
 import { updateTheme } from './theme';

@@ -1,5 +1,5 @@
 // public/miniapp/js/pet/config.ts
-import { ImagePaths, AnimationTiming, DomElements } from '../../../../src/types/dinoFriend';
+import { ImagePaths, AnimationTiming, DomElements } from '../../types/dinoFriend';
 
 /**
  * Speech bubbles content - positive messages from the dino

@@ -1,5 +1,5 @@
 // public/miniapp/js/pet/theme.ts
-import { TelegramWebApp } from '../../../../src/types/miniapp';
+import { TelegramWebApp } from '../../types/miniapp';
 
 /**
  * Update theme based on Telegram color scheme

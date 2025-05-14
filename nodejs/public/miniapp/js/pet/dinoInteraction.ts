@@ -1,6 +1,6 @@
 // public/miniapp/js/pet/dinoInteraction.ts
-import { TelegramWebApp } from '../../../../src/types/miniapp';
-import { DinoState } from '../../../../src/types/dinoFriend';
+import { TelegramWebApp } from '../../types/miniapp';
+import { DinoState } from '../../types/dinoFriend';
 import { IMAGES, TIMING, ELEMENTS } from './config';
 import { provideHapticFeedback } from './telegramApp';
 import { showSpeechBubble } from './speechBubble';

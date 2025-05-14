@@ -1,5 +1,5 @@
 // public/miniapp/js/pet/telegramApp.ts
-import { TelegramWebApp } from '../../../../src/types/miniapp';
+import { TelegramWebApp } from '../../types/miniapp';
 
 /**
  * Initialize the Telegram Web App integration
