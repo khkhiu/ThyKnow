@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "es2020",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "lib": ["es2020", "dom"],
+    "outDir": "./public/miniapp/dist",
+    "rootDir": "./public/miniapp"
+  },
+  "include": ["public/miniapp/**/*.ts", "src/types/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

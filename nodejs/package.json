@@ -4,9 +4,10 @@
   "description": "ThyKnow Telegram bot for self-awareness and connections",
   "main": "dist/server.js",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
-    "build": "tsc && npm run build:frontend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "tsc -p tsconfig.json",
     "build:frontend": "tsc -p tsconfig.frontend.json",
     "railway:up": "railway up",
     "railway:status": "railway status",
