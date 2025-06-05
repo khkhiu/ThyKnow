@@ -1,19 +1,32 @@
 {
   "compilerOptions": {
-    "target": "es2017",
+    "target": "es2020",
     "module": "es2020",
     "moduleResolution": "node",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "lib": ["es2020", "dom"],
-    "outDir": "./public/miniapp/dist",
-    "rootDir": "./public/miniapp"
+    "lib": ["es2020", "dom", "dom.iterable"],
+    "declaration": false,
+    "outDir": "./temp-ts-output",
+    "rootDir": "./public/miniapp",
+    "baseUrl": "./public/miniapp",
+    "paths": {
+      "~/*": ["./*"]
+    },
+    "resolveJsonModule": true
   },
-  "include": ["public/miniapp/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "public/miniapp/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules", 
+    "dist",
+    "public/miniapp/dist"
+  ]
 }
