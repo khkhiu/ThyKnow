@@ -3,7 +3,6 @@ import { User } from '../models/User';
 import { PROMPTS } from '../constants';
 import { Prompt, PromptType } from '../types';
 import { logger } from '../utils/logger';
-import { userService } from './userService';
 
 export class PromptService {
   private promptHistory: Record<PromptType, string[]> = {

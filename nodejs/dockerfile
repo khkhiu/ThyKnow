@@ -1,4 +1,4 @@
-# Use Node.js v20 (more stable than v23) as the base image
+# Use Node.js v23 as the base image
 FROM node:23-slim
 
 # Set working directory
@@ -9,16 +9,31 @@ RUN node --version && npm --version
 
 # Copy package files and tsconfig first
 COPY package*.json ./
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 
-# Install dependencies
+# Copy scripts needed for build
+COPY scripts/copy-static-files.js ./scripts/
+COPY scripts/copy-images.js ./scripts/
+
+# Install dependencies (including esbuild)
 RUN npm ci
 
 # Copy the entire codebase
 COPY . .
 
+# Create default image directories so the build doesn't fail
+RUN mkdir -p public/miniapp/images
+RUN mkdir -p public/miniapp/dist
+
 # Build the application
-RUN npm run build
+# 1. Build backend TypeScript
+# 2. Bundle frontend with esbuild 
+# 3. Copy static files and images
+RUN npm run build:backend && npm run build:frontend && npm run copy-public
+
+# Ensure the public directory is properly structured
+RUN mkdir -p /app/dist/public/miniapp/dist
+RUN cp -r public/* dist/public/ || true
 
 # Clean up dev dependencies to reduce image size
 RUN npm prune --production
@@ -27,6 +42,9 @@ RUN npm prune --production
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Create a script to check files on startup
+RUN echo '#!/bin/sh\necho "Checking directory structure..."\nls -la\necho "\nPublic directory:"\nls -la public\necho "\nPublic/miniapp directory:"\nls -la public/miniapp\necho "\nPublic/miniapp/dist directory:"\nls -la public/miniapp/dist\necho "\nDist directory:"\nls -la dist\necho "\nDist/public directory:"\nls -la dist/public\necho "\nDist/public/miniapp directory:"\nls -la dist/public/miniapp\necho "\nDist/public/miniapp/dist directory:"\nls -la dist/public/miniapp/dist\necho "\nStarting application..."\nnode dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
+
 # Expose the application port
 EXPOSE 3000
 
@@ -34,5 +52,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application
-CMD ["node", "dist/server.js"]
+# Start the application with our check script
+CMD ["/app/start.sh"]

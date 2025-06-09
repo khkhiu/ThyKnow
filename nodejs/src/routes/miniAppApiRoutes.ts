@@ -118,7 +118,7 @@ function generateNewPrompt(req: Request, res: Response, next: NextFunction): voi
  * Handler for GET /api/miniapp/history/:userId
  * Get journal entry history for a user with optional limit
  */
-function getHistory(req: Request, res: Response, next: NextFunction): void {
+function getHistory(req: Request, res: Response, _next: NextFunction): void {
   const { userId } = req.params;
   const limit = parseInt(req.query.limit as string) || 10;
   
@@ -208,7 +208,7 @@ function saveResponse(req: Request, res: Response, next: NextFunction): void {
  * Handler for GET /api/miniapp/pet/random
  * Get a random affirmation
  */
-function getRandomAffirmation(req: Request, res: Response): void {
+function getRandomAffirmation(_req: Request, res: Response): void {
   try {
     // List of pet
     const pet = [
@@ -294,7 +294,7 @@ function shareAffirmation(req: Request, res: Response): void {
  * Handler for GET /api/miniapp/dinoMessages/random
  * Get a random dino speech bubble message
  */
-function getRandomDinoMessage(req: Request, res: Response): void {
+function getRandomDinoMessage(_req: Request, res: Response): void {
   try {
     // List of dino speech messages
     const dinoMessages = [

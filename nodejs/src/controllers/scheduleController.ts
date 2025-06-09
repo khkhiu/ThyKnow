@@ -38,12 +38,10 @@ export async function handleScheduleCommand(ctx: Context): Promise<void> {
     
     // Get current Singapore time
     const now = moment().tz(config.timezone);
-    const currentDayName = dayNames[now.day()];
     const currentHour24 = now.hour();
     const currentMinute = now.minute();
     
     // Calculate time until next prompt
-    let nextPromptDay = user.schedulePreference.day;
     let daysToAdd = 0;
     
     // If today is the scheduled day but the hour has passed, next prompt is next week

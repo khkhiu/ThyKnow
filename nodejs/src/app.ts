@@ -1,4 +1,4 @@
-// src/app.ts (Updated with Mini-App Support)
+// src/app.ts (Static File Configuration Update)
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -13,7 +13,7 @@ import { stream } from './utils/logger';
 import dotenv from 'dotenv';
 import pubSubRoutes from './routes/pubSubRoutes';
 import miniAppRoutes from './routes/miniAppRoutes';
-import miniAppApiRouter from './routes/miniAppApiRoutes';  // Use named import
+import miniAppApiRouter from './routes/miniAppApiRoutes';
 
 // Import health check controllers
 import { healthCheck } from './controllers/healthController';
@@ -48,8 +48,17 @@ app.use(express.urlencoded({ extended: true }));
 // Add Morgan request logging middleware
 app.use(morgan('combined', { stream }));
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve static files - updated for Railway deployment
+// Using process.cwd() to ensure correct paths in production
+const publicPath = path.join(process.cwd(), 'public');
+logger.info(`Serving static files from: ${publicPath}`);
+app.use(express.static(publicPath));
+
+// Add a path logging middleware to help debug file paths
+app.use((req, _res, next) => {
+  logger.debug(`Request path: ${req.path}`);
+  next();
+});
 
 // Setup bot commands and handlers
 setupBotCommands(bot);
@@ -68,14 +77,14 @@ app.use('/pubsub', pubSubRoutes);
 
 // Set up Mini-App routes
 app.use('/miniapp', miniAppRoutes);
-app.use('/api/miniapp', miniAppApiRouter);  // Use the named import
+app.use('/api/miniapp', miniAppApiRouter);
 
 // Health check endpoints (required for Railway)
 app.get('/health', minimalHealthCheck); // Fast endpoint for Railway's health checks
 app.get('/health/detailed', healthCheck); // Detailed health check for monitoring
 
 // API version and info endpoint
-app.get('/api/info', (req, res) => {
+app.get('/api/info', (_req, res) => {
   res.status(200).json({
     name: 'ThyKnow API',
     version: '1.0.0',
@@ -84,8 +93,8 @@ app.get('/api/info', (req, res) => {
   });
 });
 
-// Simple home page
-app.get('/', (req, res) => {
+// Simple home page with file path information for debugging
+app.get('/', (_req, res) => {
   res.status(200).send(`
     <html>
       <head>
@@ -94,6 +103,7 @@ app.get('/', (req, res) => {
           body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
           h1 { color: #333; }
           .container { max-width: 800px; margin: 0 auto; }
+          .debug { background: #f0f0f0; padding: 10px; border-radius: 5px; font-family: monospace; }
         </style>
       </head>
       <body>
@@ -103,6 +113,13 @@ app.get('/', (req, res) => {
           <p>Check <a href="/health">health status</a> or <a href="/api/info">API info</a>.</p>
           <p>To interact with ThyKnow, please visit our <a href="https://t.me/your_bot_username">Telegram Bot</a>.</p>
           <p>Our <a href="/miniapp">Telegram Mini App</a> is also available.</p>
+          
+          <div class="debug">
+            <h3>Debug Information:</h3>
+            <p>Environment: ${config.nodeEnv}</p>
+            <p>Current Directory: ${process.cwd()}</p>
+            <p>Public Path: ${publicPath}</p>
+          </div>
         </div>
       </body>
     </html>

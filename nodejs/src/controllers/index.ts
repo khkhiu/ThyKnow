@@ -40,7 +40,7 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.on('callback_query', (ctx) => {
     const callbackData = (ctx.callbackQuery as CallbackQuery.DataQuery).data;
     
-    if (!callbackData) return;
+    if (!callbackData) return; // Return explicitly
     
     if (callbackData.startsWith('set_day:') || callbackData.startsWith('set_time:')) {
       return handleScheduleCallback(ctx);
@@ -53,6 +53,9 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     if (callbackData.startsWith('choose:')) {
       return handleChooseCallback(ctx);
     }
+    
+    // Add a default return
+    return; // Ensures all code paths return a value
   });
   
   // Middleware for handling text - try feedback first, then fall back to regular text handling

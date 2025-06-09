@@ -6,15 +6,36 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
+// Helper function to resolve the correct file path depending on environment
+function resolvePublicPath(relativePath: string): string {
+  // In production (Railway), the files will be in a different location after build
+  if (config.nodeEnv === 'production') {
+    // First try the path relative to the current directory
+    const prodPath = path.join(process.cwd(), 'public', relativePath);
+    logger.debug(`Resolved production path: ${prodPath}`);
+    return prodPath;
+  } else {
+    // In development, use the path relative to the src directory
+    const devPath = path.join(__dirname, '../../public', relativePath);
+    logger.debug(`Resolved development path: ${devPath}`);
+    return devPath;
+  }
+}
+
 /**
  * GET /miniapp
  * Serves the mini-app main entry point
  */
 router.get('/', (req: Request, res: Response) => {
   try {
-    const indexPath = path.join(__dirname, '../../public/miniapp/index.html');
-    res.sendFile(indexPath);
-    logger.debug(`Served mini-app at ${req.originalUrl}`);
+    const indexPath = resolvePublicPath('miniapp/index.html');
+    logger.debug(`Serving mini-app at ${req.originalUrl} from ${indexPath}`);
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        logger.error(`Error sending file ${indexPath}:`, err);
+        res.status(500).send(`Error loading mini-app: ${err.message}`);
+      }
+    });
   } catch (error) {
     logger.error('Error serving mini-app:', error);
     res.status(500).send('Error loading mini-app');
@@ -27,9 +48,14 @@ router.get('/', (req: Request, res: Response) => {
  */
 router.get('/pet', (req: Request, res: Response) => {
   try {
-    const petPath = path.join(__dirname, '../../public/miniapp/pet.html');
-    res.sendFile(petPath);
-    logger.debug(`Served dino friend page at ${req.originalUrl}`);
+    const petPath = resolvePublicPath('miniapp/pet.html');
+    logger.debug(`Serving dino friend page at ${req.originalUrl} from ${petPath}`);
+    res.sendFile(petPath, (err) => {
+      if (err) {
+        logger.error(`Error sending file ${petPath}:`, err);
+        res.status(500).send(`Error loading dino friend page: ${err.message}`);
+      }
+    });
   } catch (error) {
     logger.error('Error serving dino friend page:', error);
     res.status(500).send('Error loading dino friend page');
@@ -40,7 +66,7 @@ router.get('/pet', (req: Request, res: Response) => {
  * GET /miniapp/config
  * Provides configuration data for the mini-app
  */
-router.get('/config', (req: Request, res: Response) => {
+router.get('/config', (_req: Request, res: Response) => {
   try {
     // Provide necessary configuration to the mini-app front-end
     // Avoid exposing sensitive information
