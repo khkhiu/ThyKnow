@@ -1,5 +1,34 @@
 /* ThyKnow Dino Friend Page Specific Styles */
 
+/* Root variables for theme colors - makes switching easier */
+:root {
+    --background-color: #f8f9fa;
+    --text-color: #333333;
+    --card-background: rgba(255, 255, 255, 0.8);
+    --border-radius: 15px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --primary-color: #6c63ff;
+    --nav-background: rgba(255, 255, 255, 0.95);
+    --nav-border: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme variable overrides */
+.dark-theme {
+    --background-color: #1a1a1a;
+    --text-color: #e0e0e0;
+    --card-background: rgba(51, 51, 51, 0.8);
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --nav-background: rgba(51, 51, 51, 0.95);
+    --nav-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Apply theme colors to body */
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 .background-container {
     position: fixed;
     top: 0;
@@ -11,6 +40,14 @@
     background-position: center;
     background-repeat: no-repeat;
     opacity: 0.95;
+    /* Smooth theme transition */
+    transition: opacity 0.3s ease;
+}
+
+/* Darken background images in dark theme for better contrast */
+.dark-theme .background-container {
+    opacity: 0.7;
+    filter: brightness(0.8);
 }
 
 .affirmation-container {
@@ -26,13 +63,82 @@
 .header {
     padding: 15px;
     border-radius: var(--border-radius);
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: var(--card-background);
     margin-bottom: 20px;
     box-shadow: var(--box-shadow);
+    /* Smooth theme transition */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.dark-theme .header {
-    background-color: rgba(51, 51, 51, 0.8);
+/* Header top container for title and theme toggle */
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Ensure title doesn't get too cramped on mobile */
+.header-top h1 {
+    margin: 0;
+    flex-grow: 1;
+    text-align: left;
+}
+
+/* Theme toggle button styling */
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: background-color 0.3s ease, transform 0.15s ease;
+    /* Ensure proper touch target size for mobile */
+    min-width: 44px;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.theme-toggle:hover {
+    background-color: rgba(108, 99, 255, 0.1);
+}
+
+.dark-theme .theme-toggle:hover {
+    background-color: rgba(108, 99, 255, 0.2);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Theme toggle icons */
+.theme-icon {
+    position: absolute;
+    font-size: 1.2rem;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    color: var(--primary-color);
+}
+
+.theme-icon.light-icon {
+    opacity: 1;
+}
+
+.theme-icon.dark-icon {
+    opacity: 0;
+}
+
+.dark-theme .theme-icon.light-icon {
+    opacity: 0;
+}
+
+.dark-theme .theme-icon.dark-icon {
+    opacity: 1;
 }
 
 /* Hint text for the blinking feature */
@@ -55,18 +161,15 @@
     justify-content: center;
     align-items: center;
     position: relative; /* This is important for absolute positioning of the speech bubble */
-    /* Changed from min-height to a fixed height to control position better */
     height: auto;
-    /* Remove top margin */
     margin-top: 0;
-    /* Add auto margin to push content to top and bottom */
     margin: auto 0;
     padding-bottom: 20px; /* Space between dino and nav bar */
-    width: 100%; /* Ensure it takes full width */
+    width: 100%;
 }
 
 .dino-image {
-    width: 200px; /* Slightly reduced size to fit better above nav */
+    width: 200px;
     height: auto;
     transition: transform 0.2s ease, filter 0.2s ease;
     cursor: pointer;
@@ -75,10 +178,13 @@
     -webkit-user-drag: none;
     position: relative;
     z-index: 5;
-    /* Important for mobile tapping - ensure a large enough tap target */
     padding: 10px;
-    /* Improve tap visual feedback */
     -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+/* Adjust dino image filter for dark theme */
+.dark-theme .dino-image {
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.4)) brightness(1.1);
 }
 
 .dino-image:hover {
@@ -86,11 +192,15 @@
     filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.3));
 }
 
+.dark-theme .dino-image:hover {
+    filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.5)) brightness(1.1);
+}
+
 .dino-image:active {
     transform: scale(0.95);
 }
 
-/* Updated blink animation to avoid fading - now uses a subtle transform/filter effect instead */
+/* Updated blink animation */
 .blink {
     animation: blinkAnimation 0.8s ease;
 }
@@ -102,29 +212,42 @@
     100% { transform: scale(1); filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2)); }
 }
 
+/* Dark theme blink animation */
+.dark-theme .blink {
+    animation: blinkAnimationDark 0.8s ease;
+}
+
+@keyframes blinkAnimationDark {
+    0% { transform: scale(1); filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.4)) brightness(1.1); }
+    40% { transform: scale(0.98); filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3)) brightness(1.05); }
+    60% { transform: scale(0.98); filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3)) brightness(1.05); }
+    100% { transform: scale(1); filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.4)) brightness(1.1); }
+}
+
 .speech-bubble {
     position: absolute;
     top: -70px;
     background-color: white;
+    color: #333333;
     border-radius: 20px;
     padding: 15px 20px;
     box-shadow: var(--box-shadow);
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
     z-index: 10;
     font-size: 1.1rem;
-    /* Center the speech bubble */
     transform: translateX(-50%) translateY(10px);
     left: 0;
     right: 0;
     margin: 0 auto;
-    width: fit-content; /* This ensures the bubble is only as wide as its content */
-    max-width: 250px; /* Keep your existing max-width */
-}c
+    width: fit-content;
+    max-width: 250px;
+}
 
 .dark-theme .speech-bubble {
-    background-color: var(--card-color);
+    background-color: #333333;
+    color: #e0e0e0;
 }
 
 .speech-bubble::after {
@@ -136,10 +259,11 @@
     border-width: 15px 15px 0;
     border-style: solid;
     border-color: white transparent transparent;
+    transition: border-color 0.3s ease;
 }
 
 .dark-theme .speech-bubble::after {
-    border-color: var(--card-color) transparent transparent;
+    border-color: #333333 transparent transparent;
 }
 
 .speech-bubble.show {
@@ -147,14 +271,51 @@
     transform: translateX(-50%) translateY(0);
 }
 
-/* Added extra styles for the nav-bar to ensure proper spacing */
+/* Enhanced nav bar with theme support */
 .nav-bar {
     margin-top: 0;
     width: 100%;
     border-radius: var(--border-radius);
+    background-color: var(--nav-background);
+    border: 1px solid var(--nav-border);
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
-/* Loading spinner */
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-color);
+    padding: 8px 16px;
+    border-radius: 12px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-width: 60px;
+}
+
+.nav-item:hover {
+    background-color: rgba(108, 99, 255, 0.1);
+}
+
+.nav-item.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.nav-icon {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+}
+
+.nav-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Loading spinner with theme support */
 .loading {
     display: flex;
     justify-content: center;
@@ -167,10 +328,11 @@
     bottom: 0;
     background-color: rgba(255, 255, 255, 0.8);
     z-index: 1000;
+    transition: background-color 0.3s ease;
 }
 
 .dark-theme .loading {
-    background-color: rgba(34, 34, 34, 0.8);
+    background-color: rgba(26, 26, 26, 0.8);
 }
 
 .spinner {
@@ -194,4 +356,60 @@
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 480px) {
+    .header-top h1 {
+        font-size: 1.4rem;
+    }
+    
+    .theme-toggle {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    .theme-icon {
+        font-size: 1rem;
+    }
+    
+    .dino-image {
+        width: 180px;
+    }
+    
+    .speech-bubble {
+        max-width: 200px;
+        font-size: 1rem;
+        padding: 12px 16px;
+    }
+}
+
+/* High contrast mode support for accessibility */
+@media (prefers-contrast: high) {
+    :root {
+        --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dark-theme {
+        --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+    
+    .theme-toggle:hover {
+        background-color: rgba(108, 99, 255, 0.3);
+    }
+}
+
+/* Reduced motion support for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .hint-text {
+        animation: none;
+    }
 }
