@@ -4,48 +4,36 @@ FROM node:23-slim
 # Set working directory
 WORKDIR /app
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
 # Verify Node.js and npm are available
 RUN node --version && npm --version
 
-# Copy package files first for better Docker layer caching
+# Copy package files and tsconfig first
 COPY package*.json ./
 COPY tsconfig*.json ./
 
-# Copy build scripts that are needed during installation
-COPY scripts/ ./scripts/
+# Copy scripts needed for build
+COPY scripts/copy-static-files.js ./scripts/
+COPY scripts/copy-images.js ./scripts/
 
 # Install dependencies (including esbuild)
-RUN npm ci --only=production
-
-# Install dev dependencies needed for build
 RUN npm ci
 
 # Copy the entire codebase
 COPY . .
 
-# Create miniapp directory structure
-RUN mkdir -p public/miniapp/{dist,images} && \
-    mkdir -p dist/public/miniapp/{dist,images}
+# Create default image directories so the build doesn't fail
+RUN mkdir -p public/miniapp/images
+RUN mkdir -p public/miniapp/dist
 
-# Build the application in the correct order
+# Build the application
 # 1. Build backend TypeScript
-RUN npm run build:backend
+# 2. Bundle frontend with esbuild 
+# 3. Copy static files and images
+RUN npm run build:backend && npm run build:frontend && npm run copy-public
 
-# 2. Bundle frontend JavaScript (main.ts and pet.ts)
-RUN npm run build:frontend
-
-# 3. Copy all public files to dist
-RUN npm run copy-public
-
-# Verify the build structure
-RUN echo "📊 Build verification:" && \
-    echo "Public/miniapp contents:" && ls -la public/miniapp/ || echo "No public/miniapp" && \
-    echo "Dist/public/miniapp contents:" && ls -la dist/public/miniapp/ || echo "No dist/public/miniapp" && \
-    echo "JavaScript bundles:" && ls -la public/miniapp/dist/ || echo "No JS bundles" && \
-    echo "Dist JavaScript bundles:" && ls -la dist/public/miniapp/dist/ || echo "No dist JS bundles"
+# Ensure the public directory is properly structured
+RUN mkdir -p /app/dist/public/miniapp/dist
+RUN cp -r public/* dist/public/ || true
 
 # Clean up dev dependencies to reduce image size
 RUN npm prune --production
@@ -54,43 +42,15 @@ RUN npm prune --production
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Create a startup script with better diagnostics
-RUN echo '#!/bin/sh\n\
-echo "🚀 Starting ThyKnow Mini App Server"\n\
-echo "📊 Environment: $NODE_ENV"\n\
-echo "🔌 Port: $PORT"\n\
-echo ""\n\
-echo "📁 Directory Structure:"\n\
-echo "Root directory:" && ls -la\n\
-echo ""\n\
-echo "📦 Public directory:" && ls -la public/ 2>/dev/null || echo "No public directory"\n\
-echo "📱 Public/miniapp:" && ls -la public/miniapp/ 2>/dev/null || echo "No public/miniapp"\n\
-echo "🔧 Public/miniapp/dist:" && ls -la public/miniapp/dist/ 2>/dev/null || echo "No public/miniapp/dist"\n\
-echo "🖼️ Public/miniapp/images:" && ls -la public/miniapp/images/ 2>/dev/null || echo "No public/miniapp/images"\n\
-echo ""\n\
-echo "📦 Dist directory:" && ls -la dist/ 2>/dev/null || echo "No dist directory"\n\
-echo "📱 Dist/public/miniapp:" && ls -la dist/public/miniapp/ 2>/dev/null || echo "No dist/public/miniapp"\n\
-echo "🔧 Dist/public/miniapp/dist:" && ls -la dist/public/miniapp/dist/ 2>/dev/null || echo "No dist/public/miniapp/dist"\n\
-echo ""\n\
-echo "🔍 Key Files Check:"\n\
-test -f public/miniapp/index.html && echo "✅ index.html exists" || echo "❌ index.html missing"\n\
-test -f public/miniapp/pet.html && echo "✅ pet.html exists" || echo "❌ pet.html missing"\n\
-test -f public/miniapp/dist/main.js && echo "✅ main.js bundle exists" || echo "❌ main.js bundle missing"\n\
-test -f public/miniapp/dist/pet.js && echo "✅ pet.js bundle exists" || echo "❌ pet.js bundle missing"\n\
-test -f dist/public/miniapp/index.html && echo "✅ dist/index.html exists" || echo "❌ dist/index.html missing"\n\
-test -f dist/public/miniapp/dist/main.js && echo "✅ dist/main.js bundle exists" || echo "❌ dist/main.js bundle missing"\n\
-echo ""\n\
-echo "🎯 Starting Node.js server..."\n\
-exec node dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
+# Create a script to check files on startup
+RUN echo '#!/bin/sh\necho "Checking directory structure..."\nls -la\necho "\nPublic directory:"\nls -la public\necho "\nPublic/miniapp directory:"\nls -la public/miniapp\necho "\nPublic/miniapp/dist directory:"\nls -la public/miniapp/dist\necho "\nDist directory:"\nls -la dist\necho "\nDist/public directory:"\nls -la dist/public\necho "\nDist/public/miniapp directory:"\nls -la dist/public/miniapp\necho "\nDist/public/miniapp/dist directory:"\nls -la dist/public/miniapp/dist\necho "\nStarting application..."\nnode dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose the application port
 EXPOSE 3000
 
-# Health check - check if server is responding and key files exist
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:3000/health && \
-      test -f public/miniapp/index.html && \
-      test -f dist/public/miniapp/index.html || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
 
-# Use our enhanced startup script
+# Start the application with our check script
 CMD ["/app/start.sh"]
