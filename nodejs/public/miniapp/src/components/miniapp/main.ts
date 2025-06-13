@@ -7,7 +7,7 @@ import {
   setupBackButton, 
   provideHapticFeedback, 
   notifyAppReady 
-} from './services/telegramApp';
+} from '../../../js/app/services/telegramApp';
 import { updateTheme, setupThemeListener, toggleTheme } from './ui/theme';
 import { showElement, hideElement } from './utils/elements';
 import { showError } from './ui/notifications';
