@@ -2,14 +2,14 @@
 // Main entry point for the ThyKnow mini-app
 
 // Import necessary modules
-import { TelegramWebApp, TelegramUser } from './src/types/miniapp';
-import { initTelegramApp, setupBackButton } from './js/app/services/telegramApp';
-import { updateTheme, toggleTheme } from './js/app/ui/theme';
-import { getTodaysPrompt, getNewPrompt, submitPromptResponse } from './js/app/services/promptService';
-import { getHistoryEntries } from './js/app/services/historyService';
-import { showElement, hideElement } from './js/app/utils/elements';
-import { showError } from './js/app/ui/notifications';
-import { fetchConfig, fetchUserData } from './js/app/api';
+import { TelegramWebApp, TelegramUser } from './types/miniapp';
+import { initTelegramApp, setupBackButton } from '../js/app/services/telegramApp';
+import { updateTheme, toggleTheme } from '../js/app/ui/theme';
+import { getTodaysPrompt, getNewPrompt, submitPromptResponse } from '../js/app/services/promptService';
+import { getHistoryEntries } from '../js/app/services/historyService';
+import { showElement, hideElement } from '../js/app/utils/elements';
+import { showError } from '../js/app/ui/notifications';
+import { fetchConfig, fetchUserData } from '../js/app/api';
 
 /**
  * Main entry point - initialize the application

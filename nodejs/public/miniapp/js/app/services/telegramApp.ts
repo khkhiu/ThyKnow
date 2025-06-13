@@ -1,5 +1,5 @@
 // public/miniapp/js/app/services/telegramApp.ts
-import { TelegramWebApp, TelegramUser } from '../../../types/miniapp';
+import { TelegramWebApp, TelegramUser } from '../../../src/types/miniapp';
 
 /**
  * Initialize Telegram WebApp
