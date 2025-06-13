@@ -1,19 +1,19 @@
-// public/miniapp/js/app/main.ts
+//public/miniapp/src/components/miniapp/main.ts
 import { TelegramWebApp, TelegramUser } from '../../types/miniapp';
-import { ELEMENTS, TIMING } from './config';
+import { ELEMENTS, TIMING } from '../../config/app';
 import { 
   initTelegramApp, 
   getTelegramUser, 
   setupBackButton, 
   provideHapticFeedback, 
   notifyAppReady 
-} from '../../../js/app/services/telegramApp';
-import { updateTheme, setupThemeListener, toggleTheme } from './ui/theme';
-import { showElement, hideElement } from './utils/elements';
-import { showError } from './ui/notifications';
-import { fetchConfig, fetchUserData } from './api';
-import { getTodaysPrompt, getNewPrompt, submitPromptResponse } from './services/promptService';
-import { getHistoryEntries } from './services/historyService';
+} from '../../services/telegramApp';
+import { updateTheme, setupThemeListener, toggleTheme } from '../../ui/theme';
+import { showElement, hideElement } from '../../utils/elements';
+import { showError } from '../../ui/notifications';
+import { fetchConfig, fetchUserData } from '../../services/api';
+import { getTodaysPrompt, getNewPrompt, submitPromptResponse } from '../../services/promptService';
+import { getHistoryEntries } from '../../services/historyService';
 
 /**
  * Main entry point - initialize the application
