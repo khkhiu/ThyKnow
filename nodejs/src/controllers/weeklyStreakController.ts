@@ -1,13 +1,14 @@
 // File: src/controllers/weeklyStreakController.ts
-// New controller for handling weekly streak commands in Telegram bot
+// Fixed controller for handling weekly streak commands in Telegram bot
 
 import { Context } from 'telegraf';
-import { userService } from '../services/userService';
+import { Message } from 'telegraf/typings/core/types/typegram';
+import { UserService } from '../services/userService'; // Import the class directly
 import { logger } from '../utils/logger';
-import { Points } from '../models/Points';
+import { Points, IPointsHistory } from '../models/Points';
 
 // Initialize weekly-enabled user service
-const weeklyUserService = new userService.UserService();
+const weeklyUserService = new UserService(); // Use the class directly
 
 /**
  * Handle the /streak command - show user's weekly streak information
@@ -54,7 +55,7 @@ export async function handleWeeklyStreakCommand(ctx: Context): Promise<void> {
     // Recent activity
     if (streakStats.pointsHistory.length > 0) {
       message += `📈 Recent Activity:\n`;
-      streakStats.pointsHistory.slice(0, 3).forEach(entry => {
+      streakStats.pointsHistory.slice(0, 3).forEach((entry: IPointsHistory) => {
         const date = new Date(entry.timestamp).toLocaleDateString();
         message += `• ${date}: +${entry.pointsEarned} points (${formatReason(entry.reason)})\n`;
       });
@@ -69,38 +70,142 @@ export async function handleWeeklyStreakCommand(ctx: Context): Promise<void> {
 }
 
 /**
- * Handle the /leaderboard command - show weekly streak leaderboard
+ * Handle the /leaderboard command - show top weekly performers
  */
-export async function handleWeeklyLeaderboardCommand(ctx: Context): Promise<void> {
+export async function handleLeaderboardCommand(ctx: Context): Promise<void> {
   try {
+    const userId = ctx.from?.id.toString();
+    
+    if (!userId) {
+      logger.error('No user ID found in leaderboard command');
+      return;
+    }
+    
     const leaderboard = await weeklyUserService.getLeaderboard(10);
-    const systemStats = await weeklyUserService.getSystemStats();
     
     let message = `🏆 Weekly Reflection Leaderboard\n\n`;
     
     if (leaderboard.length === 0) {
-      message += `No one has started their weekly reflection journey yet.\nBe the first to begin!\n\n`;
+      message += `No weekly streaks yet! Be the first to start your journey.\n\n`;
+      message += `Use any prompt command to begin your weekly reflection streak!`;
     } else {
-      leaderboard.forEach((entry, index) => {
-        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📍';
-        message += `${medal} #${entry.rank}: ${entry.totalPoints.toLocaleString()} pts (${entry.currentStreak}w streak)\n`;
+      leaderboard.forEach((user, index) => {
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔸';
+        message += `${medal} #${user.rank}: ${user.currentStreak} weeks (${user.totalPoints.toLocaleString()} pts)\n`;
       });
-      message += '\n';
+      
+      // Find current user's rank in the leaderboard
+      const currentUser = leaderboard.find(user => user.userId === userId);
+      if (!currentUser && leaderboard.length === 10) {
+        // User might be ranked lower than top 10, get extended leaderboard to find them
+        try {
+          const extendedLeaderboard = await weeklyUserService.getLeaderboard(100);
+          const userInExtended = extendedLeaderboard.find(user => user.userId === userId);
+          if (userInExtended) {
+            message += `\n⭐ Your rank: #${userInExtended.rank}`;
+          }
+        } catch (error) {
+          // If we can't get extended leaderboard, just skip showing user rank
+          logger.warn('Could not fetch extended leaderboard for user rank');
+        }
+      }
     }
-    
-    // System statistics
-    message += `📊 Community Stats:\n`;
-    message += `• ${systemStats.totalActiveStreaks} active streaks\n`;
-    message += `• ${systemStats.averageStreak} weeks average streak\n`;
-    message += `• ${systemStats.longestCurrentStreak} weeks longest current streak\n`;
-    message += `• ${systemStats.usersWithMultipleEntriesThisWeek} users with multiple entries this week\n\n`;
-    message += `Weekly reflection builds lasting self-awareness! 🌱`;
     
     await ctx.reply(message);
     
   } catch (error) {
-    logger.error('Error in weekly leaderboard command:', error);
-    await ctx.reply('Sorry, there was an error fetching the weekly leaderboard. Please try again later.');
+    logger.error('Error in leaderboard command:', error);
+    await ctx.reply('Sorry, there was an error fetching the leaderboard. Please try again later.');
+  }
+}
+
+/**
+ * Handle text messages for weekly journal submissions
+ */
+export async function handleWeeklyJournalSubmission(ctx: Context): Promise<void> {
+  try {
+    // Check if message has text property using type guard
+    const message = ctx.message;
+    if (!message || !('text' in message)) {
+      return;
+    }
+    
+    const textMessage = message as Message.TextMessage;
+    const userId = ctx.from?.id.toString();
+    const responseText = textMessage.text;
+    
+    if (!userId || !responseText) {
+      logger.error('Missing user ID or response text');
+      return;
+    }
+    
+    // Ignore command messages
+    if (responseText.startsWith('/')) {
+      return;
+    }
+    
+    // Get user data
+    const user = await weeklyUserService.getUser(userId);
+    
+    if (!user) {
+      logger.info(`User ${userId} not found, suggesting to start the bot`);
+      await ctx.reply("Please start the bot with /start first!");
+      return;
+    }
+    
+    // Check if user has a recent prompt
+    const userWithPrompt = user as any; // Temporary any cast for lastPrompt access
+    if (!userWithPrompt.lastPrompt) {
+      await ctx.reply(
+        "I don't see a recent prompt for you. Use /prompt to get a new reflection question!"
+      );
+      return;
+    }
+    
+    // Submit the weekly journal entry
+    const submissionResult = await weeklyUserService.submitJournalEntry(
+      userId,
+      userWithPrompt.lastPrompt.text,
+      userWithPrompt.lastPrompt.type,
+      responseText
+    );
+    
+    // Create response message based on submission result
+    let responseMessage = '';
+    
+    if (submissionResult.streakBroken) {
+      responseMessage += `😔 Your streak was broken, but you're starting fresh!\n\n`;
+    }
+    
+    if (submissionResult.isNewRecord) {
+      responseMessage += `🎉 NEW PERSONAL RECORD!\n`;
+      responseMessage += `You've reached ${submissionResult.newStreak} weeks - your longest streak yet!\n\n`;
+    } else if (!submissionResult.isMultipleEntry) {
+      responseMessage += `🔥 Streak continued: ${submissionResult.newStreak} week${submissionResult.newStreak === 1 ? '' : 's'}!\n\n`;
+    }
+    
+    if (submissionResult.isMultipleEntry) {
+      responseMessage += `✨ Bonus reflection this week! `;
+    } else {
+      responseMessage += `📝 Weekly reflection saved! `;
+    }
+    
+    responseMessage += `+${submissionResult.pointsAwarded} points\n`;
+    responseMessage += `💎 Total: ${submissionResult.totalPoints.toLocaleString()} points\n\n`;
+    
+    if (submissionResult.milestoneReached) {
+      responseMessage += `🏆 MILESTONE ACHIEVED! ${submissionResult.milestoneReached} week milestone bonus!\n\n`;
+    }
+    
+    responseMessage += `Use /streak to see your complete weekly journey stats!`;
+    
+    await ctx.reply(responseMessage);
+    
+    logger.info(`Weekly journal submission processed for user ${userId}: ${submissionResult.pointsAwarded} points, streak ${submissionResult.newStreak}`);
+    
+  } catch (error) {
+    logger.error('Error processing weekly journal submission:', error);
+    await ctx.reply('Sorry, there was an error saving your reflection. Please try again.');
   }
 }
 
@@ -149,155 +254,17 @@ Use /streak to see your progress!
 }
 
 /**
- * Handle the /mystats command - detailed personal statistics
- */
-export async function handleMyStatsCommand(ctx: Context): Promise<void> {
-  try {
-    const userId = ctx.from?.id.toString();
-    
-    if (!userId) {
-      logger.error('No user ID found in my stats command');
-      return;
-    }
-    
-    const user = await weeklyUserService.getUser(userId);
-    const streakStats = await weeklyUserService.getStreakStats(userId);
-    const pointsHistory = await weeklyUserService.getPointsHistory(userId, 10);
-    
-    if (!user) {
-      await ctx.reply('Please start the bot with /start first!');
-      return;
-    }
-    
-    // Calculate some interesting stats
-    const weeksActive = new Set(pointsHistory.map(p => p.weekIdentifier)).size;
-    const totalEntries = user.promptCount;
-    const avgPointsPerEntry = totalEntries > 0 ? Math.round(streakStats.totalPoints / totalEntries) : 0;
-    const consistency = streakStats.longestStreak > 0 ? 
-      Math.round((streakStats.currentStreak / streakStats.longestStreak) * 100) : 100;
-    
-    let message = `📊 Your Weekly Reflection Statistics\n\n`;
-    
-    // Core stats
-    message += `🔥 Current Streak: ${streakStats.currentStreak} weeks\n`;
-    message += `🏆 Personal Best: ${streakStats.longestStreak} weeks\n`;
-    message += `💎 Total Points: ${streakStats.totalPoints.toLocaleString()}\n`;
-    message += `📝 Total Reflections: ${totalEntries}\n\n`;
-    
-    // Calculated insights
-    message += `📈 Insights:\n`;
-    message += `• Active for ${weeksActive} different weeks\n`;
-    message += `• Average ${avgPointsPerEntry} points per reflection\n`;
-    message += `• Current consistency: ${consistency}% of personal best\n`;
-    
-    if (streakStats.hasEntryThisWeek) {
-      message += `• ✅ Completed this week's reflection\n`;
-    } else {
-      message += `• ⏳ This week's reflection pending\n`;
-    }
-    
-    // Milestone progress
-    if (streakStats.weeksUntilNextMilestone > 0) {
-      message += `\n🎯 Next milestone in ${streakStats.weeksUntilNextMilestone} weeks\n`;
-      message += `Reward: ${streakStats.nextMilestoneReward} bonus points\n`;
-    }
-    
-    // Recent point sources
-    if (pointsHistory.length > 0) {
-      message += `\n💰 Recent Points:\n`;
-      pointsHistory.slice(0, 5).forEach(entry => {
-        const date = new Date(entry.timestamp).toLocaleDateString();
-        message += `• ${date}: +${entry.pointsEarned} (${formatReason(entry.reason)})\n`;
-      });
-    }
-    
-    await ctx.reply(message);
-    
-  } catch (error) {
-    logger.error('Error in my stats command:', error);
-    await ctx.reply('Sorry, there was an error fetching your statistics. Please try again later.');
-  }
-}
-
-/**
- * Format point earning reasons for display
+ * Format reason text for display
  */
 function formatReason(reason: string): string {
-  const reasonMap: { [key: string]: string } = {
-    'weekly_entry': 'Weekly reflection',
-    'streak_continuation': 'Streak maintained', 
-    'streak_restart': 'Fresh start',
-    'additional_weekly_entry': 'Bonus reflection',
-    'milestone_4_weeks': '1 month milestone',
-    'milestone_12_weeks': '3 month milestone',
-    'milestone_26_weeks': '6 month milestone',
-    'milestone_52_weeks': '1 year milestone',
-    'milestone_104_weeks': '2 year milestone',
-  };
-  
-  return reasonMap[reason] || reason.replace(/_/g, ' ');
-}
-
-/**
- * Enhanced response handler that includes weekly streak rewards
- * This replaces or enhances your existing response handling
- */
-export async function handleWeeklyReflectionResponse(ctx: Context): Promise<void> {
-  try {
-    const userId = ctx.from?.id.toString();
-    const responseText = ctx.message?.text;
-    
-    if (!userId || !responseText) {
-      return;
-    }
-    
-    // Check if user has a pending prompt
-    const user = await weeklyUserService.getUser(userId);
-    if (!user || !user.lastPrompt) {
-      return; // Let other handlers deal with this
-    }
-    
-    // Process the weekly reflection entry
-    const result = await weeklyUserService.submitJournalEntry(
-      userId,
-      user.lastPrompt.text,
-      user.lastPrompt.type,
-      responseText
-    );
-    
-    // Generate motivational response
-    const motivationalMessage = weeklyUserService.generateMotivationalMessage(result);
-    
-    // Create a comprehensive response
-    let response = `${motivationalMessage}\n\n`;
-    
-    // Add specific achievement details
-    if (result.milestoneReached) {
-      response += `🎉 MILESTONE BONUS: You've reached ${result.milestoneReached} weeks of consistent reflection!\n\n`;
-    }
-    
-    if (result.isNewRecord) {
-      response += `📈 NEW PERSONAL RECORD: ${result.newStreak} weeks is your longest streak ever!\n\n`;
-    }
-    
-    if (result.isMultipleEntry) {
-      response += `✨ Additional reflection this week! Bonus points earned for going deeper.\n\n`;
-    }
-    
-    // Add point breakdown
-    response += `💎 Points Earned: ${result.pointsAwarded}\n`;
-    response += `🔥 Current Streak: ${result.newStreak} weeks\n`;
-    response += `💰 Total Points: ${result.totalPoints.toLocaleString()}\n\n`;
-    
-    response += `Thank you for your thoughtful reflection! 🌱\n\n`;
-    response += `Use /streak to see your full progress, or /schedule to manage your weekly prompts.`;
-    
-    await ctx.reply(response);
-    
-    logger.info(`Processed weekly reflection for user ${userId}: ${result.pointsAwarded} points, ${result.newStreak} week streak`);
-    
-  } catch (error) {
-    logger.error('Error handling weekly reflection response:', error);
-    await ctx.reply('Thank you for your reflection! There was a small issue processing your streak, but your entry has been saved.');
+  switch (reason) {
+    case 'weekly_entry':
+      return 'Weekly reflection';
+    case 'streak_milestone':
+      return 'Streak milestone';
+    case 'bonus_entry':
+      return 'Bonus reflection';
+    default:
+      return reason;
   }
 }
