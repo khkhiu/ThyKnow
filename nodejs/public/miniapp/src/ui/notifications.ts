@@ -1,5 +1,5 @@
 // public/miniapp/js/app/ui/notifications.ts
-import { TIMING } from '../../../src/config/app';
+import { TIMING } from '../config/app';
 
 /**
  * Show notification

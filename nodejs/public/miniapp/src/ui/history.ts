@@ -1,6 +1,6 @@
 // public/miniapp/js/app/ui/history.ts
-import { JournalEntry } from '../../../src/types/miniapp';
-import { ELEMENTS } from '../../../src/config/app';
+import { JournalEntry } from '../types/miniapp';
+import { ELEMENTS } from '../config/app';
 import { setInnerHTML, showElement, hideElement } from '../utils/elements';
 import { 
   formatDate, 
