@@ -12,12 +12,15 @@ RUN node --version && npm --version
 COPY package*.json ./
 COPY tsconfig*.json ./
 
-# Copy scripts needed for build process
-# These scripts handle the new src/ directory structure
+# Copy scripts needed for build process and weekly streak system
+# These scripts handle the new src/ directory structure and database migrations
 COPY scripts/copy-static-files.js ./scripts/
 COPY scripts/copy-images.js ./scripts/
 COPY scripts/dev-build-frontend.js ./scripts/
 COPY scripts/fix-html-imports.js ./scripts/
+COPY scripts/migrate-to-weekly-streaks.ts ./scripts/
+COPY scripts/verify-weekly-system.ts ./scripts/
+COPY scripts/init-database.ts ./scripts/
 
 # Install dependencies (including esbuild and TypeScript)
 # Using npm ci for faster, reliable, reproducible builds in production
@@ -25,28 +28,31 @@ RUN npm ci
 
 # Copy the entire codebase
 # This includes the new src/ directory structure with organized TypeScript files
+# and the enhanced weekly streak system
 COPY . .
 
 # Create necessary directory structure for the new organization
 # The src/ directory contains organized TypeScript modules, CSS, and other assets
+# Plus new weekly streak components and models
 RUN mkdir -p public/miniapp/src/css
 RUN mkdir -p public/miniapp/src/types
 RUN mkdir -p public/miniapp/src/services
 RUN mkdir -p public/miniapp/src/config
 RUN mkdir -p public/miniapp/src/ui
 RUN mkdir -p public/miniapp/src/utils
+RUN mkdir -p public/miniapp/src/components
 RUN mkdir -p public/miniapp/images
 RUN mkdir -p public/miniapp/dist
 
 # Build the application in the correct order
-# This process has been updated to work with the new src/ structure
-# 1. Build backend TypeScript (server code)
-# 2. Bundle frontend TypeScript from src/ directory with esbuild
+# This process has been updated to work with the new src/ structure and weekly streaks
+# 1. Build backend TypeScript (server code including weekly streak models)
+# 2. Bundle frontend TypeScript from src/ directory with esbuild (including weekly components)
 # 3. Copy static files (HTML, CSS, images) to proper locations
 # 4. Fix any import paths that need updating for the new structure
-RUN echo "Building backend TypeScript..." && \
+RUN echo "Building backend TypeScript with weekly streak system..." && \
     npm run build:backend && \
-    echo "Building frontend from src/ directory..." && \
+    echo "Building frontend from src/ directory with weekly components..." && \
     npm run build:frontend && \
     echo "Copying static files with new structure..." && \
     npm run copy-public && \
@@ -55,72 +61,76 @@ RUN echo "Building backend TypeScript..." && \
 
 # Ensure the public directory structure is properly set up for deployment
 # The new structure maintains src/ organization while providing built assets
+# Including weekly streak frontend components
 RUN mkdir -p /app/dist/public/miniapp/dist && \
     mkdir -p /app/dist/public/miniapp/src/css && \
+    mkdir -p /app/dist/public/miniapp/src/components && \
     mkdir -p /app/dist/public/miniapp/images
 
 # Copy public files to dist, preserving the new directory structure
 # This ensures both development files (src/) and built files (dist/) are available
+# Including weekly streak CSS and components
 RUN cp -r public/* dist/public/ 2>/dev/null || true
+
+# Copy scripts to dist for production access
+# This is important for Railway deployment where migration scripts need to be accessible
+RUN mkdir -p dist/scripts && \
+    cp scripts/*.ts dist/scripts/ 2>/dev/null || true && \
+    cp scripts/*.js dist/scripts/ 2>/dev/null || true
 
 # Verify that critical files exist after the build process
 # This helps catch build issues early and provides useful debugging info
+# Now includes verification of weekly streak components
 RUN echo "Verifying build output..." && \
     echo "Main app bundle:" && ls -la public/miniapp/dist/main.js 2>/dev/null || echo "main.js not found" && \
     echo "Pet app bundle:" && ls -la public/miniapp/dist/pet.js 2>/dev/null || echo "pet.js not found" && \
-    echo "CSS files:" && ls -la public/miniapp/src/css/ 2>/dev/null || echo "CSS directory not found" && \
-    echo "Images:" && ls -la public/miniapp/images/ 2>/dev/null || echo "Images directory not found"
+    echo "Backend build:" && ls -la dist/src/server.js 2>/dev/null || echo "server.js not found" && \
+    echo "Weekly streak models:" && ls -la dist/src/models/Points.js 2>/dev/null || echo "Points.js not found" && \
+    echo "Migration scripts:" && ls -la dist/scripts/ 2>/dev/null || echo "scripts directory not found"
 
-# Clean up dev dependencies to reduce image size
-# This removes build tools that aren't needed in production
-RUN npm prune --production
-
-# Set environment variables for production deployment
+# Set production environment
 ENV NODE_ENV=production
-ENV PORT=3000
 
-# Create a comprehensive startup script that provides debugging information
-# This script helps diagnose any issues with the new directory structure in production
-RUN echo '#!/bin/sh\n\
-echo "🚀 Starting ThyKnow application with new src/ structure..."\n\
-echo ""\n\
-echo "📁 Directory Structure Check:"\n\
-echo "Root directory:"\n\
-ls -la /app\n\
-echo ""\n\
-echo "Public miniapp directory:"\n\
-ls -la /app/public/miniapp/ 2>/dev/null || echo "miniapp directory not found"\n\
-echo ""\n\
-echo "Source directory (src/):"\n\
-ls -la /app/public/miniapp/src/ 2>/dev/null || echo "src directory not found"\n\
-echo ""\n\
-echo "CSS directory (src/css/):"\n\
-ls -la /app/public/miniapp/src/css/ 2>/dev/null || echo "CSS directory not found"\n\
-echo ""\n\
-echo "Built JavaScript (dist/):"\n\
-ls -la /app/public/miniapp/dist/ 2>/dev/null || echo "dist directory not found"\n\
-echo ""\n\
-echo "Images directory:"\n\
-ls -la /app/public/miniapp/images/ 2>/dev/null || echo "images directory not found"\n\
-echo ""\n\
-echo "Dist/public structure:"\n\
-ls -la /app/dist/public/miniapp/ 2>/dev/null || echo "dist/public/miniapp not found"\n\
-echo ""\n\
-echo "🔧 Configuration Check:"\n\
-echo "NODE_ENV: $NODE_ENV"\n\
-echo "PORT: $PORT"\n\
-echo ""\n\
-echo "🎯 Starting application server..."\n\
-node dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
-
-# Expose the application port
+# Expose the port that the app will run on
 EXPOSE 3000
 
-# Health check endpoint to verify the application is running correctly
-# This works with the existing health endpoint in your server
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+# Add health check for the weekly streak system
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application with our enhanced startup script
-# This provides comprehensive debugging information for the new structure
-CMD ["/app/start.sh"]
+# Create a startup script that handles database initialization and migration
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Starting ThyKnow with Weekly Streak System..."\n\
+echo "Checking database connection..."\n\
+\n\
+# Wait for database to be ready\n\
+until pg_isready -h $(echo $DATABASE_URL | cut -d@ -f2 | cut -d: -f1) 2>/dev/null; do\n\
+  echo "Waiting for database..."\n\
+  sleep 2\n\
+done\n\
+\n\
+echo "Database is ready!"\n\
+\n\
+# Initialize database schema (including weekly streak tables)\n\
+echo "Initializing database schema..."\n\
+npm run db:init || echo "Database initialization completed or already done"\n\
+\n\
+# Run weekly streak migration if needed\n\
+echo "Checking for weekly streak migration..."\n\
+npm run db:migrate || echo "Migration completed or not needed"\n\
+\n\
+# Verify weekly streak system\n\
+echo "Verifying weekly streak system..."\n\
+npm run db:verify || echo "Verification completed"\n\
+\n\
+echo "Starting application..."\n\
+exec "$@"' > /app/docker-entrypoint.sh && \
+    chmod +x /app/docker-entrypoint.sh
+
+# Use the startup script as entrypoint
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
+# Start the application using the production start command
+# This now includes database initialization and weekly streak migration
+CMD ["npm", "run", "start:production"]
