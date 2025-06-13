@@ -7,7 +7,7 @@
     --card-background: rgba(255, 255, 255, 0.8);
     --border-radius: 15px;
     --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    --primary-color: #6c63ff;
+    --primary-color: rgb(102, 180, 110);
     --nav-background: rgba(255, 255, 255, 0.95);
     --nav-border: rgba(0, 0, 0, 0.1);
 }
@@ -106,11 +106,11 @@ body {
 }
 
 .theme-toggle:hover {
-    background-color: rgba(108, 99, 255, 0.1);
+    background-color: rgba(102, 180, 110, 0.1);
 }
 
 .dark-theme .theme-toggle:hover {
-    background-color: rgba(108, 99, 255, 0.2);
+    background-color: rgba(102, 180, 110, 0.2);
 }
 
 .theme-toggle:active {
@@ -297,7 +297,7 @@ body {
 }
 
 .nav-item:hover {
-    background-color: rgba(108, 99, 255, 0.1);
+    background-color: rgba(102, 180, 110, 0.1);
 }
 
 .nav-item.active {
@@ -338,7 +338,7 @@ body {
 .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid rgba(108, 99, 255, 0.2);
+    border: 4px solid rgba(102, 180, 110, 0.2);
     border-radius: 50%;
     border-top-color: var(--primary-color);
     animation: spin 1s ease-in-out infinite;
@@ -397,7 +397,7 @@ body {
     }
     
     .theme-toggle:hover {
-        background-color: rgba(108, 99, 255, 0.3);
+        background-color: rgba(102, 180, 110, 0.3);
     }
 }
 
