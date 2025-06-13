@@ -3,12 +3,12 @@
 
 // Import necessary modules
 import { TelegramWebApp, TelegramUser } from './types/miniapp';
-import { initTelegramApp, setupBackButton } from '../js/app/services/telegramApp';
-import { updateTheme, toggleTheme } from '../js/app/ui/theme';
+import { initTelegramApp, setupBackButton } from './services/telegramApp';
+import { updateTheme, toggleTheme } from './ui/miniappTheme';
 import { getTodaysPrompt, getNewPrompt, submitPromptResponse } from './services/promptService';
 import { getHistoryEntries } from './services/historyService';
-import { showElement, hideElement } from '../js/app/utils/elements';
-import { showError } from '../js/app/ui/notifications';
+import { showElement, hideElement } from './utils/elements';
+import { showError } from './ui/notifications';
 import { fetchConfig, fetchUserData } from './services/api';
 
 /**
