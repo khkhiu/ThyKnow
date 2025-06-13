@@ -1,14 +1,51 @@
-// File: src/controllers/weeklyStreakController.ts
+// File: src/controllers/weeklyStreakController.ts (Fixed version)
 // Fixed controller for handling weekly streak commands in Telegram bot
 
 import { Context } from 'telegraf';
 import { Message } from 'telegraf/typings/core/types/typegram';
-import { UserService } from '../services/userService'; // Import the class directly
+import { UserService } from '../services/userService'; // Fixed import
 import { logger } from '../utils/logger';
-import { Points, IPointsHistory } from '../models/Points';
+import { IPointsHistory } from '../models/Points';
 
 // Initialize weekly-enabled user service
-const weeklyUserService = new UserService(); // Use the class directly
+const weeklyUserService = new UserService(); // Fixed instantiation
+
+// Define types for better type safety
+interface IStreakStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalPoints: number;
+  hasEntryThisWeek: boolean;
+  currentWeekId: string;
+  weeksUntilNextMilestone: number;
+  nextMilestoneReward: number;
+  pointsHistory: IPointsHistory[];
+}
+
+interface ILeaderboardEntry {
+  rank: number;
+  userId: string;
+  currentStreak: number;
+  longestStreak: number;
+  totalPoints: number;
+}
+
+interface ISubmissionResult {
+  entry: {
+    id: number;
+    prompt: string;
+    response: string;
+    timestamp: Date;
+  };
+  pointsAwarded: number;
+  newStreak: number;
+  totalPoints: number;
+  milestoneReached?: number;
+  streakBroken: boolean;
+  isNewRecord: boolean;
+  isMultipleEntry: boolean;
+  weekId: string;
+}
 
 /**
  * Handle the /streak command - show user's weekly streak information
@@ -22,8 +59,8 @@ export async function handleWeeklyStreakCommand(ctx: Context): Promise<void> {
       return;
     }
     
-    const streakStats = await weeklyUserService.getStreakStats(userId);
-    const currentWeek = weeklyUserService.getCurrentWeekId();
+    const streakStats: IStreakStats = await weeklyUserService.getStreakStats(userId);
+    const currentWeek: string = weeklyUserService.getCurrentWeekId();
     
     // Create a comprehensive streak report
     let message = `📊 Your Weekly Reflection Journey\n\n`;
@@ -81,7 +118,7 @@ export async function handleLeaderboardCommand(ctx: Context): Promise<void> {
       return;
     }
     
-    const leaderboard = await weeklyUserService.getLeaderboard(10);
+    const leaderboard: ILeaderboardEntry[] = await weeklyUserService.getLeaderboard(10);
     
     let message = `🏆 Weekly Reflection Leaderboard\n\n`;
     
@@ -89,18 +126,18 @@ export async function handleLeaderboardCommand(ctx: Context): Promise<void> {
       message += `No weekly streaks yet! Be the first to start your journey.\n\n`;
       message += `Use any prompt command to begin your weekly reflection streak!`;
     } else {
-      leaderboard.forEach((user, index) => {
+      leaderboard.forEach((user: ILeaderboardEntry, index: number) => {
         const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔸';
         message += `${medal} #${user.rank}: ${user.currentStreak} weeks (${user.totalPoints.toLocaleString()} pts)\n`;
       });
       
       // Find current user's rank in the leaderboard
-      const currentUser = leaderboard.find(user => user.userId === userId);
+      const currentUser = leaderboard.find((user: ILeaderboardEntry) => user.userId === userId);
       if (!currentUser && leaderboard.length === 10) {
         // User might be ranked lower than top 10, get extended leaderboard to find them
         try {
-          const extendedLeaderboard = await weeklyUserService.getLeaderboard(100);
-          const userInExtended = extendedLeaderboard.find(user => user.userId === userId);
+          const extendedLeaderboard: ILeaderboardEntry[] = await weeklyUserService.getLeaderboard(100);
+          const userInExtended = extendedLeaderboard.find((user: ILeaderboardEntry) => user.userId === userId);
           if (userInExtended) {
             message += `\n⭐ Your rank: #${userInExtended.rank}`;
           }
@@ -163,7 +200,7 @@ export async function handleWeeklyJournalSubmission(ctx: Context): Promise<void>
     }
     
     // Submit the weekly journal entry
-    const submissionResult = await weeklyUserService.submitJournalEntry(
+    const submissionResult: ISubmissionResult = await weeklyUserService.submitJournalEntry(
       userId,
       userWithPrompt.lastPrompt.text,
       userWithPrompt.lastPrompt.type,
@@ -205,51 +242,7 @@ export async function handleWeeklyJournalSubmission(ctx: Context): Promise<void>
     
   } catch (error) {
     logger.error('Error processing weekly journal submission:', error);
-    await ctx.reply('Sorry, there was an error saving your reflection. Please try again.');
-  }
-}
-
-/**
- * Handle the /weekinfo command - explain the weekly streak system
- */
-export async function handleWeekInfoCommand(ctx: Context): Promise<void> {
-  try {
-    const currentWeek = Points.getWeekIdentifier();
-    
-    const message = `
-📅 Weekly Reflection System
-
-🌟 How it works:
-• Receive a thoughtful prompt each week
-• Complete your reflection to maintain your streak
-• Earn points based on your consistency
-• Reach milestones for bonus rewards
-
-💎 Point System:
-• Base: 50 points per weekly reflection
-• Streak Bonus: +10 points per week in streak
-• Multiple entries: +20 points each
-• Milestones: Bonus rewards at 4, 12, 26, 52+ weeks
-
-🏆 Milestones:
-• 4 weeks: Monthly Reflector (+200 pts)
-• 12 weeks: Quarterly Champion (+500 pts)
-• 26 weeks: Half-Year Hero (+1,000 pts)
-• 52 weeks: Annual Achiever (+2,500 pts)
-• 104 weeks: Biennial Master (+5,000 pts)
-
-📊 Current Week: ${currentWeek}
-
-Weekly reflection builds deeper self-awareness through consistency over frequency. Quality thoughts, sustained over time. 🌱
-
-Use /streak to see your progress!
-    `.trim();
-    
-    await ctx.reply(message);
-    
-  } catch (error) {
-    logger.error('Error in week info command:', error);
-    await ctx.reply('Sorry, there was an error explaining the weekly system. Please try again later.');
+    await ctx.reply('Sorry, there was an error saving your reflection. Please try again later.');
   }
 }
 
@@ -257,14 +250,23 @@ Use /streak to see your progress!
  * Format reason text for display
  */
 function formatReason(reason: string): string {
-  switch (reason) {
-    case 'weekly_entry':
-      return 'Weekly reflection';
-    case 'streak_milestone':
-      return 'Streak milestone';
-    case 'bonus_entry':
-      return 'Bonus reflection';
-    default:
-      return reason;
-  }
+  return reason
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char: string) => char.toUpperCase());
 }
+
+/**
+ * Get milestone name based on week count
+ */
+/*
+function getMilestoneName(weeks: number): string {
+  const milestones: { [key: number]: string } = {
+    4: 'Monthly Reflector',
+    12: 'Quarterly Champion', 
+    26: 'Half-Year Hero',
+    52: 'Annual Achiever',
+    104: 'Biennial Master'
+  };
+  return milestones[weeks] || `${weeks}-Week Achievement`;
+}
+  */

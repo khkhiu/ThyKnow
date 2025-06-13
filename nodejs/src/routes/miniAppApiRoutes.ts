@@ -1,21 +1,74 @@
-// File: src/routes/miniAppApiRoutes.ts (Updated for Weekly Streaks)
+// File: src/routes/miniAppApiRoutes.ts (Fixed version)
 // Mini App API routes with weekly streak and points support
 
 import express, { Request, Response, NextFunction } from 'express';
-import { userService } from '../services/userService';
-import { promptService } from '../services/promptService';
+import { UserService } from '../services/userService'; // Fixed import
+import { PromptService } from '../services/promptService'; // Fixed import
+import { IJournalEntry } from '../models/JournalEntry'; // Import IJournalEntry
 import { logger } from '../utils/logger';
 
 const router = express.Router();
 
-// Initialize userService with weekly configuration
-const weeklyStreakUserService = new userService.UserService();
+// Initialize services correctly
+const weeklyStreakUserService = new UserService(); // Fixed instantiation
+const promptService = new PromptService(); // Fixed instantiation
+
+// Define types for better type safety
+interface SubmissionResult {
+  entry: IJournalEntry;
+  pointsAwarded: number;
+  newStreak: number;
+  totalPoints: number;
+  milestoneReached?: number;
+  streakBroken: boolean;
+  isNewRecord: boolean;
+  isMultipleEntry: boolean;
+  weekId: string;
+  user: {
+    id: string;
+    totalPoints: number;
+    currentStreak: number;
+    longestStreak: number;
+  };
+}
+
+interface StreakStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalPoints: number;
+  hasEntryThisWeek: boolean;
+  currentWeekId: string;
+  weeksUntilNextMilestone: number;
+  nextMilestoneReward: number;
+  pointsHistory: Array<{
+    pointsEarned: number;
+    reason: string;
+    streakWeek?: number;
+    weekIdentifier?: string;
+    timestamp: Date;
+  }>;
+}
+
+interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  currentStreak: number;
+  longestStreak: number;
+  totalPoints: number;
+}
+
+interface SystemStats {
+  totalActiveStreaks: number;
+  totalUsers: number;
+  weeklyEntriesCount: number;
+  averageStreak: number;
+}
 
 /**
  * Handler for POST /api/miniapp/responses
  * Save a journal entry response and process weekly rewards
  */
-function saveResponseWithWeeklyRewards(req: Request, res: Response, next: NextFunction): void {
+function saveResponseWithWeeklyRewards(req: Request, res: Response, _next: NextFunction): void {
   const { userId, response } = req.body;
   
   if (!userId || !response) {
@@ -24,7 +77,7 @@ function saveResponseWithWeeklyRewards(req: Request, res: Response, next: NextFu
   }
   
   weeklyStreakUserService.getUser(userId)
-    .then(async user => {
+    .then(async (user: any) => { // Fixed type annotation
       if (!user) {
         res.status(404).json({ error: 'User not found' });
         return;
@@ -39,7 +92,7 @@ function saveResponseWithWeeklyRewards(req: Request, res: Response, next: NextFu
       
       try {
         // Submit the journal entry and process all weekly rewards
-        const result = await weeklyStreakUserService.submitJournalEntry(
+        const result: SubmissionResult = await weeklyStreakUserService.submitJournalEntry(
           userId,
           userWithPrompt.lastPrompt.text,
           userWithPrompt.lastPrompt.type,
@@ -80,7 +133,7 @@ function saveResponseWithWeeklyRewards(req: Request, res: Response, next: NextFu
         res.status(500).json({ error: 'Failed to save entry and process weekly rewards' });
       }
     })
-    .catch(err => {
+    .catch((err: any) => { // Fixed type annotation
       logger.error('Error getting user for weekly response submission:', err);
       res.status(500).json({ error: 'An error occurred while processing your weekly response' });
     });
@@ -90,7 +143,7 @@ function saveResponseWithWeeklyRewards(req: Request, res: Response, next: NextFu
  * Handler for GET /api/miniapp/streak/:userId
  * Get comprehensive weekly streak and points information for a user
  */
-function getWeeklyStreakInfo(req: Request, res: Response, next: NextFunction): void {
+function getWeeklyStreakInfo(req: Request, res: Response, _next: NextFunction): void {
   const { userId } = req.params;
   
   if (!userId) {
@@ -99,7 +152,7 @@ function getWeeklyStreakInfo(req: Request, res: Response, next: NextFunction): v
   }
   
   weeklyStreakUserService.getStreakStats(userId)
-    .then(stats => {
+    .then((stats: StreakStats) => { // Fixed type annotation
       res.json({
         streak: {
           current: stats.currentStreak,
@@ -111,7 +164,7 @@ function getWeeklyStreakInfo(req: Request, res: Response, next: NextFunction): v
         },
         points: {
           total: stats.totalPoints,
-          recentHistory: stats.pointsHistory.map(entry => ({
+          recentHistory: stats.pointsHistory.map((entry: any) => ({ // Fixed type annotation
             points: entry.pointsEarned,
             reason: entry.reason,
             streakWeek: entry.streakWeek,
@@ -128,7 +181,7 @@ function getWeeklyStreakInfo(req: Request, res: Response, next: NextFunction): v
         }
       });
     })
-    .catch(err => {
+    .catch((err: any) => { // Fixed type annotation
       logger.error('Error fetching weekly streak info:', err);
       res.status(500).json({ error: 'Failed to fetch weekly streak information' });
     });
@@ -138,25 +191,23 @@ function getWeeklyStreakInfo(req: Request, res: Response, next: NextFunction): v
  * Handler for GET /api/miniapp/leaderboard
  * Get weekly leaderboard data with optional limit
  */
-function getWeeklyLeaderboard(req: Request, res: Response, next: NextFunction): void {
+function getWeeklyLeaderboard(req: Request, res: Response, _next: NextFunction): void {
   const limit = parseInt(req.query.limit as string) || 10;
   
   weeklyStreakUserService.getLeaderboard(limit)
-    .then(leaderboard => {
+    .then((leaderboard: LeaderboardEntry[]) => { // Fixed type annotation
       res.json({
-        leaderboard: leaderboard.map(entry => ({
+        leaderboard: leaderboard.map((entry: LeaderboardEntry) => ({ // Fixed type annotation
           rank: entry.rank,
           userId: entry.userId,
           currentStreak: entry.currentStreak,
           longestStreak: entry.longestStreak,
           totalPoints: entry.totalPoints,
           streakLabel: `${entry.currentStreak} week${entry.currentStreak === 1 ? '' : 's'}`
-        })),
-        type: 'weekly',
-        description: 'Weekly reflection streaks - consistency over frequency'
+        }))
       });
     })
-    .catch(err => {
+    .catch((err: any) => { // Fixed type annotation
       logger.error('Error fetching weekly leaderboard:', err);
       res.status(500).json({ error: 'Failed to fetch weekly leaderboard' });
     });
@@ -164,9 +215,9 @@ function getWeeklyLeaderboard(req: Request, res: Response, next: NextFunction): 
 
 /**
  * Handler for GET /api/miniapp/prompt/:userId
- * Generate a new prompt and include current weekly streak information
+ * Get a prompt with weekly streak context
  */
-function getPromptWithWeeklyStreak(req: Request, res: Response, next: NextFunction): void {
+function getPromptWithWeeklyStreak(req: Request, res: Response, _next: NextFunction): void {
   const { userId } = req.params;
   
   if (!userId) {
@@ -176,64 +227,55 @@ function getPromptWithWeeklyStreak(req: Request, res: Response, next: NextFuncti
   
   Promise.all([
     weeklyStreakUserService.getUser(userId),
-    weeklyStreakUserService.hasEntryThisWeek(userId)
+    weeklyStreakUserService.getStreakStats(userId)
   ])
-    .then(async ([user, hasEntryThisWeek]) => {
+    .then(async ([user, streakStats]) => {
       if (!user) {
         res.status(404).json({ error: 'User not found' });
         return;
       }
       
       try {
-        // Generate a new prompt
         const prompt = await promptService.generatePrompt(userId);
         
-        // Create weekly-appropriate context messages
-        let streakContext, hint;
+        // Save the prompt for this user
+        await weeklyStreakUserService.saveLastPrompt(userId, prompt);
         
-        if (hasEntryThisWeek) {
-          streakContext = `You've already reflected this week! Your ${user.currentStreak}-week streak continues.`;
-          hint = 'Additional weekly reflections deepen your self-awareness and earn bonus points.';
-        } else {
-          if (user.currentStreak === 0) {
-            streakContext = 'Start your weekly reflection journey!';
-            hint = 'Begin building a powerful habit of weekly self-reflection.';
-          } else {
-            streakContext = `Keep your ${user.currentStreak}-week streak alive!`;
-            hint = 'Maintain your consistency with this week\'s reflection to continue growing.';
-          }
-        }
-        
-        const promptData = {
-          type: prompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
-          text: prompt.text,
-          hint,
-          streakContext,
-          currentStreak: user.currentStreak,
-          totalPoints: user.totalPoints,
-          hasEntryThisWeek,
-          weekId: weeklyStreakUserService.getCurrentWeekId(),
-          isWeeklySystem: true
-        };
-        
-        logger.info(`Generated weekly prompt for user ${userId} with streak context`);
-        res.json(promptData);
+        res.json({
+          prompt: {
+            text: prompt.text,
+            type: prompt.type
+          },
+          weeklyContext: {
+            currentStreak: streakStats.currentStreak,
+            hasEntryThisWeek: streakStats.hasEntryThisWeek,
+            currentWeekId: streakStats.currentWeekId,
+            nextMilestone: streakStats.weeksUntilNextMilestone > 0 
+              ? `${streakStats.weeksUntilNextMilestone} weeks until next milestone`
+              : 'All milestones achieved!'
+          },
+          encouragement: streakStats.hasEntryThisWeek
+            ? 'Great job on your weekly reflection! Feel free to add more thoughts.'
+            : streakStats.currentStreak > 0
+              ? `Keep your ${streakStats.currentStreak}-week streak alive!`
+              : 'Start your weekly reflection journey today!'
+        });
       } catch (error) {
-        logger.error('Error generating prompt with weekly streak info:', error);
+        logger.error('Error generating prompt with weekly context:', error);
         res.status(500).json({ error: 'Failed to generate prompt' });
       }
     })
-    .catch(err => {
-      logger.error('Error in getPromptWithWeeklyStreak:', err);
-      res.status(500).json({ error: 'An error occurred while fetching weekly prompt data' });
+    .catch((error: any) => {
+      logger.error('Error in getPromptWithWeeklyStreak:', error);
+      res.status(500).json({ error: 'An error occurred while generating your prompt' });
     });
 }
 
 /**
  * Handler for GET /api/miniapp/history/:userId
- * Get journal entry history with weekly stats
+ * Get journal history with weekly stats
  */
-function getHistoryWithWeeklyStats(req: Request, res: Response, next: NextFunction): void {
+function getHistoryWithWeeklyStats(req: Request, res: Response, _next: NextFunction): void {
   const { userId } = req.params;
   const limit = parseInt(req.query.limit as string) || 10;
   
@@ -244,93 +286,90 @@ function getHistoryWithWeeklyStats(req: Request, res: Response, next: NextFuncti
   
   Promise.all([
     weeklyStreakUserService.getRecentEntries(userId, limit),
-    weeklyStreakUserService.getPointsHistory(userId, limit)
+    weeklyStreakUserService.getStreakStats(userId)
   ])
-    .then(([entries, pointsHistory]) => {
-      // Combine entry data with weekly points information
-      const entriesWithWeeklyPoints = entries.map(entry => {
-        const pointsEntries = pointsHistory.filter(p => p.entryId === entry.id);
-        const totalPointsForEntry = pointsEntries.reduce((sum, p) => sum + p.pointsEarned, 0);
-        const weeklyData = pointsEntries.find(p => p.reason.includes('weekly') || p.reason.includes('streak'));
+    .then(([entries, streakStats]) => {
+      const pointsHistory = streakStats.pointsHistory;
+      
+      const entriesWithWeeklyPoints = entries.map((entry: any) => { // Fixed type annotation
+        const pointsEntries = pointsHistory.filter((p: any) => p.entryId === entry.id); // Fixed type annotation
+        const totalPointsForEntry = pointsEntries.reduce((sum: number, p: any) => sum + p.pointsEarned, 0); // Fixed type annotation
+        const weeklyData = pointsEntries.find((p: any) => p.reason.includes('weekly') || p.reason.includes('streak')); // Fixed type annotation
         
         return {
-          id: entry.id,
-          date: entry.timestamp.toISOString().split('T')[0],
-          week: pointsEntries[0]?.weekIdentifier || 'N/A',
-          promptType: entry.promptType,
-          prompt: entry.prompt,
-          response: entry.response,
-          pointsEarned: totalPointsForEntry,
-          streakWeek: weeklyData?.streakWeek || 0,
-          wasMultipleEntry: pointsEntries.some(p => p.reason.includes('additional'))
+          ...entry,
+          weeklyPoints: {
+            total: totalPointsForEntry,
+            weekId: weeklyData?.weekIdentifier || null,
+            streakWeek: weeklyData?.streakWeek || null,
+            isMilestone: pointsEntries.some((p: any) => p.reason.includes('milestone')), // Fixed type annotation
+            wasMultipleEntry: pointsEntries.some((p: any) => p.reason.includes('additional')) // Fixed type annotation
+          }
         };
       });
       
       res.json({
         entries: entriesWithWeeklyPoints,
-        totalEntries: entries.length,
-        systemType: 'weekly',
-        description: 'Your weekly reflection journey'
+        streakContext: {
+          currentStreak: streakStats.currentStreak,
+          longestStreak: streakStats.longestStreak,
+          totalPoints: streakStats.totalPoints
+        }
       });
     })
-    .catch(err => {
-      logger.error('Error fetching enhanced weekly history:', err);
-      res.status(500).json({ error: 'Failed to fetch weekly entry history' });
+    .catch((error: any) => {
+      logger.error('Error getting history with weekly stats:', error);
+      res.status(500).json({ error: 'Failed to fetch history' });
     });
 }
 
 /**
- * Handler for GET /api/miniapp/stats
- * Get system-wide weekly streak statistics
+ * Handler for GET /api/miniapp/system/stats
+ * Get system-wide weekly statistics
  */
-function getWeeklySystemStats(req: Request, res: Response, next: NextFunction): void {
+function getWeeklySystemStats(_req: Request, res: Response, _next: NextFunction): void {
   weeklyStreakUserService.getSystemStats()
-    .then(stats => {
+    .then((stats: SystemStats) => { // Fixed type annotation
       res.json({
-        system: 'weekly',
-        stats: {
-          totalActiveStreaks: stats.totalActiveStreaks,
-          averageStreak: `${stats.averageStreak} weeks`,
-          longestCurrentStreak: `${stats.longestCurrentStreak} weeks`,
-          usersWithMultipleEntriesThisWeek: stats.usersWithMultipleEntriesThisWeek,
-          currentWeek: stats.currentWeek
+        system: {
+          totalUsers: stats.totalUsers,
+          activeStreaks: stats.totalActiveStreaks,
+          weeklyEntries: stats.weeklyEntriesCount,
+          averageStreak: stats.averageStreak
         },
-        description: 'Global weekly reflection statistics'
+        timestamp: new Date().toISOString()
       });
     })
-    .catch(err => {
-      logger.error('Error fetching weekly system stats:', err);
-      res.status(500).json({ error: 'Failed to fetch weekly system statistics' });
+    .catch((err: any) => { // Fixed type annotation
+      logger.error('Error fetching system stats:', err);
+      res.status(500).json({ error: 'Failed to fetch system statistics' });
     });
 }
 
 /**
  * Handler for GET /api/miniapp/milestones
- * Get information about weekly streak milestones
+ * Get weekly milestone information
  */
-function getWeeklyMilestones(req: Request, res: Response, next: NextFunction): void {
-  const milestones = [
-    { weeks: 4, title: 'Monthly Reflector', description: 'One month of weekly self-reflection', points: 200 },
-    { weeks: 12, title: 'Quarterly Champion', description: 'Three months of consistent growth', points: 500 },
-    { weeks: 26, title: 'Half-Year Hero', description: 'Six months of dedicated self-awareness', points: 1000 },
-    { weeks: 52, title: 'Annual Achiever', description: 'One full year of weekly reflection', points: 2500 },
-    { weeks: 104, title: 'Biennial Master', description: 'Two years of incredible commitment', points: 5000 }
-  ];
-
+function getWeeklyMilestones(_req: Request, res: Response, _next: NextFunction): void {
   res.json({
-    milestones,
-    systemType: 'weekly',
-    description: 'Weekly reflection milestone rewards'
+    milestones: [
+      { weeks: 4, title: 'Monthly Reflector', reward: 500, description: 'One month of consistent weekly reflection' },
+      { weeks: 12, title: 'Quarterly Champion', reward: 1500, description: 'Three months of dedicated growth' },
+      { weeks: 26, title: 'Half-Year Hero', reward: 3000, description: 'Six months of self-awareness journey' },
+      { weeks: 52, title: 'Annual Achiever', reward: 6000, description: 'One full year of reflection mastery' },
+      { weeks: 104, title: 'Biennial Master', reward: 12000, description: 'Two years of incredible dedication' }
+    ],
+    description: 'Weekly milestones reward consistent reflection habits with bonus points and recognition.'
   });
 }
 
-// Define the routes with the weekly-enabled handlers
+// Export route handlers
 router.post('/responses', saveResponseWithWeeklyRewards);
 router.get('/streak/:userId', getWeeklyStreakInfo);
 router.get('/leaderboard', getWeeklyLeaderboard);
 router.get('/prompt/:userId', getPromptWithWeeklyStreak);
 router.get('/history/:userId', getHistoryWithWeeklyStats);
-router.get('/stats', getWeeklySystemStats);
+router.get('/system/stats', getWeeklySystemStats);
 router.get('/milestones', getWeeklyMilestones);
 
 export default router;

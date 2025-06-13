@@ -370,7 +370,7 @@ export class User {
     user: IUser;
   }> {
     // Use database transaction for consistency
-    return await transaction(async (client) => {
+    return await transaction(async (_client) => {
       try {
         // Get current user data
         const user = await User.findOne(userId);
@@ -513,4 +513,38 @@ export class User {
       throw error;
     }
   }
+
+  /**
+   * Save the last prompt sent to a user
+   */
+  static async saveLastPrompt(userId: string, prompt: { text: string; type: string }): Promise<void> {
+    try {
+      await query(`
+        UPDATE users 
+        SET last_prompt_text = $1, last_prompt_type = $2 
+        WHERE id = $3
+      `, [prompt.text, prompt.type, userId]);
+      
+      logger.info(`Saved last prompt for user ${userId}`);
+    } catch (error) {
+      logger.error(`Error saving last prompt for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get total user count for system stats
+   */
+  static async getTotalUserCount(): Promise<number> {
+    try {
+      const result = await query<{ count: string }>(`
+        SELECT COUNT(*) as count FROM users
+      `);
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      logger.error('Error getting total user count:', error);
+      throw error;
+    }
+  }
+
 }

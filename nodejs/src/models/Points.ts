@@ -403,4 +403,83 @@ export class Points {
       throw error;
     }
   }
+
+  /**
+   * Get total number of active streaks (users with currentStreak > 0)
+   */
+  static async getTotalActiveStreaks(): Promise<number> {
+    try {
+      const result = await query<{ count: string }>(`
+        SELECT COUNT(*) as count 
+        FROM users 
+        WHERE current_streak > 0
+      `);
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      logger.error('Error getting total active streaks:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get count of entries made this week
+   */
+  static async getWeeklyEntriesCount(): Promise<number> {
+    try {
+      const currentWeek = Points.getWeekIdentifier();
+      const result = await query<{ count: string }>(`
+        SELECT COUNT(*) as count 
+        FROM points_history 
+        WHERE week_identifier = $1 
+        AND reason LIKE '%weekly%'
+      `, [currentWeek]);
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      logger.error('Error getting weekly entries count:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get average streak length across all users
+   */
+  static async getAverageStreakLength(): Promise<number> {
+    try {
+      const result = await query<{ avg: string }>(`
+        SELECT AVG(current_streak) as avg 
+        FROM users 
+        WHERE current_streak > 0
+      `);
+      return parseFloat(result[0]?.avg || '0');
+    } catch (error) {
+      logger.error('Error getting average streak length:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get points history for a specific user
+   */
+  static async getUserPointsHistory(userId: string, limit: number = 10): Promise<IPointsHistory[]> {
+    try {
+      return await query<IPointsHistory>(`
+        SELECT 
+          user_id as "userId",
+          entry_id as "entryId", 
+          points_earned as "pointsEarned",
+          reason,
+          streak_week as "streakWeek",
+          week_identifier as "weekIdentifier",
+          timestamp
+        FROM points_history 
+        WHERE user_id = $1 
+        ORDER BY timestamp DESC 
+        LIMIT $2
+      `, [userId, limit]);
+    } catch (error) {
+      logger.error(`Error getting points history for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
 }

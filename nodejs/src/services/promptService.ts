@@ -116,6 +116,25 @@ export class PromptService {
       timestamp: new Date()
     };
   }
+
+  /**
+   * Generate a prompt for a specific user (considering their history)
+   */
+  async generatePrompt(userId: string): Promise<{ text: string; type: PromptType; count: number }> {
+    try {
+      // Get the user's next prompt using existing logic
+      const prompt = await this.getNextPromptForUser(userId);
+      
+      return {
+        text: prompt.text,
+        type: prompt.type,
+        count: prompt.count
+      };
+    } catch (error) {
+      logger.error(`Error generating prompt for user ${userId}:`, error);
+      throw error;
+    }
+  }
 }
 
 // Create and export a singleton instance
