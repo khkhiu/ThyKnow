@@ -54,7 +54,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative;
+    position: relative; /* This is important for absolute positioning of the speech bubble */
     /* Changed from min-height to a fixed height to control position better */
     height: auto;
     /* Remove top margin */
@@ -62,6 +62,7 @@
     /* Add auto margin to push content to top and bottom */
     margin: auto 0;
     padding-bottom: 20px; /* Space between dino and nav bar */
+    width: 100%; /* Ensure it takes full width */
 }
 
 .dino-image {
@@ -111,13 +112,16 @@
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
-    max-width: 250px;
     z-index: 10;
     font-size: 1.1rem;
     /* Center the speech bubble */
-    left: 50%;
     transform: translateX(-50%) translateY(10px);
-}
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: fit-content; /* This ensures the bubble is only as wide as its content */
+    max-width: 250px; /* Keep your existing max-width */
+}c
 
 .dark-theme .speech-bubble {
     background-color: var(--card-color);
