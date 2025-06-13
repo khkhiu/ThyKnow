@@ -2,8 +2,8 @@
 // Mini App API routes with weekly streak and points support
 
 import express, { Request, Response, NextFunction } from 'express';
-import { userService } from '../services';
-import { promptService } from '../services';
+import { userService } from '../services/userService';
+import { promptService } from '../services/promptService';
 import { logger } from '../utils/logger';
 
 const router = express.Router();
