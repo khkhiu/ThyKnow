@@ -1,8 +1,8 @@
 // public/miniapp/js/pet/app.ts
 import { TelegramWebApp } from '../../types/miniapp';
-import { TIMING, ELEMENTS } from './config';
+import { TIMING, ELEMENTS } from '../../config/pet';
 import { initTelegramApp, notifyAppReady } from './telegramApp';
-import { updateTheme } from '../../ui/theme';
+import { updateTheme } from '../../ui/petTheme';
 import { 
     setBackgroundImage, 
     setInitialDinoImage, 
