@@ -19,8 +19,34 @@
     </style>
     
     <!-- App styles -->
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="pet.css">
+    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/pet.css">
+    
+    <!-- Theme initialization script - runs before main content loads -->
+    <script>
+        // Initialize theme as early as possible to prevent flash of unstyled content
+        (function() {
+            // Check if Telegram WebApp provides theme info
+            const savedTheme = localStorage.getItem('thyknow-theme');
+            let preferredTheme = savedTheme;
+            
+            // If no saved theme, try to detect from Telegram WebApp or system
+            if (!preferredTheme) {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.colorScheme) {
+                    preferredTheme = window.Telegram.WebApp.colorScheme;
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    preferredTheme = 'dark';
+                } else {
+                    preferredTheme = 'light';
+                }
+            }
+            
+            // Apply theme to document immediately
+            if (preferredTheme === 'dark') {
+                document.documentElement.classList.add('dark-theme');
+            }
+        })();
+    </script>
     
     <!-- Main entry point (compiled from TypeScript) -->
     <script type="module" src="dist/pet.js"></script>
@@ -34,7 +60,14 @@
 
     <div class="affirmation-container">
         <div class="header fade-in" style="animation-delay: 0.2s">
-            <h1>Meet Your Dino Friend</h1>
+            <!-- Theme toggle button added to header -->
+            <div class="header-top">
+                <h1>Meet Your Dino Friend</h1>
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark theme">
+                    <i class="fas fa-sun theme-icon light-icon" id="light-icon"></i>
+                    <i class="fas fa-moon theme-icon dark-icon" id="dark-icon"></i>
+                </button>
+            </div>
             <p class="tagline">Tap on your dino friend to make it blink!</p>
             <p class="hint-text"><i class="fas fa-hand-point-up"></i> Tap to see different messages too!</p>
         </div>
@@ -59,5 +92,85 @@
             </a>
         </div>
     </div>
+
+    <!-- Theme toggle functionality script -->
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('light-icon');
+            const darkIcon = document.getElementById('dark-icon');
+            
+            // Function to update theme toggle button appearance
+            function updateThemeToggle(isDark) {
+                if (isDark) {
+                    lightIcon.style.opacity = '0';
+                    darkIcon.style.opacity = '1';
+                    themeToggle.setAttribute('aria-label', 'Switch to light theme');
+                } else {
+                    lightIcon.style.opacity = '1';
+                    darkIcon.style.opacity = '0';
+                    themeToggle.setAttribute('aria-label', 'Switch to dark theme');
+                }
+            }
+            
+            // Initialize toggle button based on current theme
+            const isDarkTheme = document.documentElement.classList.contains('dark-theme');
+            updateThemeToggle(isDarkTheme);
+            
+            // Handle theme toggle click
+            themeToggle.addEventListener('click', function() {
+                const currentlyDark = document.documentElement.classList.contains('dark-theme');
+                
+                if (currentlyDark) {
+                    // Switch to light theme
+                    document.documentElement.classList.remove('dark-theme');
+                    localStorage.setItem('thyknow-theme', 'light');
+                    updateThemeToggle(false);
+                    
+                    // Inform Telegram WebApp about theme change if available
+                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.setHeaderColor) {
+                        window.Telegram.WebApp.setHeaderColor('#ffffff');
+                    }
+                } else {
+                    // Switch to dark theme
+                    document.documentElement.classList.add('dark-theme');
+                    localStorage.setItem('thyknow-theme', 'dark');
+                    updateThemeToggle(true);
+                    
+                    // Inform Telegram WebApp about theme change if available
+                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.setHeaderColor) {
+                        window.Telegram.WebApp.setHeaderColor('#333333');
+                    }
+                }
+                
+                // Add a subtle animation to indicate the theme has changed
+                themeToggle.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    themeToggle.style.transform = 'scale(1)';
+                }, 150);
+            });
+            
+            // Listen for Telegram theme changes (if user changes theme in Telegram settings)
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.onEvent('themeChanged', function() {
+                    const telegramTheme = window.Telegram.WebApp.colorScheme;
+                    const shouldBeDark = telegramTheme === 'dark';
+                    const currentlyDark = document.documentElement.classList.contains('dark-theme');
+                    
+                    if (shouldBeDark !== currentlyDark) {
+                        if (shouldBeDark) {
+                            document.documentElement.classList.add('dark-theme');
+                            localStorage.setItem('thyknow-theme', 'dark');
+                        } else {
+                            document.documentElement.classList.remove('dark-theme');
+                            localStorage.setItem('thyknow-theme', 'light');
+                        }
+                        updateThemeToggle(shouldBeDark);
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

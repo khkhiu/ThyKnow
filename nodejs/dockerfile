@@ -7,50 +7,120 @@ WORKDIR /app
 # Verify Node.js and npm are available
 RUN node --version && npm --version
 
-# Copy package files and tsconfig first
+# Copy package files and tsconfig first for efficient layer caching
+# This allows Docker to cache the dependency installation step
 COPY package*.json ./
 COPY tsconfig*.json ./
 
-# Copy scripts needed for build
+# Copy scripts needed for build process
+# These scripts handle the new src/ directory structure
 COPY scripts/copy-static-files.js ./scripts/
 COPY scripts/copy-images.js ./scripts/
+COPY scripts/dev-build-frontend.js ./scripts/
+COPY scripts/fix-html-imports.js ./scripts/
 
-# Install dependencies (including esbuild)
+# Install dependencies (including esbuild and TypeScript)
+# Using npm ci for faster, reliable, reproducible builds in production
 RUN npm ci
 
 # Copy the entire codebase
+# This includes the new src/ directory structure with organized TypeScript files
 COPY . .
 
-# Create default image directories so the build doesn't fail
+# Create necessary directory structure for the new organization
+# The src/ directory contains organized TypeScript modules, CSS, and other assets
+RUN mkdir -p public/miniapp/src/css
+RUN mkdir -p public/miniapp/src/types
+RUN mkdir -p public/miniapp/src/services
+RUN mkdir -p public/miniapp/src/config
+RUN mkdir -p public/miniapp/src/ui
+RUN mkdir -p public/miniapp/src/utils
 RUN mkdir -p public/miniapp/images
 RUN mkdir -p public/miniapp/dist
 
-# Build the application
-# 1. Build backend TypeScript
-# 2. Bundle frontend with esbuild 
-# 3. Copy static files and images
-RUN npm run build:backend && npm run build:frontend && npm run copy-public
+# Build the application in the correct order
+# This process has been updated to work with the new src/ structure
+# 1. Build backend TypeScript (server code)
+# 2. Bundle frontend TypeScript from src/ directory with esbuild
+# 3. Copy static files (HTML, CSS, images) to proper locations
+# 4. Fix any import paths that need updating for the new structure
+RUN echo "Building backend TypeScript..." && \
+    npm run build:backend && \
+    echo "Building frontend from src/ directory..." && \
+    npm run build:frontend && \
+    echo "Copying static files with new structure..." && \
+    npm run copy-public && \
+    echo "Fixing HTML import paths..." && \
+    node scripts/fix-html-imports.js
 
-# Ensure the public directory is properly structured
-RUN mkdir -p /app/dist/public/miniapp/dist
-RUN cp -r public/* dist/public/ || true
+# Ensure the public directory structure is properly set up for deployment
+# The new structure maintains src/ organization while providing built assets
+RUN mkdir -p /app/dist/public/miniapp/dist && \
+    mkdir -p /app/dist/public/miniapp/src/css && \
+    mkdir -p /app/dist/public/miniapp/images
+
+# Copy public files to dist, preserving the new directory structure
+# This ensures both development files (src/) and built files (dist/) are available
+RUN cp -r public/* dist/public/ 2>/dev/null || true
+
+# Verify that critical files exist after the build process
+# This helps catch build issues early and provides useful debugging info
+RUN echo "Verifying build output..." && \
+    echo "Main app bundle:" && ls -la public/miniapp/dist/main.js 2>/dev/null || echo "main.js not found" && \
+    echo "Pet app bundle:" && ls -la public/miniapp/dist/pet.js 2>/dev/null || echo "pet.js not found" && \
+    echo "CSS files:" && ls -la public/miniapp/src/css/ 2>/dev/null || echo "CSS directory not found" && \
+    echo "Images:" && ls -la public/miniapp/images/ 2>/dev/null || echo "Images directory not found"
 
 # Clean up dev dependencies to reduce image size
+# This removes build tools that aren't needed in production
 RUN npm prune --production
 
-# Set environment variables
+# Set environment variables for production deployment
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Create a script to check files on startup
-RUN echo '#!/bin/sh\necho "Checking directory structure..."\nls -la\necho "\nPublic directory:"\nls -la public\necho "\nPublic/miniapp directory:"\nls -la public/miniapp\necho "\nPublic/miniapp/dist directory:"\nls -la public/miniapp/dist\necho "\nDist directory:"\nls -la dist\necho "\nDist/public directory:"\nls -la dist/public\necho "\nDist/public/miniapp directory:"\nls -la dist/public/miniapp\necho "\nDist/public/miniapp/dist directory:"\nls -la dist/public/miniapp/dist\necho "\nStarting application..."\nnode dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
+# Create a comprehensive startup script that provides debugging information
+# This script helps diagnose any issues with the new directory structure in production
+RUN echo '#!/bin/sh\n\
+echo "🚀 Starting ThyKnow application with new src/ structure..."\n\
+echo ""\n\
+echo "📁 Directory Structure Check:"\n\
+echo "Root directory:"\n\
+ls -la /app\n\
+echo ""\n\
+echo "Public miniapp directory:"\n\
+ls -la /app/public/miniapp/ 2>/dev/null || echo "miniapp directory not found"\n\
+echo ""\n\
+echo "Source directory (src/):"\n\
+ls -la /app/public/miniapp/src/ 2>/dev/null || echo "src directory not found"\n\
+echo ""\n\
+echo "CSS directory (src/css/):"\n\
+ls -la /app/public/miniapp/src/css/ 2>/dev/null || echo "CSS directory not found"\n\
+echo ""\n\
+echo "Built JavaScript (dist/):"\n\
+ls -la /app/public/miniapp/dist/ 2>/dev/null || echo "dist directory not found"\n\
+echo ""\n\
+echo "Images directory:"\n\
+ls -la /app/public/miniapp/images/ 2>/dev/null || echo "images directory not found"\n\
+echo ""\n\
+echo "Dist/public structure:"\n\
+ls -la /app/dist/public/miniapp/ 2>/dev/null || echo "dist/public/miniapp not found"\n\
+echo ""\n\
+echo "🔧 Configuration Check:"\n\
+echo "NODE_ENV: $NODE_ENV"\n\
+echo "PORT: $PORT"\n\
+echo ""\n\
+echo "🎯 Starting application server..."\n\
+node dist/src/server.js' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose the application port
 EXPOSE 3000
 
-# Health check
+# Health check endpoint to verify the application is running correctly
+# This works with the existing health endpoint in your server
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application with our check script
+# Start the application with our enhanced startup script
+# This provides comprehensive debugging information for the new structure
 CMD ["/app/start.sh"]
