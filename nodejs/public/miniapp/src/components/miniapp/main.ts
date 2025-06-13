@@ -1,4 +1,4 @@
-//public/miniapp/src/components/miniapp/main.ts
+//nodejs/public/miniapp/src/components/miniapp/main.ts
 import { TelegramWebApp, TelegramUser } from '../../types/miniapp';
 import { ELEMENTS, TIMING } from '../../config/app';
 import { 

@@ -1,4 +1,4 @@
-// public/miniapp/js/app/ui/notifications.ts
+// nodejs/public/miniapp/src/ui/notifications.ts
 import { TIMING } from '../config/app';
 
 /**

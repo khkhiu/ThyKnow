@@ -1,4 +1,4 @@
-// public/miniapp/js/app/utils/elements.ts
+// nodejs/public/miniapp/src/utils/elements.ts
 
 /**
  * Show a DOM element by ID

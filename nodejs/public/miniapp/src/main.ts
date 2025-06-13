@@ -1,4 +1,4 @@
-// public/miniapp/main.ts
+// nodejs/public/miniapp/src/main.ts
 // Main entry point for the ThyKnow mini-app
 
 // Import necessary modules

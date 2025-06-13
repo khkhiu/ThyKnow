@@ -1,4 +1,4 @@
-// public/miniapp/js/app/services/promptService.ts
+// nodejs/public/miniapp/src/services/promptService.ts
 import { PromptData, ResponseData, TelegramWebApp } from '../types/miniapp';
 import { fetchTodaysPrompt, fetchNewPromptDirectly } from './api';
 import { updatePrompt, resetPromptUI } from '../ui/prompt';

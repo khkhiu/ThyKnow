@@ -1,4 +1,4 @@
-// public/miniapp/js/app/services/telegramApp.ts
+// nodejs/public/miniapp/src/services/telegramApp.ts
 import { TelegramWebApp, TelegramUser } from '../types/miniapp';
 
 /**

@@ -1,4 +1,4 @@
-// public/miniapp/js/app/ui/prompt.ts
+// nodejs/public/miniapp/src/ui/prompt.ts
 import { PromptData } from '../types/miniapp';
 import { ELEMENTS } from '../config/app';
 import { setElementText, scrollIntoView, addElementClass, removeElementClass } from '../utils/elements';

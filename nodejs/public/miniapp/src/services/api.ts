@@ -1,4 +1,4 @@
-// public/miniapp/js/app/api.ts
+// nodejs/public/miniapp/src/services/api.ts
 import { API, FALLBACKS } from '../config/app';
 import { 
   AppConfig, 

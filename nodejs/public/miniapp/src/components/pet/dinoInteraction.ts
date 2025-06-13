@@ -1,4 +1,4 @@
-// public/miniapp/js/pet/dinoInteraction.ts
+// nodejs/public/miniapp/src/components/pet/dinoInteraction.ts
 import { TelegramWebApp } from '../../types/miniapp';
 import { DinoState } from '../../types/dinoFriend';
 import { IMAGES, TIMING, ELEMENTS } from '../../config/pet';

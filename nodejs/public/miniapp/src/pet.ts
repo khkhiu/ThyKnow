@@ -1,4 +1,4 @@
-// public/miniapp/pet.ts
+// nodejs/public/miniapp/src/pet.ts
 // Main entry point for the ThyKnow dino friend page
 
 // Import necessary modules and types

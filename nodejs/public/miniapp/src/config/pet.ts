@@ -1,4 +1,4 @@
-// public/miniapp/js/pet/config.ts
+// nodejs/public/miniapp/src/config/pet.ts
 import { ImagePaths, AnimationTiming, DomElements } from '../types/dinoFriend';
 
 /**

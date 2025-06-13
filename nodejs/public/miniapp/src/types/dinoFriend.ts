@@ -1,4 +1,4 @@
-// public/miniapp/types/dinoFriend.ts
+// nodejs/public/miniapp/src/types/dinoFriend.ts
 // Type definitions for the ThyKnow Dino Friend feature
 
 export interface DinoSpeech {

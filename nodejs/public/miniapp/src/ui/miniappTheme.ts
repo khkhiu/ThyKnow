@@ -1,4 +1,4 @@
-// public/miniapp/js/app/ui/theme.ts
+// nodejs/public/miniapp/src/ui/theme.ts
 import { TelegramWebApp } from '../types/miniapp';
 
 /**

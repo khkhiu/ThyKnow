@@ -1,4 +1,4 @@
-// public/miniapp/types/miniapp.ts
+// nodejs/public/miniapp/src/types/miniapp.ts
 // Type definitions for the ThyKnow Mini App
 
 // Prompt data structure

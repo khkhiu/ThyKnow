@@ -1,4 +1,4 @@
-// public/miniapp/js/app/utils/formatters.ts
+// nodejs/public/miniapp/src/utils/formatters.ts
 
 /**
  * Format a date as a readable string

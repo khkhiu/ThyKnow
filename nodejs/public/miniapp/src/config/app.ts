@@ -1,4 +1,4 @@
-// public/miniapp/js/app/config.ts
+// nodejs/public/miniapp/src/config/app.ts
 import { 
   ApiEndpoints, 
   ElementIds, 
