@@ -8,7 +8,7 @@ import {
   provideHapticFeedback, 
   notifyAppReady 
 } from '../../services/telegramApp';
-import { updateTheme, setupThemeListener, toggleTheme } from '../../ui/theme';
+import { updateTheme, setupThemeListener, toggleTheme } from '../../ui/miniappTheme';
 import { showElement, hideElement } from '../../utils/elements';
 import { showError } from '../../ui/notifications';
 import { fetchConfig, fetchUserData } from '../../services/api';

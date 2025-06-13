@@ -2,7 +2,7 @@
 import { TelegramWebApp } from '../../types/miniapp';
 import { TIMING, ELEMENTS } from './config';
 import { initTelegramApp, notifyAppReady } from './telegramApp';
-import { updateTheme } from './theme';
+import { updateTheme } from '../../ui/theme';
 import { 
     setBackgroundImage, 
     setInitialDinoImage, 
