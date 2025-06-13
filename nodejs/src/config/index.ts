@@ -21,6 +21,7 @@ interface AppConfig {
   port: number;
   nodeEnv: string;
   telegramBotToken: string;
+  databaseUrl: string; // ✅ Add this property
   postgresql: PostgreSQLConfig;
   timezone: string;
   baseUrl: string;
@@ -88,10 +89,28 @@ function getBaseUrl(): string {
   return process.env.BASE_URL || 'http://localhost:3000';
 }
 
+// ✅ Build database URL from either env or individual components
+function buildDatabaseUrl(): string {
+  // Use DATABASE_URL if available (Railway, Heroku, etc.)
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+  
+  // Fallback: build from individual components
+  const host = (process.env.DB_HOST === 'localhost' ? '127.0.0.1' : process.env.DB_HOST) || '127.0.0.1';
+  const port = process.env.DB_PORT || '5432';
+  const database = process.env.DB_NAME || 'thyknow';
+  const user = process.env.DB_USER || 'postgres';
+  const password = process.env.DB_PASSWORD || '';
+  
+  return `postgresql://${user}:${password}@${host}:${port}/${database}`;
+}
+
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
+  databaseUrl: buildDatabaseUrl(), //Add the database URL
   postgresql: railwayDbConfig || {
     // Fallback to individual environment variables if DATABASE_URL is not provided
     // Replace localhost with 127.0.0.1 for container compatibility
