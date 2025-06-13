@@ -1,6 +1,6 @@
 // public/miniapp/js/app/services/promptService.ts
-import { PromptData, ResponseData, TelegramWebApp } from '../../../src/types/miniapp';
-import { fetchTodaysPrompt, fetchNewPromptDirectly } from '../api';
+import { PromptData, ResponseData, TelegramWebApp } from '../types/miniapp';
+import { fetchTodaysPrompt, fetchNewPromptDirectly } from './api';
 import { updatePrompt, resetPromptUI } from '../ui/prompt';
 import { getElementValue, clearElementValue, scrollIntoView } from '../utils/elements';
 import { showNotification } from '../ui/notifications';
@@ -99,7 +99,7 @@ export async function submitPromptResponse(userId: string | number, tg: Telegram
   
   try {
     // Import API function here to avoid circular dependencies
-    const { submitResponse } = await import('../api');
+    const { submitResponse } = await import('./api');
     
     // Show loading state
     const submitButton = document.getElementById('submit-response') as HTMLButtonElement;

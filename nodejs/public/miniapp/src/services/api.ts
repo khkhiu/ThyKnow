@@ -1,12 +1,12 @@
 // public/miniapp/js/app/api.ts
-import { API, FALLBACKS } from '../../src/config/app';
+import { API, FALLBACKS } from '../config/app';
 import { 
   AppConfig, 
   PromptData, 
   JournalEntry, 
   UserData, 
   ResponseData 
-} from '../../src/types/miniapp';
+} from '../types/miniapp';
 
 /**
  * Fetch app configuration

@@ -5,11 +5,11 @@
 import { TelegramWebApp, TelegramUser } from './types/miniapp';
 import { initTelegramApp, setupBackButton } from '../js/app/services/telegramApp';
 import { updateTheme, toggleTheme } from '../js/app/ui/theme';
-import { getTodaysPrompt, getNewPrompt, submitPromptResponse } from '../js/app/services/promptService';
-import { getHistoryEntries } from '../js/app/services/historyService';
+import { getTodaysPrompt, getNewPrompt, submitPromptResponse } from './services/promptService';
+import { getHistoryEntries } from './services/historyService';
 import { showElement, hideElement } from '../js/app/utils/elements';
 import { showError } from '../js/app/ui/notifications';
-import { fetchConfig, fetchUserData } from '../js/app/api';
+import { fetchConfig, fetchUserData } from './services/api';
 
 /**
  * Main entry point - initialize the application
