@@ -21,9 +21,9 @@ export const DINO_SPEECH: string[] = [
  * Image paths for dino states
  */
 export const IMAGES: ImagePaths = {
-    DINO_EYES_OPEN: "/miniapp/images/ThyKnow_dino-eyes-open.png",
-    DINO_EYES_CLOSED: "/miniapp/images/ThyKnow_dino-eyes-close.png",
-    BACKGROUND: "/miniapp/images/ThyKnow_background.png"
+    DINO_EYES_OPEN: "nodejs/public/miniapp/src/assets/images/ThyKnow_dino-eyes-open.png",
+    DINO_EYES_CLOSED: "nodejs/public/miniapp/src/assets/images/ThyKnow_dino-eyes-close.png",
+    BACKGROUND: "nodejs/public/miniapp/src/assets/images/ThyKnow_background.png"
 };
 
 /**
