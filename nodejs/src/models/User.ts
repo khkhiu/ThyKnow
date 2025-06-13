@@ -253,7 +253,7 @@ export class User {
       currentStreak?: number;
       longestStreak?: number;
       totalPoints?: number;
-      lastEntryWeek?: string;
+      lastEntryWeek?: string | null; // <-- Add | null here to match IUser interface
     }
   ): Promise<IUser> {
     try {
@@ -299,7 +299,7 @@ export class User {
 
       if (data.lastEntryWeek !== undefined) {
         updates.push(`last_entry_week = $${paramIndex++}`);
-        values.push(data.lastEntryWeek);
+        values.push(data.lastEntryWeek); // This can now be string or null
       }
 
       if (updates.length === 0) {
@@ -344,7 +344,7 @@ export class User {
         currentStreak: row.currentStreak,
         longestStreak: row.longestStreak,
         totalPoints: row.totalPoints,
-        lastEntryWeek: row.lastEntryWeek
+        lastEntryWeek: row.lastEntryWeek // This matches IUser interface (string | null)
       };
     } catch (error) {
       logger.error(`Error updating user ${id}:`, error);
