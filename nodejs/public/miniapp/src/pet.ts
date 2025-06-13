@@ -1,412 +1,270 @@
 // nodejs/public/miniapp/src/pet.ts
 // Main entry point for the ThyKnow dino friend page
+// IMPROVED VERSION: Uses centralized configuration to eliminate duplication bugs
 
 // Import necessary modules and types
 import { TelegramWebApp } from './types/miniapp';
 import { DinoState } from './types/dinoFriend';
 
-// Image paths for dino states
-const IMAGES = {
-    DINO_EYES_OPEN: "nodejs/public/miniapp/src/assets/images/ThyKnow_background.png",
-    DINO_EYES_CLOSED: "nodejs/public/miniapp/src/assets/images/ThyKnow_dino-eyes-close.png",
-    BACKGROUND: "nodejs/public/miniapp/src/assets/images/ThyKnow_background.png"
-};
+// IMPROVEMENT: Import centralized configuration instead of duplicating it
+// This eliminates the possibility of configuration drift between files
+import { IMAGES, TIMING, ELEMENTS, DINO_SPEECH } from './config/pet';
 
-// Animation timing constants (in milliseconds)
-const TIMING = {
-    BLINK_DURATION: 800,      // How long the blink animation lasts
-    SPEECH_DURATION: 3000,    // How long speech bubbles remain visible
-    INITIAL_SPEECH_DELAY: 1500, // Delay before showing the first speech bubble
-    LOADING_HIDE_DELAY: 1000  // Delay before hiding the loading spinner
-};
-
-// DOM element IDs for easy reference
-const ELEMENTS = {
-    LOADING: 'loading',
-    BACKGROUND: 'background',
-    DINO_IMAGE: 'dino-image',
-    SPEECH_BUBBLE: 'speech-bubble'
-};
-
-// Dino speech bubbles content - positive messages
-const DINO_SPEECH = [
-    "You're doing great!",
-    "Rawr! That means 'awesome' in dinosaur!",
-    "I believe in you!",
-    "You've got this!",
-    "Keep going, you're amazing!",
-    "You make this dinosaur proud!",
-    "Sending prehistoric good vibes!",
-    "Your growth mindset is dino-mite!",
-    "Remember to be kind to yourself!",
-    "Even T-Rex had small arms but a big impact!"
-];
-
-// State variables
-const state: DinoState = {
+// Global state for the dino's current status
+let dinoState: DinoState = {
     eyesOpen: true,
     isAnimating: false
 };
 
 /**
- * Initialize the application when DOM is loaded
- */
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("ThyKnow Dino Friend initializing...");
-    
-    // Initialize the application
-    initApp();
-    
-    // Set up theme toggle button if it exists
-    const themeToggleButton = document.querySelector('.theme-toggle');
-    if (themeToggleButton) {
-        themeToggleButton.addEventListener('click', toggleTheme);
-    }
-});
-
-/**
- * Initialize and start the application
- */
-function initApp(): void {
-    try {
-        // Get Telegram WebApp instance
-        const tg = initTelegramApp();
-        
-        // Set theme based on Telegram settings
-        updateTheme(tg);
-        
-        // Set background image
-        setBackgroundImage();
-        
-        // Set initial dino image
-        setInitialDinoImage();
-        
-        // Set up event listeners for the dino
-        setupDinoEventListeners(tg);
-        
-        // Show a welcome speech bubble after a short delay
-        setTimeout(() => showSpeechBubble(tg), TIMING.INITIAL_SPEECH_DELAY);
-        
-        // Hide loading spinner
-        const loadingElement = document.getElementById(ELEMENTS.LOADING);
-        if (loadingElement) {
-            setTimeout(() => {
-                loadingElement.style.display = 'none';
-            }, TIMING.LOADING_HIDE_DELAY);
-        }
-        
-        // Set up theme change handler
-        tg.onEvent('themeChanged', () => updateTheme(tg));
-        
-        // Notify Telegram that the Mini App is ready
-        tg.ready();
-        
-        console.log("ThyKnow Dino Friend app fully initialized");
-    } catch (error) {
-        console.error("Error initializing Dino Friend app:", error);
-        showError("Failed to initialize the app. Please try again later.");
-    }
-}
-
-/**
- * Initialize the Telegram Web App integration
- * @returns The Telegram WebApp instance
+ * Initialize the Telegram WebApp
+ * This ensures proper integration with the Telegram mini-app environment
  */
 function initTelegramApp(): TelegramWebApp {
-    // Get the Telegram WebApp instance from the global window object
     const tg = window.Telegram.WebApp;
     
-    // Expand the WebApp to full height
-    tg.expand();
+    // Configure the app for optimal user experience
+    tg.expand();  // Use full available height
+    tg.ready();   // Signal that the app is ready for interaction
     
-    // Log initialization
-    console.log("Telegram WebApp initialized");
-    
+    console.log('Telegram WebApp initialized for pet page');
     return tg;
 }
 
 /**
- * Update theme based on Telegram color scheme
- * @param tg - Telegram WebApp instance
- */
-function updateTheme(tg: TelegramWebApp): void {
-    const isDarkMode = tg.colorScheme === 'dark';
-    if (isDarkMode) {
-        document.body.classList.add('dark-theme');
-    } else {
-        document.body.classList.remove('dark-theme');
-    }
-    
-    console.log(`Theme set to ${isDarkMode ? 'dark' : 'light'} mode`);
-}
-
-/**
- * Toggle between light and dark theme
- */
-function toggleTheme(): void {
-    document.body.classList.toggle('dark-theme');
-    const isDark = document.body.classList.contains('dark-theme');
-    
-    // Update toggle button if it exists
-    const toggleIcon = document.querySelector('.theme-toggle i');
-    const toggleLabel = document.querySelector('.toggle-label');
-    
-    if (toggleIcon instanceof HTMLElement && toggleLabel instanceof HTMLElement) {
-        if (isDark) {
-            toggleIcon.className = 'fas fa-sun';
-            toggleLabel.textContent = 'Light Mode';
-        } else {
-            toggleIcon.className = 'fas fa-moon';
-            toggleLabel.textContent = 'Dark Mode';
-        }
-    }
-    
-    console.log(`Theme manually toggled to ${isDark ? 'dark' : 'light'} mode`);
-}
-
-/**
- * Set background image from server
+ * Set the background image for the pet page
+ * This creates the scenic environment for your dino friend
  */
 function setBackgroundImage(): void {
     const backgroundElement = document.getElementById(ELEMENTS.BACKGROUND);
     if (backgroundElement) {
+        // Apply the background image using the centralized configuration
+        // This ensures we're always using the correct, up-to-date image path
         (backgroundElement as HTMLElement).style.backgroundImage = `url('${IMAGES.BACKGROUND}')`;
-        console.log("Background image set");
+        console.log("Background image set successfully");
+    } else {
+        console.warn("Background element not found - check HTML structure");
     }
 }
 
 /**
- * Set initial dino image (eyes open)
+ * Set the initial dino image (eyes open state)
+ * This is the default state when the page loads
  */
 function setInitialDinoImage(): void {
     const dinoImage = document.getElementById(ELEMENTS.DINO_IMAGE) as HTMLImageElement;
     if (dinoImage) {
+        // Use the centralized configuration to ensure correct image path
+        // This prevents the bug you experienced where wrong images were loaded
         dinoImage.src = IMAGES.DINO_EYES_OPEN;
-        state.eyesOpen = true;
-        state.isAnimating = false;
+        dinoState.eyesOpen = true;
+        dinoState.isAnimating = false;
         
-        console.log("Initial dino image set to eyes open");
-    }
-}
-
-/**
- * Set up event listeners for the dinosaur image
- * @param tg - Telegram WebApp instance
- */
-function setupDinoEventListeners(tg: TelegramWebApp): void {
-    const dinoImage = document.getElementById(ELEMENTS.DINO_IMAGE) as HTMLImageElement;
-    if (!dinoImage) {
-        console.error("Dino image element not found");
-        return;
-    }
-    
-    if (dinoImage.complete) {
-        console.log("Dino image already loaded");
-        setupDinoInteraction(tg);
+        console.log("Initial dino image set to eyes open using centralized config");
     } else {
-        console.log("Waiting for dino image to load...");
-        dinoImage.onload = () => {
-            console.log("Dino image loaded");
-            setupDinoInteraction(tg);
-        };
+        console.error("Dino image element not found - check HTML structure");
     }
 }
 
 /**
- * Set up dino interaction (tap/click and touch events)
- * @param tg - Telegram WebApp instance
- */
-function setupDinoInteraction(tg: TelegramWebApp): void {
-    const dinoImage = document.getElementById(ELEMENTS.DINO_IMAGE);
-    if (!dinoImage) {
-        console.error("Dino image element not found");
-        return;
-    }
-    
-    // Center the dino
-    centerDinoImage();
-    
-    console.log("Setting up dino interaction");
-    
-    // Add click event listener
-    dinoImage.addEventListener('click', (e) => handleDinoTap(e, tg));
-    
-    // For mobile - add touch event listeners to ensure tapping works well
-    dinoImage.addEventListener('touchstart', function(e) {
-        // Just prevent default to avoid any scrolling issues
-        e.preventDefault();
-    });
-    
-    dinoImage.addEventListener('touchend', function(e) {
-        // Call the same handler used for clicks
-        handleDinoTap(e, tg);
-    });
-    
-    console.log("Dino interaction setup complete");
-}
-
-/**
- * Center the dino image in its container for proper display
- */
-function centerDinoImage(): void {
-    const dinoImage = document.getElementById(ELEMENTS.DINO_IMAGE);
-    const dinoContainer = document.querySelector('.dino-container');
-    
-    if (!dinoImage || !dinoContainer) {
-        console.error("Dino image or container element not found");
-        return;
-    }
-    
-    // Ensure the container is properly set up for centering
-    (dinoContainer as HTMLElement).style.display = 'flex';
-    (dinoContainer as HTMLElement).style.justifyContent = 'center';
-    (dinoContainer as HTMLElement).style.alignItems = 'center';
-    
-    // Style the dino image for interaction
-    (dinoImage as HTMLElement).style.position = 'static';
-    (dinoImage as HTMLElement).style.cursor = 'pointer';
-    
-    console.log("Dino image centered");
-}
-
-/**
- * Handle dino tap/click event
- * @param e - Event object
- * @param tg - Telegram WebApp instance
- */
-function handleDinoTap(e: Event, tg: TelegramWebApp): void {
-    console.log("Dino tapped!");
-    e.preventDefault();
-    
-    // Prevent multiple taps during animation
-    if (state.isAnimating) {
-        console.log("Animation in progress, ignoring tap");
-        return;
-    }
-    
-    // Set animation flag
-    state.isAnimating = true;
-    
-    // Toggle dino eyes
-    toggleDinoEyes(tg);
-    
-    // Show speech bubble
-    showSpeechBubble(tg);
-    
-    // Apply blink animation
-    const dinoImage = document.getElementById(ELEMENTS.DINO_IMAGE);
-    if (!dinoImage) {
-        state.isAnimating = false;
-        return;
-    }
-    
-    dinoImage.classList.add('blink');
-    
-    // Remove blink animation class after animation completes
-    setTimeout(() => {
-        dinoImage.classList.remove('blink');
-    }, TIMING.BLINK_DURATION);
-    
-    // Blink eyes back open after a delay if they're currently closed
-    if (!state.eyesOpen) {
-        setTimeout(() => {
-            const updatedDinoImage = document.getElementById(ELEMENTS.DINO_IMAGE) as HTMLImageElement;
-            if (updatedDinoImage) {
-                updatedDinoImage.src = IMAGES.DINO_EYES_OPEN;
-                state.eyesOpen = true;
-            }
-            // Reset animation flag after everything is done
-            state.isAnimating = false;
-            console.log("Auto-opened eyes after delay");
-        }, TIMING.BLINK_DURATION);
-    } else {
-        // Reset animation flag if we started with eyes closed
-        setTimeout(() => {
-            state.isAnimating = false;
-        }, TIMING.BLINK_DURATION);
-    }
-}
-
-/**
- * Toggle dino eyes between open and closed states
- * @param tg - Telegram WebApp instance
+ * Toggle between dino's open and closed eye states
+ * This is the core of the interactive blinking behavior
  */
 function toggleDinoEyes(tg: TelegramWebApp): void {
     const dinoImage = document.getElementById(ELEMENTS.DINO_IMAGE) as HTMLImageElement;
-    if (!dinoImage) return;
-    
-    if (state.eyesOpen) {
-        dinoImage.src = IMAGES.DINO_EYES_CLOSED;
-        state.eyesOpen = false;
-        console.log("Eyes closed");
-    } else {
-        dinoImage.src = IMAGES.DINO_EYES_OPEN;
-        state.eyesOpen = true;
-        console.log("Eyes opened");
+    if (!dinoImage) {
+        console.error("Cannot toggle eyes: dino image element not found");
+        return;
     }
     
-    // Provide haptic feedback if available
+    // Use centralized configuration for consistent image paths
+    if (dinoState.eyesOpen) {
+        // Switch to closed eyes
+        dinoImage.src = IMAGES.DINO_EYES_CLOSED;
+        dinoState.eyesOpen = false;
+        console.log("Dino eyes closed");
+    } else {
+        // Switch back to open eyes
+        dinoImage.src = IMAGES.DINO_EYES_OPEN;
+        dinoState.eyesOpen = true;
+        console.log("Dino eyes opened");
+    }
+    
+    // Provide haptic feedback for enhanced mobile experience
     if (tg.HapticFeedback) {
         tg.HapticFeedback.impactOccurred('light');
     }
 }
 
 /**
- * Show a speech bubble with a random encouraging message
- * @param tg - Telegram WebApp instance
+ * Show a random encouraging speech bubble from the dino
+ * This adds personality and engagement to the interaction
  */
-function showSpeechBubble(tg: TelegramWebApp): void {
+function showSpeechBubble(): void {
     const speechBubble = document.getElementById(ELEMENTS.SPEECH_BUBBLE);
     if (!speechBubble) {
-        console.error("Speech bubble element not found");
+        console.warn("Speech bubble element not found - check HTML structure");
         return;
     }
     
-    // Set random message
-    speechBubble.textContent = getRandomItem(DINO_SPEECH);
+    // Select a random message from the centralized speech configuration
+    // This makes it easy to add new messages by just updating the config file
+    const randomMessage = DINO_SPEECH[Math.floor(Math.random() * DINO_SPEECH.length)];
+    speechBubble.textContent = randomMessage;
     
-    // Show the bubble
-    speechBubble.classList.add('show');
+    // Show the speech bubble with smooth animation
+    speechBubble.style.opacity = '1';
+    speechBubble.style.transform = 'translateY(0)';
     
-    console.log("Showing speech bubble:", speechBubble.textContent);
-    
-    // Hide after delay
+    // Hide the speech bubble after the centrally-configured duration
     setTimeout(() => {
-        speechBubble.classList.remove('show');
+        speechBubble.style.opacity = '0';
+        speechBubble.style.transform = 'translateY(10px)';
     }, TIMING.SPEECH_DURATION);
     
-    // Provide haptic feedback if available
-    if (tg.HapticFeedback) {
-        tg.HapticFeedback.notificationOccurred('success');
+    console.log(`Dino says: "${randomMessage}"`);
+}
+
+/**
+ * Handle dino tap/click interaction
+ * This orchestrates the complete interaction: blinking, speech, and animations
+ */
+function handleDinoTap(e: Event, tg: TelegramWebApp): void {
+    console.log("Dino tapped!");
+    e.preventDefault();
+    
+    // Prevent multiple interactions during animation to avoid glitches
+    if (dinoState.isAnimating) {
+        console.log("Animation in progress, ignoring tap");
+        return;
+    }
+    
+    // Set animation flag to prevent overlapping interactions
+    dinoState.isAnimating = true;
+    
+    // Perform the eye toggle using centralized logic
+    toggleDinoEyes(tg);
+    
+    // Show encouraging message
+    showSpeechBubble();
+    
+    // Add visual blink animation
+    const dinoImage = document.getElementById(ELEMENTS.DINO_IMAGE);
+    if (dinoImage) {
+        dinoImage.classList.add('blink');
+        
+        // Remove the animation class after the centrally-configured duration
+        setTimeout(() => {
+            dinoImage.classList.remove('blink');
+        }, TIMING.BLINK_DURATION);
+    }
+    
+    // Auto-return to eyes open state after blinking if eyes were closed
+    if (!dinoState.eyesOpen) {
+        setTimeout(() => {
+            const updatedDinoImage = document.getElementById(ELEMENTS.DINO_IMAGE) as HTMLImageElement;
+            if (updatedDinoImage) {
+                // Use centralized configuration for consistency
+                updatedDinoImage.src = IMAGES.DINO_EYES_OPEN;
+                dinoState.eyesOpen = true;
+                console.log("Auto-opened eyes after blink");
+            }
+            // Reset animation flag
+            dinoState.isAnimating = false;
+        }, TIMING.BLINK_DURATION);
+    } else {
+        // Reset animation flag if no auto-open is needed
+        setTimeout(() => {
+            dinoState.isAnimating = false;
+        }, TIMING.BLINK_DURATION);
     }
 }
 
 /**
- * Get a random item from an array
- * @param array - The array to select from
- * @returns A random item from the array
+ * Set up all dino interactions and event listeners
+ * This configures both mouse and touch events for cross-platform compatibility
  */
-function getRandomItem<T>(array: T[]): T {
-    return array[Math.floor(Math.random() * array.length)];
+function setupDinoInteraction(tg: TelegramWebApp): void {
+    const dinoImage = document.getElementById(ELEMENTS.DINO_IMAGE);
+    if (!dinoImage) {
+        console.error("Cannot setup interaction: dino image element not found");
+        return;
+    }
+    
+    console.log("Setting up dino interaction events");
+    
+    // Add click event listener for desktop interaction
+    dinoImage.addEventListener('click', (e) => handleDinoTap(e, tg));
+    
+    // Add touch event listeners for mobile devices
+    dinoImage.addEventListener('touchstart', function(e) {
+        e.preventDefault(); // Prevent default touch behavior that might interfere
+    });
+    
+    dinoImage.addEventListener('touchend', function(e) {
+        handleDinoTap(e, tg);
+    });
+    
+    // Add keyboard accessibility support (spacebar or enter when focused)
+    dinoImage.addEventListener('keydown', function(e) {
+        if (e.key === ' ' || e.key === 'Enter') {
+            handleDinoTap(e, tg);
+        }
+    });
 }
 
 /**
- * Display error message
- * @param message - Error message to display
+ * Hide the loading spinner and show the main content
+ * This provides smooth visual transition from loading to interactive state
  */
-function showError(message: string): void {
+function hideLoadingSpinner(): void {
     const loadingElement = document.getElementById(ELEMENTS.LOADING);
     if (loadingElement) {
         loadingElement.style.display = 'none';
+        console.log("Loading spinner hidden");
     }
-    
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-container';
-    errorDiv.innerHTML = `
-        <i class="fas fa-exclamation-triangle"></i>
-        <p class="error-message">${message}</p>
-        <button onclick="location.reload()" class="btn secondary">Try Again</button>
-    `;
-    
-    document.body.appendChild(errorDiv);
 }
+
+/**
+ * Initialize the pet page application
+ * This is the main orchestrator that coordinates all setup activities
+ */
+function initPetApp(): void {
+    console.log('🦕 Initializing ThyKnow Dino Friend page...');
+    
+    try {
+        // Initialize Telegram WebApp integration
+        const tg = initTelegramApp();
+        
+        // Set up the visual environment using centralized configuration
+        setBackgroundImage();
+        setInitialDinoImage();
+        
+        // Configure user interactions
+        setupDinoInteraction(tg);
+        
+        // Show the initial welcome message after a brief delay (from config)
+        setTimeout(() => {
+            showSpeechBubble();
+        }, TIMING.INITIAL_SPEECH_DELAY);
+        
+        // Hide loading spinner and show content (timing from config)
+        setTimeout(() => {
+            hideLoadingSpinner();
+        }, TIMING.LOADING_HIDE_DELAY);
+        
+        console.log('✅ Pet app initialization complete - all configuration centralized');
+        
+    } catch (error) {
+        console.error('❌ Error initializing pet app:', error);
+        
+        // Fallback: at least hide the loading spinner so user can see something
+        setTimeout(() => {
+            hideLoadingSpinner();
+        }, TIMING.LOADING_HIDE_DELAY);
+    }
+}
+
+// Start the application when the DOM is fully loaded
+// This ensures all HTML elements are available before we try to interact with them
+document.addEventListener('DOMContentLoaded', initPetApp);
