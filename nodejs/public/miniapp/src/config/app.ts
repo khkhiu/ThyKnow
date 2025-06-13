@@ -6,7 +6,7 @@ import {
   Fallbacks, 
   PromptData, 
   JournalEntry 
-} from '../../src/types/miniapp';
+} from '../types/miniapp';
 
 /**
  * DOM element IDs for easy reference

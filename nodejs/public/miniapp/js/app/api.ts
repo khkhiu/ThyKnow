@@ -1,5 +1,5 @@
 // public/miniapp/js/app/api.ts
-import { API, FALLBACKS } from './config';
+import { API, FALLBACKS } from '../../src/config/app';
 import { 
   AppConfig, 
   PromptData, 
