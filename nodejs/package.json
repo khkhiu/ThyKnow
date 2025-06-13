@@ -7,25 +7,44 @@
     "start": "node dist/src/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
     "dev:frontend": "node scripts/dev-build-frontend.js --watch",
-    "build": "npm run build:backend && npm run build:frontend && npm run copy-public",
+    
+    "build": "node scripts/cleanup-and-build.js",
+    "build:quick": "npm run build:backend && npm run build:frontend && npm run copy-public",
     "build:backend": "tsc -p tsconfig.json",
     "build:frontend": "npm run bundle:main && npm run bundle:pet && npm run copy-static",
+    
     "bundle:main": "esbuild public/miniapp/main.ts --bundle --outfile=public/miniapp/dist/main.js --format=esm --target=es2020 --sourcemap",
     "bundle:pet": "esbuild public/miniapp/pet.ts --bundle --outfile=public/miniapp/dist/pet.js --format=esm --target=es2020 --sourcemap",
+    "bundle:all": "npm run bundle:main && npm run bundle:pet",
+    
     "copy-static": "node scripts/copy-static-files.js",
-    "copy-public": "cp -r public dist/ && mkdir -p dist/public/miniapp/dist && cp -r public/miniapp/dist/* dist/public/miniapp/dist/",
-    "clean": "rm -rf dist && rm -rf public/miniapp/dist",
+    "copy-public": "node scripts/copy-static-files.js && cp -r public dist/ && mkdir -p dist/public/miniapp/dist && cp -r public/miniapp/dist/* dist/public/miniapp/dist/ 2>/dev/null || true",
+    "copy-images": "node scripts/copy-images.js",
+    
+    "clean": "rm -rf dist && rm -rf public/miniapp/dist && rm -rf public/miniapp/js",
+    "clean:legacy": "rm -rf public/miniapp/js && rm -rf dist/public/miniapp/js",
+    "clean:full": "npm run clean && npm run clean:legacy",
+    
+    "fix-structure": "node scripts/cleanup-and-build.js",
+    "fix-imports": "node scripts/fix-html-imports.js",
+    
     "railway:up": "railway up",
     "railway:status": "railway status",
     "railway:logs": "railway logs",
     "setup-webhook": "ts-node scripts/setup-railway-webhook.ts",
     "railway:webhook": "railway run ts-node scripts/setup-railway-webpack.ts",
+    
     "lint": "eslint --ext .ts src/",
     "lint:fix": "eslint --ext .ts src/ --fix",
+    
     "test": "mocha --require ts-node/register test/**/*.test.ts",
     "test:coverage": "nyc --reporter=lcov --reporter=text npm test",
+    
     "postinstall": "npm run build",
-    "copy-images": "node scripts/copy-images.js"
+    
+    "debug:paths": "echo 'Visit /debug/paths endpoint to see directory structure'",
+    "debug:fix": "echo 'Visit /debug/fix endpoint to fix directory issues'",
+    "debug:build": "echo 'Visit /debug/build endpoint to trigger full rebuild'"
   },
   "keywords": [
     "telegram",

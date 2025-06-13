@@ -12,21 +12,34 @@ yarn-error.log
 # Environment files
 .env
 .env.*
+!.env.example
 
-# Build outputs
+# Build outputs (will be rebuilt in container)
 dist
 coverage
 build
+
+# Legacy miniapp structure (should not exist)
+public/miniapp/js/
+public/miniapp/js/app/
+public/miniapp/js/pet/
+
+# Development artifacts
+public/miniapp/dist/*.map
+*.tsbuildinfo
 
 # Editor directories and files
 .idea
 .vscode
 *.swp
 *.swo
+*~
 
 # OS files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # Logs
 logs
@@ -37,6 +50,8 @@ test
 __tests__
 *.test.ts
 *.spec.ts
+coverage/
+.nyc_output
 
 # Docker files
 Dockerfile
@@ -51,9 +66,30 @@ railway.toml
 *.md
 docs
 LICENSE
+CHANGELOG.md
 
 # Development configs
-.eslintrc
-.prettierrc
+.eslintrc*
+.prettierrc*
 .editorconfig
 nodemon.json
+jest.config.*
+babel.config.*
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Debug output
+debug.log
+error.log
+
+# Package manager files
+.yarn/
+.pnp.*
+package-lock.json.backup
+
+# IDE specific
+.vscode/settings.json
+.idea/workspace.xml

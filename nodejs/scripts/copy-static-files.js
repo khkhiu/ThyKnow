@@ -1,7 +1,7 @@
 // scripts/copy-static-files.js
 /**
  * Copy static files (HTML, CSS, images) to the dist directory
- * This script ensures all non-TypeScript assets are available after bundling
+ * Updated to work with simplified miniapp directory structure
  */
 
 const fs = require('fs');
@@ -20,9 +20,9 @@ function copyFile(src, dest) {
     
     // Copy the file
     fs.copyFileSync(src, dest);
-    console.log(`Copied: ${src} -> ${dest}`);
+    console.log(`✓ Copied: ${path.relative(process.cwd(), src)} → ${path.relative(process.cwd(), dest)}`);
   } catch (error) {
-    console.error(`Error copying ${src} to ${dest}:`, error.message);
+    console.error(`✗ Error copying ${src} to ${dest}:`, error.message);
   }
 }
 
@@ -32,7 +32,7 @@ function copyFile(src, dest) {
 function copyDirectory(src, dest, exclude = []) {
   try {
     if (!fs.existsSync(src)) {
-      console.warn(`Source directory does not exist: ${src}`);
+      console.warn(`⚠ Source directory does not exist: ${src}`);
       return;
     }
     
@@ -61,78 +61,140 @@ function copyDirectory(src, dest, exclude = []) {
       }
     }
   } catch (error) {
-    console.error(`Error copying directory ${src} to ${dest}:`, error.message);
+    console.error(`✗ Error copying directory ${src} to ${dest}:`, error.message);
   }
 }
 
 function copyStaticFiles() {
-  console.log('Copying static files for mini-app...');
+  console.log('📦 Copying static files for mini-app...');
   
   const baseDir = process.cwd();
   
-  // Files to copy
-  const filesToCopy = [
-    {
-      src: path.join(baseDir, 'public/miniapp/index.html'),
-      dest: path.join(baseDir, 'public/miniapp/index.html') // Already in place
-    },
-    {
-      src: path.join(baseDir, 'public/miniapp/pet.html'),
-      dest: path.join(baseDir, 'public/miniapp/pet.html') // Already in place
-    },
-    {
-      src: path.join(baseDir, 'public/miniapp/styles.css'),
-      dest: path.join(baseDir, 'public/miniapp/styles.css') // Already in place
-    },
-    {
-      src: path.join(baseDir, 'public/miniapp/pet.css'),
-      dest: path.join(baseDir, 'public/miniapp/pet.css') // Already in place
-    }
+  // Simplified directory structure - everything in public/miniapp/
+  const miniappDir = path.join(baseDir, 'public/miniapp');
+  const distMiniappDir = path.join(baseDir, 'dist/public/miniapp');
+  
+  // Ensure base directories exist
+  const dirsToEnsure = [
+    'public',
+    'public/miniapp',
+    'public/miniapp/dist',
+    'public/miniapp/images',
+    'dist',
+    'dist/public',
+    'dist/public/miniapp',
+    'dist/public/miniapp/dist',
+    'dist/public/miniapp/images'
   ];
   
-  // Copy individual files (verify they exist)
-  for (const { src, dest } of filesToCopy) {
+  for (const dir of dirsToEnsure) {
+    const fullPath = path.join(baseDir, dir);
+    if (!fs.existsSync(fullPath)) {
+      fs.mkdirSync(fullPath, { recursive: true });
+      console.log(`📁 Created directory: ${dir}`);
+    }
+  }
+  
+  // Files to copy from miniapp to dist/public/miniapp
+  const filesToCopy = [
+    'index.html',
+    'pet.html',
+    'styles.css',
+    'pet.css'
+  ];
+  
+  // Copy individual files
+  console.log('\n📄 Copying HTML and CSS files...');
+  for (const file of filesToCopy) {
+    const src = path.join(miniappDir, file);
+    const dest = path.join(distMiniappDir, file);
+    
     if (fs.existsSync(src)) {
-      console.log(`✓ File exists: ${src}`);
+      copyFile(src, dest);
     } else {
-      console.warn(`✗ File missing: ${src}`);
+      console.warn(`⚠ File missing: ${path.relative(baseDir, src)}`);
+    }
+  }
+  
+  // Copy JavaScript bundles if they exist
+  console.log('\n🔧 Copying JavaScript bundles...');
+  const jsBundles = ['main.js', 'pet.js'];
+  const jsDistSrc = path.join(miniappDir, 'dist');
+  const jsDistDest = path.join(distMiniappDir, 'dist');
+  
+  for (const bundle of jsBundles) {
+    const srcFile = path.join(jsDistSrc, bundle);
+    const destFile = path.join(jsDistDest, bundle);
+    
+    if (fs.existsSync(srcFile)) {
+      copyFile(srcFile, destFile);
+      
+      // Also copy source maps if they exist
+      const sourceMapSrc = srcFile + '.map';
+      const sourceMapDest = destFile + '.map';
+      if (fs.existsSync(sourceMapSrc)) {
+        copyFile(sourceMapSrc, sourceMapDest);
+      }
+    } else {
+      console.warn(`⚠ Bundle missing: ${path.relative(baseDir, srcFile)}`);
     }
   }
   
   // Copy images directory
-  const imagesSrc = path.join(baseDir, 'public/miniapp/images');
-  const imagesDest = path.join(baseDir, 'public/miniapp/images');
+  console.log('\n🖼️ Copying images...');
+  const imagesSrc = path.join(miniappDir, 'images');
+  const imagesDest = path.join(distMiniappDir, 'images');
   
   if (fs.existsSync(imagesSrc)) {
-    console.log(`✓ Images directory exists: ${imagesSrc}`);
-    // Images are already in the right place, just ensure they exist
+    copyDirectory(imagesSrc, imagesDest);
     const images = fs.readdirSync(imagesSrc);
-    console.log(`Found ${images.length} image files:`, images);
+    console.log(`✓ Copied ${images.length} image files`);
   } else {
-    console.warn(`✗ Images directory missing: ${imagesSrc}`);
+    console.warn(`⚠ Images directory missing: ${path.relative(baseDir, imagesSrc)}`);
     // Create default images
-    console.log('Creating default images...');
-    require('./copy-images.js');
-  }
-  
-  // Ensure dist directory structure exists
-  const distPaths = [
-    'public/miniapp/dist',
-    'dist/public',
-    'dist/public/miniapp',
-    'dist/public/miniapp/dist'
-  ];
-  
-  for (const distPath of distPaths) {
-    const fullPath = path.join(baseDir, distPath);
-    if (!fs.existsSync(fullPath)) {
-      fs.mkdirSync(fullPath, { recursive: true });
-      console.log(`Created directory: ${fullPath}`);
+    console.log('🎨 Creating default images...');
+    try {
+      require('./copy-images.js');
+    } catch (error) {
+      console.warn('⚠ Could not create default images:', error.message);
     }
   }
   
-  console.log('Static files copying complete');
+  // Clean up old directory structure if it exists
+  console.log('\n🧹 Cleaning up old directory structure...');
+  const oldDirs = [
+    path.join(miniappDir, 'js'),
+    path.join(distMiniappDir, 'js')
+  ];
+  
+  for (const oldDir of oldDirs) {
+    if (fs.existsSync(oldDir)) {
+      console.log(`🗑️ Removing old directory: ${path.relative(baseDir, oldDir)}`);
+      fs.rmSync(oldDir, { recursive: true, force: true });
+    }
+  }
+  
+  console.log('\n✅ Static files copying complete');
+  
+  // Summary
+  console.log('\n📊 Summary:');
+  console.log(`   Source: ${path.relative(baseDir, miniappDir)}`);
+  console.log(`   Destination: ${path.relative(baseDir, distMiniappDir)}`);
+  
+  // Verify final structure
+  if (fs.existsSync(distMiniappDir)) {
+    const files = fs.readdirSync(distMiniappDir, { withFileTypes: true });
+    console.log(`   Files in destination: ${files.length}`);
+    files.forEach(file => {
+      const icon = file.isDirectory() ? '📁' : '📄';
+      console.log(`     ${icon} ${file.name}`);
+    });
+  }
 }
 
 // Run the copy function
-copyStaticFiles();
+if (require.main === module) {
+  copyStaticFiles();
+}
+
+module.exports = { copyStaticFiles };
