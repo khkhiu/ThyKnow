@@ -515,23 +515,60 @@ export class User {
   }
 
   /**
-   * Save the last prompt sent to a user
+   * Save the last prompt for a user
+   * Uses the separate last_prompts table, not a column on users table
    */
-  static async saveLastPrompt(userId: string, prompt: { text: string; type: string }): Promise<void> {
+  static async saveLastPrompt(userId: string, text: string, type: PromptType): Promise<void> {
     try {
       await query(`
-        UPDATE users 
-        SET last_prompt_text = $1, last_prompt_type = $2 
-        WHERE id = $3
-      `, [prompt.text, prompt.type, userId]);
+        INSERT INTO last_prompts (user_id, text, type, timestamp)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (user_id) 
+        DO UPDATE SET 
+          text = EXCLUDED.text,
+          type = EXCLUDED.type,
+          timestamp = EXCLUDED.timestamp
+      `, [userId, text, type, new Date()]);
       
-      logger.info(`Saved last prompt for user ${userId}`);
+      logger.info(`Last prompt saved for user ${userId}`);
     } catch (error) {
       logger.error(`Error saving last prompt for user ${userId}:`, error);
       throw error;
     }
   }
 
+  /**
+   * Get the last prompt for a user
+   */
+  static async getLastPrompt(userId: string): Promise<ILastPrompt | null> {
+    try {
+      const result = await query<{
+        user_id: string;
+        text: string;
+        type: string;
+        timestamp: Date;
+      }>(`
+        SELECT user_id, text, type, timestamp
+        FROM last_prompts
+        WHERE user_id = $1
+      `, [userId]);
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      const row = result[0];
+      return {
+        userId: row.user_id,
+        text: row.text,
+        type: row.type as PromptType,
+        timestamp: row.timestamp
+      };
+    } catch (error) {
+      logger.error(`Error getting last prompt for user ${userId}:`, error);
+      throw error;
+    }
+  }
   /**
    * Get total user count for system stats
    */

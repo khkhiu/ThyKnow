@@ -139,21 +139,19 @@ export class UserService {
   }
 
   /**
-   * Save the last prompt sent to a user
+   * Save the last prompt for a user
+   * Delegates to the User model method
    */
-  async saveLastPrompt(userId: string, prompt: { text: string; type: PromptType; count?: number }): Promise<void> {
-    try {
-      // Ensure userId is a string
-      userId = String(userId);
-      
-      await User.saveLastPrompt(userId, {
-        text: prompt.text,
-        type: prompt.type
-      });
-    } catch (error) {
-      logger.error(`Error saving last prompt for user ${userId}:`, error);
-      throw error;
-    }
+  async saveLastPrompt(userId: string, text: string, type: PromptType): Promise<void> {
+    return await User.saveLastPrompt(userId, text, type);
+  }
+
+  /**
+   * Get the last prompt for a user
+   * Delegates to the User model method
+   */
+  async getLastPrompt(userId: string) {
+    return await User.getLastPrompt(userId);
   }
 
   /**
