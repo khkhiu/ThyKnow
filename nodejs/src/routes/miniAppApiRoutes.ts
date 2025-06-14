@@ -241,7 +241,7 @@ function getPromptWithWeeklyStreak(req: Request, res: Response, _next: NextFunct
         const prompt = await promptService.generatePrompt(userId);
         
         // Save the prompt for this user
-        await weeklyStreakUserService.saveLastPrompt(userId, prompt);
+        await weeklyStreakUserService.saveLastPrompt(userId, prompt.text, prompt.type);
         
         res.json({
           prompt: {

@@ -24,7 +24,7 @@ export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
     const prompt = await promptService.getNextPromptForUser(userId);
     
     // Update user's last prompt
-    await userService.saveLastPrompt(userId, prompt);
+    await userService.saveLastPrompt(userId, prompt.text, prompt.type);
     
     // Indicate the category to the user
     const categoryEmoji = prompt.type === 'self_awareness' ? '🧠' : '🤝';

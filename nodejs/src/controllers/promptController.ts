@@ -32,7 +32,7 @@ export async function handleSendPrompt(ctx: Context): Promise<void> {
     const prompt = await promptService.getNextPromptForUser(userId, chosenPromptType);
     
     // Save current prompt to user's data
-    await userService.saveLastPrompt(userId, prompt);
+    await userService.saveLastPrompt(userId, prompt.text, prompt.type);
     
     // Determine category emoji and name
     const categoryEmoji = prompt.type === 'self_awareness' ? '🧠' : '🤝';

@@ -33,7 +33,7 @@ export async function handleMiniAppCommand(ctx: Context): Promise<void> {
     const prompt = await promptService.getNextPromptForUser(userId);
     
     // Save the prompt as the user's last prompt
-    await userService.saveLastPrompt(userId, prompt);
+    await userService.saveLastPrompt(userId, prompt.text, prompt.type);
     
     logger.info(`Generated new prompt for user ${userId} before launching mini-app`);
     
