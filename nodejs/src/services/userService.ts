@@ -34,7 +34,7 @@ interface ISystemStats {
   averageStreak: number;
 }
 
-interface ISubmissionResult {
+export interface ISubmissionResult {
   entry: IJournalEntry;
   pointsAwarded: number;
   newStreak: number;

@@ -4,8 +4,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/userService'; // Fixed import
 import { PromptService } from '../services/promptService'; // Fixed import
-import { IJournalEntry } from '../models/JournalEntry'; // Import IJournalEntry
+//import { IJournalEntry } from '../models/JournalEntry'; // Import IJournalEntry
 import { logger } from '../utils/logger';
+import { ISubmissionResult } from '../services/userService';
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ const weeklyStreakUserService = new UserService(); // Fixed instantiation
 const promptService = new PromptService(); // Fixed instantiation
 
 // Define types for better type safety
+/*
 interface SubmissionResult {
   entry: IJournalEntry;
   pointsAwarded: number;
@@ -31,7 +33,7 @@ interface SubmissionResult {
     longestStreak: number;
   };
 }
-
+*/
 interface StreakStats {
   currentStreak: number;
   longestStreak: number;
@@ -92,7 +94,7 @@ function saveResponseWithWeeklyRewards(req: Request, res: Response, _next: NextF
       
       try {
         // Submit the journal entry and process all weekly rewards
-        const result: SubmissionResult = await weeklyStreakUserService.submitJournalEntry(
+        const result: ISubmissionResult = await weeklyStreakUserService.submitJournalEntry(
           userId,
           userWithPrompt.lastPrompt.text,
           userWithPrompt.lastPrompt.type,
