@@ -102,11 +102,11 @@ interface SchemaVersion {
 interface ExistsResult {
   exists: boolean;
 }
-
+/*
 interface CountResult {
   count: string; // PostgreSQL COUNT returns string
 }
-
+*/
 interface TableInfo {
   table_name: string;
   table_type: string;
