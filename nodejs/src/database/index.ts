@@ -459,6 +459,34 @@ export const getSchemaInfo = async () => {
   }
 };
 
+// Function to check database connectivity
+export const checkDatabaseConnection = async (): Promise<boolean> => {
+  try {
+    const result = await query<{ now: Date }>('SELECT NOW()');
+    logger.info(`Database connection successful, server time: ${result[0]?.now}`);
+    return true;
+  } catch (error) {
+    logger.error('Database connection check failed:', error);
+    return false;
+  }
+};
+
+// Export a function to close the pool (useful for graceful shutdown)
+export const closePool = async (): Promise<void> => {
+  await pool.end();
+  logger.info('PostgreSQL connection pool closed');
+};
+
+// Default export object
+export default {
+  query,
+  getClient,
+  transaction,
+  initDatabase,
+  checkDatabaseConnection,
+  closePool,
+};
+
 // Graceful shutdown
 process.on('SIGINT', async () => {
   logger.info('Closing database pool...');
