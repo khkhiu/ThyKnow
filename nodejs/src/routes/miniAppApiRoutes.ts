@@ -1,39 +1,29 @@
-// File: src/routes/miniAppApiRoutes.ts (Fixed version)
-// Mini App API routes with weekly streak and points support
+// src/routes/miniAppApiRoutes.ts
+// Complete Mini App API routes with both original functionality and weekly streak support
 
-import express, { Request, Response, NextFunction } from 'express';
-import { UserService } from '../services/userService'; // Fixed import
-import { PromptService } from '../services/promptService'; // Fixed import
-//import { IJournalEntry } from '../models/JournalEntry'; // Import IJournalEntry
+import { Router, Request, Response, NextFunction } from 'express';
+import { userService } from '../services/userService';
+import { promptService } from '../services/promptService';
 import { logger } from '../utils/logger';
+import { validateTelegramRequest } from '../middleware/telegramValidator';
+import { PromptType } from '../types';
+
+// Also import the weekly streak services if available
+import { UserService } from '../services/userService'; // Weekly streak version
+import { PromptService } from '../services/promptService'; // Weekly streak version
 import { ISubmissionResult } from '../services/userService';
 
-const router = express.Router();
+const router = Router();
 
-// Initialize services correctly
-const weeklyStreakUserService = new UserService(); // Fixed instantiation
-const promptService = new PromptService(); // Fixed instantiation
+// Initialize both regular and weekly streak services
+const weeklyStreakUserService = new UserService(); // For weekly streak features
+const weeklyPromptService = new PromptService(); // For weekly streak features
 
-// Define types for better type safety
-/*
-interface SubmissionResult {
-  entry: IJournalEntry;
-  pointsAwarded: number;
-  newStreak: number;
-  totalPoints: number;
-  milestoneReached?: number;
-  streakBroken: boolean;
-  isNewRecord: boolean;
-  isMultipleEntry: boolean;
-  weekId: string;
-  user: {
-    id: string;
-    totalPoints: number;
-    currentStreak: number;
-    longestStreak: number;
-  };
-}
-*/
+// Apply Telegram validation middleware to all API routes
+// Comment out during development if causing issues
+router.use(validateTelegramRequest);
+
+// Define types for weekly streak functionality
 interface StreakStats {
   currentStreak: number;
   longestStreak: number;
@@ -67,7 +57,316 @@ interface SystemStats {
 }
 
 /**
+ * Handler for GET /api/miniapp/prompts/today/:userId
+ * Get today's prompt for a user
+ */
+function getTodaysPrompt(req: Request, res: Response, next: NextFunction): void {
+  const { userId } = req.params;
+  
+  if (!userId) {
+    res.status(400).json({ error: 'User ID is required' });
+    return;
+  }
+  
+  userService.getUser(userId)
+    .then(user => {
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+      
+      // Get the last prompt for this user
+      const userWithPrompt = user as any; // Using any to simplify access to lastPrompt
+      
+      if (userWithPrompt.lastPrompt) {
+        // Return the user's last prompt
+        const promptData = {
+          type: userWithPrompt.lastPrompt.type,
+          typeLabel: userWithPrompt.lastPrompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
+          text: userWithPrompt.lastPrompt.text,
+          hint: 'Reflect deeply on this prompt to gain new insights.'
+        };
+        res.json(promptData);
+      } else {
+        // Generate a new prompt if none exists
+        promptService.getNextPromptForUser(userId)
+          .then(prompt => {
+            // Save as last prompt
+            userService.saveLastPrompt(userId, prompt.text, prompt.type)
+              .then(() => {
+                const promptData = {
+                  type: prompt.type,
+                  typeLabel: prompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
+                  text: prompt.text,
+                  hint: 'Reflect deeply on this prompt to gain new insights.'
+                };
+                res.json(promptData);
+              })
+              .catch(err => next(err));
+          })
+          .catch(err => next(err));
+      }
+    })
+    .catch(err => {
+      logger.error('Error fetching prompt:', err);
+      res.status(500).json({ error: 'An error occurred while fetching the prompt' });
+    });
+}
+
+/**
+ * Handler for POST /api/miniapp/prompts/new/:userId
+ * Generate a new prompt for a user (ORIGINAL FUNCTIONALITY)
+ */
+function generateNewPrompt(req: Request, res: Response, next: NextFunction): void {
+  const { userId } = req.params;
+  
+  if (!userId) {
+    res.status(400).json({ error: 'User ID is required' });
+    return;
+  }
+  
+  userService.getUser(userId)
+    .then(user => {
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+      
+      // Generate a new prompt
+      promptService.getNextPromptForUser(userId)
+        .then(prompt => {
+          // Save as last prompt
+          userService.saveLastPrompt(userId, prompt.text, prompt.type)
+            .then(() => {
+              const promptData = {
+                type: prompt.type,
+                typeLabel: prompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
+                text: prompt.text, 
+                hint: 'Reflect deeply on this prompt to gain new insights.'
+              };
+              
+              logger.info(`Generated new prompt for user ${userId} via button click`);
+              res.json(promptData);
+            })
+            .catch(err => next(err));
+        })
+        .catch(err => next(err));
+    })
+    .catch(err => {
+      logger.error('Error generating new prompt:', err);
+      res.status(500).json({ error: 'An error occurred while generating a new prompt' });
+    });
+}
+
+/**
+ * Handler for GET /api/miniapp/history/:userId
+ * Get journal entry history for a user with optional limit
+ */
+function getHistory(req: Request, res: Response, _next: NextFunction): void {
+  const { userId } = req.params;
+  const limit = parseInt(req.query.limit as string) || 10;
+  
+  if (!userId) {
+    res.status(400).json({ error: 'User ID is required' });
+    return;
+  }
+  
+  userService.getRecentEntries(userId, limit)
+    .then(entries => {
+      // Format for the mini app
+      const formattedEntries = entries.map(entry => ({
+        id: entry.id,
+        date: entry.timestamp.toISOString().split('T')[0],
+        promptType: entry.promptType,
+        prompt: entry.prompt,
+        response: entry.response
+      }));
+      
+      res.json(formattedEntries);
+    })
+    .catch(err => {
+      logger.error('Error fetching history:', err);
+      res.status(500).json({ error: 'An error occurred while fetching the history' });
+    });
+}
+
+/**
  * Handler for POST /api/miniapp/responses
+ * Save a journal entry response without generating a new prompt (ORIGINAL FUNCTIONALITY)
+ */
+function saveResponse(req: Request, res: Response, next: NextFunction): void {
+  const { userId, response } = req.body;
+  
+  if (!userId || !response) {
+    res.status(400).json({ error: 'User ID and response are required' });
+    return;
+  }
+  
+  userService.getUser(userId)
+    .then(async user => {
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+      
+      const userWithPrompt = user as any;
+      
+      if (!userWithPrompt.lastPrompt) {
+        res.status(400).json({ error: 'No active prompt found' });
+        return;
+      }
+      
+      // Create journal entry
+      const entry = {
+        prompt: userWithPrompt.lastPrompt.text,
+        promptType: userWithPrompt.lastPrompt.type as PromptType,
+        response: response,
+        timestamp: new Date()
+      };
+      
+      try {
+        // Save response
+        const entryId = await userService.saveResponse(userId, entry);
+        
+        // Return success without generating a new prompt
+        res.status(201).json({
+          success: true,
+          message: 'Response saved successfully',
+          entryId,
+          // Flag to indicate the user needs to press a button for a new prompt
+          needsNewPrompt: true
+        });
+        
+        logger.info(`Saved response for user ${userId} - waiting for them to request a new prompt`);
+      } catch (err) {
+        next(err);
+      }
+    })
+    .catch(err => {
+      logger.error('Error saving response:', err);
+      res.status(500).json({ error: 'An error occurred while saving the response' });
+    });
+}
+
+/**
+ * Handler for GET /api/miniapp/pet/random
+ * Get a random affirmation
+ */
+function getRandomAffirmation(_req: Request, res: Response): void {
+  try {
+    // List of pet affirmations
+    const pet = [
+      {
+        text: "You don't have to be perfect to be amazing. Even T-Rex had tiny arms and still ruled the Earth!",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "Your potential is as vast as the prehistoric skies. Embrace every opportunity to grow today.",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "You are stronger than you think, braver than you believe, and smarter than you imagine.",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "Small steps lead to big changes. Dinosaurs didn't evolve in a day!",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "Be kind to yourself today. Self-compassion is the foundation of all growth.",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "Your challenges don't define you—how you respond to them does. Face today with a RAWR!",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "Like fossils buried in rock, your greatest qualities are sometimes hidden from view. They're still there!",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "You have survived 100% of your worst days so far. You've got prehistoric-level resilience!",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "It's okay to take a break. Even the mightiest dinosaurs needed rest!",
+        author: "ThyKnow Dino"
+      },
+      {
+        text: "Your journey is uniquely yours. Embrace your path—after all, no two dinosaur tracks are exactly alike!",
+        author: "ThyKnow Dino"
+      }
+    ];
+    
+    // Get a random affirmation
+    const randomIndex = Math.floor(Math.random() * pet.length);
+    res.json(pet[randomIndex]);
+  } catch (error) {
+    logger.error('Error fetching random affirmation:', error);
+    res.status(500).json({ error: 'An error occurred while fetching a random affirmation' });
+  }
+}
+
+/**
+ * Handler for POST /api/miniapp/pet/share
+ * Share an affirmation to a Telegram chat
+ */
+function shareAffirmation(req: Request, res: Response): void {
+  const { userId, affirmation } = req.body;
+  
+  if (!userId || !affirmation) {
+    res.status(400).json({ error: 'User ID and affirmation are required' });
+    return;
+  }
+  
+  try {
+    // In a real implementation, this would use the Telegram API to share the affirmation
+    // For now, we'll just log it and return success
+    logger.info(`User ${userId} shared affirmation: ${affirmation}`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Affirmation shared successfully'
+    });
+  } catch (error) {
+    logger.error('Error sharing affirmation:', error);
+    res.status(500).json({ error: 'An error occurred while sharing the affirmation' });
+  }
+}
+
+/**
+ * Handler for GET /api/miniapp/dinoMessages/random
+ * Get a random dino speech bubble message
+ */
+function getRandomDinoMessage(_req: Request, res: Response): void {
+  try {
+    // List of dino speech messages
+    const dinoMessages = [
+      "You're doing great!",
+      "Rawr! That means 'awesome' in dinosaur!",
+      "I believe in you!",
+      "You've got this!",
+      "Keep going, you're amazing!",
+      "You make this dinosaur proud!",
+      "Sending prehistoric good vibes!",
+      "Your growth mindset is dino-mite!",
+      "Remember to be kind to yourself!",
+      "Even T-Rex had small arms but a big impact!"
+    ];
+    
+    // Get a random message
+    const randomIndex = Math.floor(Math.random() * dinoMessages.length);
+    res.json({ message: dinoMessages[randomIndex] });
+  } catch (error) {
+    logger.error('Error fetching random dino message:', error);
+    res.status(500).json({ error: 'An error occurred while fetching a random dino message' });
+  }
+}
+
+// ===== WEEKLY STREAK FUNCTIONALITY =====
+
+/**
+ * Handler for POST /api/miniapp/responses/weekly
  * Save a journal entry response and process weekly rewards
  */
 function saveResponseWithWeeklyRewards(req: Request, res: Response, _next: NextFunction): void {
@@ -79,7 +378,7 @@ function saveResponseWithWeeklyRewards(req: Request, res: Response, _next: NextF
   }
   
   weeklyStreakUserService.getUser(userId)
-    .then(async (user: any) => { // Fixed type annotation
+    .then(async (user: any) => {
       if (!user) {
         res.status(404).json({ error: 'User not found' });
         return;
@@ -135,7 +434,7 @@ function saveResponseWithWeeklyRewards(req: Request, res: Response, _next: NextF
         res.status(500).json({ error: 'Failed to save entry and process weekly rewards' });
       }
     })
-    .catch((err: any) => { // Fixed type annotation
+    .catch((err: any) => {
       logger.error('Error getting user for weekly response submission:', err);
       res.status(500).json({ error: 'An error occurred while processing your weekly response' });
     });
@@ -154,7 +453,7 @@ function getWeeklyStreakInfo(req: Request, res: Response, _next: NextFunction): 
   }
   
   weeklyStreakUserService.getStreakStats(userId)
-    .then((stats: StreakStats) => { // Fixed type annotation
+    .then((stats: StreakStats) => {
       res.json({
         streak: {
           current: stats.currentStreak,
@@ -166,7 +465,7 @@ function getWeeklyStreakInfo(req: Request, res: Response, _next: NextFunction): 
         },
         points: {
           total: stats.totalPoints,
-          recentHistory: stats.pointsHistory.map((entry: any) => ({ // Fixed type annotation
+          recentHistory: stats.pointsHistory.map((entry: any) => ({
             points: entry.pointsEarned,
             reason: entry.reason,
             streakWeek: entry.streakWeek,
@@ -183,7 +482,7 @@ function getWeeklyStreakInfo(req: Request, res: Response, _next: NextFunction): 
         }
       });
     })
-    .catch((err: any) => { // Fixed type annotation
+    .catch((err: any) => {
       logger.error('Error fetching weekly streak info:', err);
       res.status(500).json({ error: 'Failed to fetch weekly streak information' });
     });
@@ -197,9 +496,9 @@ function getWeeklyLeaderboard(req: Request, res: Response, _next: NextFunction):
   const limit = parseInt(req.query.limit as string) || 10;
   
   weeklyStreakUserService.getLeaderboard(limit)
-    .then((leaderboard: LeaderboardEntry[]) => { // Fixed type annotation
+    .then((leaderboard: LeaderboardEntry[]) => {
       res.json({
-        leaderboard: leaderboard.map((entry: LeaderboardEntry) => ({ // Fixed type annotation
+        leaderboard: leaderboard.map((entry: LeaderboardEntry) => ({
           rank: entry.rank,
           userId: entry.userId,
           currentStreak: entry.currentStreak,
@@ -209,7 +508,7 @@ function getWeeklyLeaderboard(req: Request, res: Response, _next: NextFunction):
         }))
       });
     })
-    .catch((err: any) => { // Fixed type annotation
+    .catch((err: any) => {
       logger.error('Error fetching weekly leaderboard:', err);
       res.status(500).json({ error: 'Failed to fetch weekly leaderboard' });
     });
@@ -238,7 +537,7 @@ function getPromptWithWeeklyStreak(req: Request, res: Response, _next: NextFunct
       }
       
       try {
-        const prompt = await promptService.generatePrompt(userId);
+        const prompt = await weeklyPromptService.generatePrompt(userId);
         
         // Save the prompt for this user
         await weeklyStreakUserService.saveLastPrompt(userId, prompt.text, prompt.type);
@@ -274,7 +573,7 @@ function getPromptWithWeeklyStreak(req: Request, res: Response, _next: NextFunct
 }
 
 /**
- * Handler for GET /api/miniapp/history/:userId
+ * Handler for GET /api/miniapp/history/:userId/weekly
  * Get journal history with weekly stats
  */
 function getHistoryWithWeeklyStats(req: Request, res: Response, _next: NextFunction): void {
@@ -293,10 +592,10 @@ function getHistoryWithWeeklyStats(req: Request, res: Response, _next: NextFunct
     .then(([entries, streakStats]) => {
       const pointsHistory = streakStats.pointsHistory;
       
-      const entriesWithWeeklyPoints = entries.map((entry: any) => { // Fixed type annotation
-        const pointsEntries = pointsHistory.filter((p: any) => p.entryId === entry.id); // Fixed type annotation
-        const totalPointsForEntry = pointsEntries.reduce((sum: number, p: any) => sum + p.pointsEarned, 0); // Fixed type annotation
-        const weeklyData = pointsEntries.find((p: any) => p.reason.includes('weekly') || p.reason.includes('streak')); // Fixed type annotation
+      const entriesWithWeeklyPoints = entries.map((entry: any) => {
+        const pointsEntries = pointsHistory.filter((p: any) => p.entryId === entry.id);
+        const totalPointsForEntry = pointsEntries.reduce((sum: number, p: any) => sum + p.pointsEarned, 0);
+        const weeklyData = pointsEntries.find((p: any) => p.reason.includes('weekly') || p.reason.includes('streak'));
         
         return {
           ...entry,
@@ -304,8 +603,8 @@ function getHistoryWithWeeklyStats(req: Request, res: Response, _next: NextFunct
             total: totalPointsForEntry,
             weekId: weeklyData?.weekIdentifier || null,
             streakWeek: weeklyData?.streakWeek || null,
-            isMilestone: pointsEntries.some((p: any) => p.reason.includes('milestone')), // Fixed type annotation
-            wasMultipleEntry: pointsEntries.some((p: any) => p.reason.includes('additional')) // Fixed type annotation
+            isMilestone: pointsEntries.some((p: any) => p.reason.includes('milestone')),
+            wasMultipleEntry: pointsEntries.some((p: any) => p.reason.includes('additional'))
           }
         };
       });
@@ -331,7 +630,7 @@ function getHistoryWithWeeklyStats(req: Request, res: Response, _next: NextFunct
  */
 function getWeeklySystemStats(_req: Request, res: Response, _next: NextFunction): void {
   weeklyStreakUserService.getSystemStats()
-    .then((stats: SystemStats) => { // Fixed type annotation
+    .then((stats: SystemStats) => {
       res.json({
         system: {
           totalUsers: stats.totalUsers,
@@ -342,7 +641,7 @@ function getWeeklySystemStats(_req: Request, res: Response, _next: NextFunction)
         timestamp: new Date().toISOString()
       });
     })
-    .catch((err: any) => { // Fixed type annotation
+    .catch((err: any) => {
       logger.error('Error fetching system stats:', err);
       res.status(500).json({ error: 'Failed to fetch system statistics' });
     });
@@ -365,13 +664,25 @@ function getWeeklyMilestones(_req: Request, res: Response, _next: NextFunction):
   });
 }
 
-// Export route handlers
-router.post('/responses', saveResponseWithWeeklyRewards);
+// ===== REGISTER ALL ROUTES =====
+
+// Original functionality routes
+router.get('/prompts/today/:userId', getTodaysPrompt);
+router.post('/prompts/new/:userId', generateNewPrompt); // THIS IS THE MISSING ROUTE CAUSING 404
+router.get('/history/:userId', getHistory);
+router.post('/responses', saveResponse);
+router.get('/pet/random', getRandomAffirmation);
+router.post('/pet/share', shareAffirmation);
+router.get('/dinoMessages/random', getRandomDinoMessage);
+
+// Weekly streak functionality routes
+router.post('/responses/weekly', saveResponseWithWeeklyRewards);
 router.get('/streak/:userId', getWeeklyStreakInfo);
 router.get('/leaderboard', getWeeklyLeaderboard);
 router.get('/prompt/:userId', getPromptWithWeeklyStreak);
-router.get('/history/:userId', getHistoryWithWeeklyStats);
+router.get('/history/:userId/weekly', getHistoryWithWeeklyStats);
 router.get('/system/stats', getWeeklySystemStats);
 router.get('/milestones', getWeeklyMilestones);
 
+// Export the router
 export default router;
