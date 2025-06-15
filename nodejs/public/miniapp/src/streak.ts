@@ -1,8 +1,19 @@
 // File: public/miniapp/src/streak.ts
-// Weekly streak page functionality for ThyKnow miniapp
+// Weekly streak page functionality for ThyKnow miniapp - FIXED VERSION
 
 import { TelegramWebApp, ApiEndpoints, ElementIds } from './types/miniapp';
 import { WeeklyStreakData, PointsData, createWeeklyStreakDisplay } from './components/streak/WeeklyStreakDisplay';
+// Import the existing Telegram services
+import { 
+  initTelegramApp, 
+  getTelegramUser, 
+  setupBackButton, 
+  provideHapticFeedback, 
+  notifyAppReady 
+} from './services/telegramApp';
+import { updateTheme, setupThemeListener } from './ui/miniappTheme';
+import { showElement, hideElement } from './utils/elements';
+import { showError } from './ui/notifications';
 
 // API configuration
 const API_BASE = '/api/miniapp';
@@ -36,38 +47,69 @@ interface StreakApiResponse {
   milestones: Record<string, string>;
 }
 
+/**
+ * Main entry point - initialize the streak page
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  initializeStreakPage();
+});
 
 /**
- * Initialize the streak page
+ * Initialize the streak page using the same pattern as main.ts
  */
 function initializeStreakPage(): void {
   console.log('Initializing streak page...');
 
-  // Initialize Telegram WebApp
-  if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-    telegramWebApp = window.Telegram.WebApp;
-    telegramWebApp.ready();
-    telegramWebApp.expand();
-
-    // Get user ID from Telegram
-    const user = telegramWebApp.initDataUnsafe?.user;
-    if (user?.id) {
-      currentUserId = user.id.toString();
-      console.log('User ID:', currentUserId);
-      loadStreakData();
-    } else {
-      console.error('No user data available from Telegram');
-      showError('Unable to load user data from Telegram');
-    }
+  // Initialize Telegram WebApp using the existing service (CRITICAL FIX)
+  telegramWebApp = initTelegramApp();
+  
+  // Set the theme
+  updateTheme(telegramWebApp);
+  
+  // Get Telegram user
+  const telegramUser = getTelegramUser(telegramWebApp);
+  
+  if (telegramUser?.id) {
+    currentUserId = telegramUser.id.toString();
+    console.log('User ID:', currentUserId);
+    
+    // Initialize the app
+    initStreakApp();
   } else {
-    // Fallback for development/testing
-    console.warn('Telegram WebApp not available, using fallback');
-    currentUserId = 'demo_user';
-    loadStreakData();
+    console.error('No user data available from Telegram');
+    showError('Unable to load user data from Telegram');
   }
 
   // Set up event listeners
   setupEventListeners();
+  
+  // Set up theme change listener
+  setupThemeListener(telegramWebApp);
+  
+  // Setup back button handler
+  setupBackButton(telegramWebApp, () => handleBackButton());
+  
+  // Notify Telegram that the Mini App is ready
+  notifyAppReady(telegramWebApp);
+}
+
+/**
+ * Initialize the streak app
+ */
+async function initStreakApp(): Promise<void> {
+  try {
+    // Set loading state
+    showLoading();
+    
+    // Load streak data
+    await loadStreakData();
+    
+    // Show content
+    showContent();
+  } catch (error) {
+    console.error('Error initializing streak app:', error);
+    showError('Failed to load the streak app. Please try again.');
+  }
 }
 
 /**
@@ -78,7 +120,7 @@ function setupEventListeners(): void {
   if (retryButton) {
     retryButton.addEventListener('click', () => {
       hideError();
-      loadStreakData();
+      initStreakApp();
     });
   }
 }
@@ -87,8 +129,6 @@ function setupEventListeners(): void {
  * Load all streak data
  */
 async function loadStreakData(): Promise<void> {
-  showLoading();
-  
   try {
     // Load data in parallel
     const [streakData] = await Promise.all([
@@ -102,16 +142,15 @@ async function loadStreakData(): Promise<void> {
       populatePointsHistory(streakData.points);
       populateMilestones(streakData.milestones);
     }
-
-    showContent();
   } catch (error) {
     console.error('Error loading streak data:', error);
-    showError('Failed to load streak data. Please try again.');
+    throw error; // Re-throw to be handled by initStreakApp
   }
 }
 
 /**
  * Fetch user's streak data
+ * Note: This now automatically includes Telegram auth headers thanks to initTelegramApp()
  */
 async function fetchStreakData(): Promise<StreakApiResponse | null> {
   try {
@@ -192,135 +231,84 @@ function populatePointsHistory(pointsData: PointsData): void {
     container.innerHTML = `
       <div class="empty-history">
         <i class="fas fa-calendar-alt"></i>
-        <p>No recent activity yet. Start your weekly reflection journey!</p>
+        <p>No recent activity yet. Complete your first weekly reflection to get started!</p>
       </div>
     `;
     return;
   }
 
-  const historyHtml = pointsData.recentHistory
+  const historyHTML = pointsData.recentHistory
     .slice(0, 10) // Show last 10 entries
     .map(entry => `
       <div class="history-item">
-        <div class="history-icon">
-          <i class="fas fa-plus-circle"></i>
-        </div>
-        <div class="history-content">
-          <div class="history-points">+${entry.points} points</div>
-          <div class="history-reason">${entry.reason}</div>
-          <div class="history-date">${new Date(entry.date).toLocaleDateString()}</div>
-        </div>
-        <div class="history-week">Week ${entry.weekId}</div>
+        <div class="history-date">${entry.date}</div>
+        <div class="history-reason">${entry.reason}</div>
+        <div class="history-points">+${entry.points}</div>
       </div>
     `).join('');
 
   container.innerHTML = `
-    <div class="history-header">
-      <h3>Recent Points Earned</h3>
-      <div class="total-points">${pointsData.total.toLocaleString()} total</div>
+    <div class="points-summary">
+      <h3>Recent Activity</h3>
+      <div class="total-points">Total: ${pointsData.total} points</div>
     </div>
     <div class="history-list">
-      ${historyHtml}
+      ${historyHTML}
     </div>
   `;
 }
 
 /**
- * Populate milestones grid
+ * Populate milestones section
  */
 function populateMilestones(milestones: Record<string, string>): void {
   const container = document.getElementById(ELEMENTS.MILESTONES_GRID);
   if (!container) return;
 
-  const milestonesHtml = Object.entries(milestones)
-    .map(([weeks, title]) => `
+  const milestonesHTML = Object.entries(milestones)
+    .map(([weeks, description]) => `
       <div class="milestone-card">
         <div class="milestone-weeks">${weeks} weeks</div>
-        <div class="milestone-title">${title}</div>
-        <div class="milestone-icon">
-          ${parseInt(weeks) <= 4 ? '🌱' : 
-            parseInt(weeks) <= 12 ? '🌿' : 
-            parseInt(weeks) <= 26 ? '🌳' : 
-            parseInt(weeks) <= 52 ? '🏆' : '👑'}
-        </div>
+        <div class="milestone-description">${description}</div>
       </div>
     `).join('');
 
-  container.innerHTML = milestonesHtml;
+  container.innerHTML = `
+    <h3>Milestone Achievements</h3>
+    <div class="milestones-grid">
+      ${milestonesHTML}
+    </div>
+  `;
 }
 
 /**
  * Show loading state
  */
 function showLoading(): void {
-  const loading = document.getElementById(ELEMENTS.LOADING);
-  const content = document.getElementById(ELEMENTS.CONTENT);
-  const error = document.getElementById(ELEMENTS.ERROR);
-
-  if (loading) loading.style.display = 'flex';
-  if (content) content.style.display = 'none';
-  if (error) error.style.display = 'none';
+  showElement(ELEMENTS.LOADING);
+  hideElement(ELEMENTS.CONTENT);
+  hideElement(ELEMENTS.ERROR);
 }
 
 /**
- * Show main content
+ * Show content
  */
 function showContent(): void {
-  const loading = document.getElementById(ELEMENTS.LOADING);
-  const content = document.getElementById(ELEMENTS.CONTENT);
-  const error = document.getElementById(ELEMENTS.ERROR);
-
-  if (loading) loading.style.display = 'none';
-  if (content) content.style.display = 'block';
-  if (error) error.style.display = 'none';
+  hideElement(ELEMENTS.LOADING);
+  showElement(ELEMENTS.CONTENT);
+  hideElement(ELEMENTS.ERROR);
 }
 
 /**
- * Show error state
- */
-function showError(message: string): void {
-  const loading = document.getElementById(ELEMENTS.LOADING);
-  const content = document.getElementById(ELEMENTS.CONTENT);
-  const error = document.getElementById(ELEMENTS.ERROR);
-  const errorMessage = error?.querySelector('.error-message');
-
-  if (loading) loading.style.display = 'none';
-  if (content) content.style.display = 'none';
-  if (error) error.style.display = 'flex';
-  if (errorMessage) errorMessage.textContent = message;
-}
-
-/**
- * Hide error state
+ * Hide error
  */
 function hideError(): void {
-  const error = document.getElementById(ELEMENTS.ERROR);
-  if (error) error.style.display = 'none';
+  hideElement(ELEMENTS.ERROR);
 }
 
 /**
- * Show notification
+ * Handle back button press
  */
-function showNotification(message: string, type: 'success' | 'error' = 'success'): void {
-  const container = document.getElementById(ELEMENTS.NOTIFICATION_CONTAINER);
-  if (!container) return;
-
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-
-  container.appendChild(notification);
-
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    if (notification.parentNode) {
-      notification.parentNode.removeChild(notification);
-    }
-  }, 3000);
+function handleBackButton(): void {
+  telegramWebApp.close();
 }
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeStreakPage);
-
-// Export for potential external use
-export { initializeStreakPage, showNotification };

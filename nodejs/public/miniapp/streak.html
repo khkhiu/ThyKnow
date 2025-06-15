@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="src/css/styles.css">
     <link rel="stylesheet" href="src/css/streak.css">
     
-    <!-- Main entry point (compiled from TypeScript) -->
+    <!-- Main entry point (compiled from TypeScript) - FIXED TO USE MODULE TYPE -->
     <script type="module" src="dist/streak.js"></script>
 </head>
 <body>
@@ -43,44 +43,53 @@
         <main class="main-content">
             <!-- User's Personal Streak Section -->
             <section class="streak-section">
-                <h2><i class="fas fa-fire"></i> Your Weekly Streak</h2>
-                <div id="user-streak-container" class="card">
-                    <!-- Weekly streak display will be populated here -->
+                <div class="section-header">
+                    <h2><i class="fas fa-fire"></i> Your Weekly Streak</h2>
+                    <p>Building consistency, one week at a time</p>
+                </div>
+                <div id="user-streak-container" class="streak-container">
+                    <!-- Streak display will be populated here -->
                 </div>
             </section>
 
-            <!-- Weekly Progress Charts -->
+            <!-- Weekly Progress Section -->
             <section class="progress-section">
-                <h2><i class="fas fa-chart-area"></i> Progress Overview</h2>
-                <div class="progress-cards">
-                    <div class="progress-card" id="weekly-stats">
-                        <h3>This Week</h3>
+                <div class="progress-grid">
+                    <div class="progress-card">
+                        <h3><i class="fas fa-calendar-week"></i> This Week</h3>
                         <div id="weekly-status" class="weekly-status">
-                            <!-- Current week status -->
+                            <!-- Weekly status will be populated here -->
                         </div>
                     </div>
-                    <div class="progress-card" id="milestone-progress">
-                        <h3>Next Milestone</h3>
+                    
+                    <div class="progress-card">
+                        <h3><i class="fas fa-trophy"></i> Next Milestone</h3>
                         <div id="milestone-info" class="milestone-info">
-                            <!-- Milestone progress -->
+                            <!-- Milestone information will be populated here -->
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Points History -->
+            <!-- Points History Section -->
             <section class="history-section">
-                <h2><i class="fas fa-history"></i> Recent Activity</h2>
-                <div id="points-history" class="card">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> Recent Activity</h2>
+                    <p>Your journey through reflection and growth</p>
+                </div>
+                <div id="points-history" class="points-history">
                     <!-- Points history will be populated here -->
                 </div>
             </section>
 
-            <!-- Milestones Information -->
+            <!-- Milestones Section -->
             <section class="milestones-section">
-                <h2><i class="fas fa-star"></i> Achievement Milestones</h2>
+                <div class="section-header">
+                    <h2><i class="fas fa-star"></i> Achievement Milestones</h2>
+                    <p>Celebrating your dedication to weekly reflection</p>
+                </div>
                 <div id="milestones-grid" class="milestones-grid">
-                    <!-- Milestone information will be populated here -->
+                    <!-- Milestones will be populated here -->
                 </div>
             </section>
         </main>

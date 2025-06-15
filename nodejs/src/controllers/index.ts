@@ -1,4 +1,4 @@
-// src/controllers/index.ts (Updated with Streaks MiniApp Command)
+// src/controllers/index.ts (Updated with Fixed Streak MiniApp Command)
 import { Telegraf, Context } from 'telegraf';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { handleStart, handleShowHelp } from './userController';
@@ -15,11 +15,12 @@ import { handleResponseCallback } from './responseController';
 import { handleChooseCommand, handleChooseCallback } from './chooseController';
 import { handleMiniAppCommand } from './miniAppController';
 import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText } from './feedbackController';
-// ADD WEEKLY STREAK IMPORTS
+// Import both streak handlers
 import { 
   handleWeeklyStreakCommand, 
   handleWeeklyJournalSubmission 
 } from './weeklyStreakController';
+import { handleStreakMiniAppCommand } from './streakMiniAppController';
 import { logger } from '../utils/logger';
 import { MESSAGES } from '../constants';
 
@@ -41,8 +42,11 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.command('feedback', handleFeedbackCommand);
   bot.command('cancel', handleCancelCommand);
   
-  // STREAK COMMANDS (text-based)
-  bot.command('streak', handleWeeklyStreakCommand);
+  // FIXED: Use the miniapp version for /streak command (like index.html/prompt pattern)
+  bot.command('streak', handleStreakMiniAppCommand);
+  
+  // Optional: Add a text-based streak command for users who prefer text
+  bot.command('streakinfo', handleWeeklyStreakCommand);
   
   // Register callback query handlers
   bot.on('callback_query', (ctx) => {
@@ -75,14 +79,15 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     ctx.reply(MESSAGES.ERROR);
   });
   
-  // Set up bot commands menu - UPDATED WITH NEW COMMANDS
+  // Set up bot commands menu - UPDATED WITH CORRECT DESCRIPTIONS
   bot.telegram.setMyCommands([
     { command: 'start', description: 'Initialize the bot and get started' },
     { command: 'prompt', description: 'Get a new reflection prompt' },
     { command: 'choose', description: 'Choose a specific type of prompt' },
     { command: 'history', description: 'View your recent journal entries' },
     { command: 'miniapp', description: 'Open the ThyKnow mini app (all pages)' },
-    { command: 'streak', description: 'View your weekly reflection streak' },
+    { command: 'streak', description: 'View your weekly reflection streak (visual)' },
+    { command: 'streakinfo', description: 'Get streak info as text message' },
     { command: 'feedback', description: 'Share your thoughts with us' },
     { command: 'schedule', description: 'Manage your prompt schedule' },
     { command: 'help', description: 'Show available commands and usage' }
