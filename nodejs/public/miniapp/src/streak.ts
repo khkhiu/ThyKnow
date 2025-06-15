@@ -11,7 +11,7 @@ import {
   provideHapticFeedback, 
   notifyAppReady 
 } from './services/telegramApp';
-import { updateTheme, setupThemeListener } from './ui/miniappTheme';
+import { updateTheme, setupThemeListener, toggleTheme } from './ui/miniappTheme';
 import { showElement, hideElement } from './utils/elements';
 import { showError } from './ui/notifications';
 
@@ -116,12 +116,19 @@ async function initStreakApp(): Promise<void> {
  * Set up event listeners
  */
 function setupEventListeners(): void {
+  // Retry button event listener
   const retryButton = document.getElementById(ELEMENTS.RETRY_BUTTON);
   if (retryButton) {
     retryButton.addEventListener('click', () => {
       hideError();
       initStreakApp();
     });
+  }
+
+  // Theme toggle event listener (MISSING - ADD THIS)
+  const themeToggleBtn = document.querySelector('.theme-toggle');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', toggleTheme);
   }
 }
 
@@ -221,6 +228,17 @@ function populateProgressSection(data: StreakApiResponse): void {
 }
 
 /**
+ * Format reason text for display in the frontend
+ * Converts "weekly_entry" to "Weekly Entry", "milestone_4_weeks" to "Milestone 4 Weeks", etc.
+ */
+function formatReason(reason: string): string {
+  return reason
+    .replace(/_/g, ' ')  // Replace underscores with spaces
+    .replace(/\b\w/g, (char: string) => char.toUpperCase());  // Capitalize first letter of each word
+}
+
+
+/**
  * Populate points history
  */
 function populatePointsHistory(pointsData: PointsData): void {
@@ -242,7 +260,7 @@ function populatePointsHistory(pointsData: PointsData): void {
     .map(entry => `
       <div class="history-item">
         <div class="history-date">${entry.date}</div>
-        <div class="history-reason">${entry.reason}</div>
+        <div class="history-reason">${formatReason(entry.reason)}</div>
         <div class="history-points">+${entry.points}</div>
       </div>
     `).join('');
@@ -257,7 +275,6 @@ function populatePointsHistory(pointsData: PointsData): void {
     </div>
   `;
 }
-
 /**
  * Populate milestones section
  */
