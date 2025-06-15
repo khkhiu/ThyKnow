@@ -93,6 +93,79 @@
                 </div>
             </section>
 
+            <!-- Weekly Schedule & Reset Section -->
+            <section class="weekly-schedule-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-week"></i> Weekly Schedule & Reset</h2>
+                    <p>Understanding how weeks work and when streaks reset</p>
+                </div>
+                <div class="schedule-explanation-content">
+                    <div class="schedule-breakdown">
+                        <div class="schedule-item">
+                            <div class="schedule-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="schedule-details">
+                                <h4>Week Definition</h4>
+                                <p>Weeks run <strong>Monday to Sunday</strong> following the international ISO standard<br>
+                                <span class="example">Each week gets a unique identifier like "2025-W03"</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item">
+                            <div class="schedule-icon">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                            <div class="schedule-details">
+                                <h4>Reset Timing</h4>
+                                <p>New weeks begin at <strong>midnight Monday</strong> in your system timezone<br>
+                                <span class="example">Sunday 11:59 PM → Monday 12:00 AM = new week starts</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item">
+                            <div class="schedule-icon">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="schedule-details">
+                                <h4>Streak Continuation</h4>
+                                <p>Make at least <strong>one entry per week</strong> to keep your streak alive<br>
+                                <span class="example">Miss any full week = streak resets to 1</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item">
+                            <div class="schedule-icon">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div class="schedule-details">
+                                <h4>Same-Week Entries</h4>
+                                <p>Multiple reflections in one week earn <strong>bonus points</strong> but don't change your streak count<br>
+                                <span class="example">3 entries in Week 5 = still Week 5 streak + bonus points</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="current-week-info">
+                        <h4><i class="fas fa-calendar-day"></i> This Week's Status</h4>
+                        <div class="week-status-display">
+                            <div class="week-detail">
+                                <span class="week-label">Current Week:</span>
+                                <span class="week-value" id="current-week-display">Loading...</span>
+                            </div>
+                            <div class="week-detail">
+                                <span class="week-label">Week Ends:</span>
+                                <span class="week-value" id="week-ends-display">Loading...</span>
+                            </div>
+                            <div class="week-detail">
+                                <span class="week-label">Your Status:</span>
+                                <span class="week-value" id="week-completion-status">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Points System Explanation Section -->
             <section class="points-explanation-section">
                 <div class="section-header">
