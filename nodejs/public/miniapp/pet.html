@@ -22,32 +22,6 @@
     <link rel="stylesheet" href="src/css/styles.css">
     <link rel="stylesheet" href="src/css/pet.css">
     
-    <!-- Theme initialization script - runs before main content loads -->
-    <script>
-        // Initialize theme as early as possible to prevent flash of unstyled content
-        (function() {
-            // Check if Telegram WebApp provides theme info
-            const savedTheme = localStorage.getItem('thyknow-theme');
-            let preferredTheme = savedTheme;
-            
-            // If no saved theme, try to detect from Telegram WebApp or system
-            if (!preferredTheme) {
-                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.colorScheme) {
-                    preferredTheme = window.Telegram.WebApp.colorScheme;
-                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    preferredTheme = 'dark';
-                } else {
-                    preferredTheme = 'light';
-                }
-            }
-            
-            // Apply theme to document immediately
-            if (preferredTheme === 'dark') {
-                document.documentElement.classList.add('dark-theme');
-            }
-        })();
-    </script>
-    
     <!-- Main entry point (compiled from TypeScript) -->
     <script type="module" src="dist/pet.js"></script>
 </head>
@@ -90,6 +64,10 @@
                 <i class="fas fa-dragon nav-icon"></i>
                 <span class="nav-label">Dino Friend</span>
             </a>
+            <a href="/miniapp/streak" class="nav-item">
+                <i class="fas fa-chart-line nav-icon"></i>
+                <span class="nav-label">Streak</span>
+            </a>
         </div>
     </div>
 
@@ -114,59 +92,29 @@
                 }
             }
             
-            // Initialize toggle button based on current theme
-            const isDarkTheme = document.documentElement.classList.contains('dark-theme');
-            updateThemeToggle(isDarkTheme);
+            // Initialize theme from localStorage or system preference
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
             
-            // Handle theme toggle click
-            themeToggle.addEventListener('click', function() {
-                const currentlyDark = document.documentElement.classList.contains('dark-theme');
-                
-                if (currentlyDark) {
-                    // Switch to light theme
-                    document.documentElement.classList.remove('dark-theme');
-                    localStorage.setItem('thyknow-theme', 'light');
-                    updateThemeToggle(false);
-                    
-                    // Inform Telegram WebApp about theme change if available
-                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.setHeaderColor) {
-                        window.Telegram.WebApp.setHeaderColor('#ffffff');
-                    }
-                } else {
-                    // Switch to dark theme
-                    document.documentElement.classList.add('dark-theme');
-                    localStorage.setItem('thyknow-theme', 'dark');
-                    updateThemeToggle(true);
-                    
-                    // Inform Telegram WebApp about theme change if available
-                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.setHeaderColor) {
-                        window.Telegram.WebApp.setHeaderColor('#333333');
-                    }
-                }
-                
-                // Add a subtle animation to indicate the theme has changed
-                themeToggle.style.transform = 'scale(0.9)';
-                setTimeout(() => {
-                    themeToggle.style.transform = 'scale(1)';
-                }, 150);
-            });
+            if (isDark) {
+                document.body.classList.add('dark-theme');
+            }
+            updateThemeToggle(isDark);
             
-            // Listen for Telegram theme changes (if user changes theme in Telegram settings)
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.onEvent('themeChanged', function() {
-                    const telegramTheme = window.Telegram.WebApp.colorScheme;
-                    const shouldBeDark = telegramTheme === 'dark';
-                    const currentlyDark = document.documentElement.classList.contains('dark-theme');
+            // Theme toggle click handler
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    const currentlyDark = document.body.classList.contains('dark-theme');
                     
-                    if (shouldBeDark !== currentlyDark) {
-                        if (shouldBeDark) {
-                            document.documentElement.classList.add('dark-theme');
-                            localStorage.setItem('thyknow-theme', 'dark');
-                        } else {
-                            document.documentElement.classList.remove('dark-theme');
-                            localStorage.setItem('thyknow-theme', 'light');
-                        }
-                        updateThemeToggle(shouldBeDark);
+                    if (currentlyDark) {
+                        document.body.classList.remove('dark-theme');
+                        localStorage.setItem('theme', 'light');
+                        updateThemeToggle(false);
+                    } else {
+                        document.body.classList.add('dark-theme');
+                        localStorage.setItem('theme', 'dark');
+                        updateThemeToggle(true);
                     }
                 });
             }

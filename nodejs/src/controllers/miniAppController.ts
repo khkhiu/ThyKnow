@@ -1,4 +1,4 @@
-// src/controllers/miniAppController.ts
+// src/controllers/miniAppController.ts (Updated with Streak Option)
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger';
 import config from '../config';
@@ -8,7 +8,7 @@ import { promptService } from '../services/promptService';
 /**
  * Handle the /miniapp command to launch the mini app
  * Now generates a new prompt before launching the mini app
- * and offers options for the main app, dino friend, or affirmations
+ * and offers options for the main app, dino friend, and streak progress
  */
 export async function handleMiniAppCommand(ctx: Context): Promise<void> {
   try {
@@ -43,25 +43,26 @@ export async function handleMiniAppCommand(ctx: Context): Promise<void> {
     // Build URLs for all mini-app pages
     const miniAppUrl = `${config.baseUrl}/miniapp?t=${timeStamp}`;
     const petUrl = `${config.baseUrl}/miniapp/pet?t=${timeStamp}`;
+    const streakUrl = `${config.baseUrl}/miniapp/streak?t=${timeStamp}`;
     
-    // Log the mini app URL for debugging
-    logger.debug(`Serving mini app URLs: ${miniAppUrl}, ${petUrl}`);
+    // Log the mini app URLs for debugging
+    logger.debug(`Serving mini app URLs: ${miniAppUrl}, ${petUrl}, ${streakUrl}`);
     
     // Send a message with the web app buttons
     await ctx.reply(
       "📱 *ThyKnow Mini App*\n\n" +
       "Experience ThyKnow right inside Telegram with our interactive mini app!\n\n" +
-      "• A fresh new prompt has been generated for you! 🦕\n" +
-      "• Meet your dino friend (tap to see it blink and get encouragement!) 👀\n" +
-      "• View and respond to your prompt\n" +
-      "• Get daily affirmations\n\n" +
-      "Tap one of the buttons below to launch the app:",
+      "🦕 **Main App**: A fresh new prompt has been generated for you!\n" +
+      "🦖 **Dino Friend**: Meet your encouraging companion\n" +
+      "📊 **Weekly Progress**: Track your reflection streak and milestones\n\n" +
+      "Choose your experience:",
       {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
             [{ text: "🦕 Open ThyKnow App", web_app: { url: miniAppUrl } }],
             [{ text: "🦖 Meet Dino Friend", web_app: { url: petUrl } }],
+            [{ text: "📊 Weekly Progress", web_app: { url: streakUrl } }]
           ]
         }
       }

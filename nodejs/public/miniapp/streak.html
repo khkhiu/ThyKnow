@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ThyKnow - Weekly Streak</title>
+    
+    <!-- Telegram Web App stylesheet and script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Prevent mobile double-tap zoom and ensure proper touch handling -->
+    <style>
+        * { touch-action: manipulation; }
+        body { overscroll-behavior: none; }
+    </style>
+    
+    <!-- App styles -->
+    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/streak.css">
+    
+    <!-- Main entry point (compiled from TypeScript) -->
+    <script type="module" src="dist/streak.js"></script>
+</head>
+<body>
+    <!-- Loading spinner -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading your weekly progress...</p>
+    </div>
+
+    <div class="container" id="content" style="display: none;">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-chart-line"></i> Weekly Progress</h1>
+                <p class="tagline">Track your reflection journey and celebrate growth</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- User's Personal Streak Section -->
+            <section class="streak-section">
+                <h2><i class="fas fa-fire"></i> Your Weekly Streak</h2>
+                <div id="user-streak-container" class="card">
+                    <!-- Weekly streak display will be populated here -->
+                </div>
+            </section>
+
+            <!-- Weekly Progress Charts -->
+            <section class="progress-section">
+                <h2><i class="fas fa-chart-area"></i> Progress Overview</h2>
+                <div class="progress-cards">
+                    <div class="progress-card" id="weekly-stats">
+                        <h3>This Week</h3>
+                        <div id="weekly-status" class="weekly-status">
+                            <!-- Current week status -->
+                        </div>
+                    </div>
+                    <div class="progress-card" id="milestone-progress">
+                        <h3>Next Milestone</h3>
+                        <div id="milestone-info" class="milestone-info">
+                            <!-- Milestone progress -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Points History -->
+            <section class="history-section">
+                <h2><i class="fas fa-history"></i> Recent Activity</h2>
+                <div id="points-history" class="card">
+                    <!-- Points history will be populated here -->
+                </div>
+            </section>
+
+            <!-- Leaderboard Section -->
+            <section class="leaderboard-section">
+                <h2><i class="fas fa-trophy"></i> Weekly Champions</h2>
+                <div id="leaderboard-container" class="card">
+                    <!-- Leaderboard will be populated here -->
+                </div>
+            </section>
+
+            <!-- Milestones Information -->
+            <section class="milestones-section">
+                <h2><i class="fas fa-star"></i> Achievement Milestones</h2>
+                <div id="milestones-grid" class="milestones-grid">
+                    <!-- Milestone information will be populated here -->
+                </div>
+            </section>
+        </main>
+        
+        <!-- Error state -->
+        <div id="error" class="error-container" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p class="error-message">Sorry, something went wrong loading your streak data.</p>
+            <button id="retry-button" class="btn secondary">Try Again</button>
+        </div>
+
+        <footer>
+            <div class="nav-bar">
+                <a href="/miniapp" class="nav-item">
+                    <i class="fas fa-home nav-icon"></i>
+                    <span class="nav-label">Home</span>
+                </a>
+                <a href="/miniapp/pet" class="nav-item">
+                    <i class="fas fa-dragon nav-icon"></i>
+                    <span class="nav-label">Dino Friend</span>
+                </a>
+                <a href="/miniapp/streak" class="nav-item active">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span class="nav-label">Streak</span>
+                </a>
+            </div>
+            <div class="footer-info">
+                <p>© 2025 ThyKnow - Celebrating your weekly reflection journey</p>
+                <div class="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                    <span class="toggle-label">Dark Mode</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Notification container for success/error messages -->
+    <div id="notification-container" class="notification-container"></div>
+</body>
+</html>
