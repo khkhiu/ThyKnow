@@ -83,6 +83,20 @@ export async function handleCombinedStreakCommand(ctx: Context): Promise<void> {
       message += `🏆 *All milestones achieved!* You're a reflection master!\n\n`;
     }
     
+    // Points system explanation
+    message += `💡 How Points Work:\n`;
+    message += `• Base: 50 points per weekly reflection\n`;
+    message += `• Streak bonus: +10 points per streak week\n`;
+    message += `• Extra entries: +20 bonus points same week\n`;
+    message += `• Milestones: Big bonuses at 4, 12, 26, 52+ weeks\n\n`;
+    
+    // Week reset explanation
+    message += `📅 Weekly Schedule:\n`;
+    message += `• Weeks run Monday to Sunday (ISO standard)\n`;
+    message += `• Reset at midnight ${config.timezone} time\n`;
+    message += `• Miss a week = streak resets to 1\n`;
+    message += `• Multiple entries same week = bonus points only\n\n`;
+
     // Add call-to-action
     message += `📱 *Tap below for detailed visual progress, milestones, and activity history!*`;
     

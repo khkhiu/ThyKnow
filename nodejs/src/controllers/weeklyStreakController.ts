@@ -6,6 +6,7 @@ import { Message } from 'telegraf/typings/core/types/typegram';
 import { UserService } from '../services/userService'; // Fixed import
 import { logger } from '../utils/logger';
 import { IPointsHistory } from '../models/Points';
+import config from '../config';
 
 // Initialize weekly-enabled user service
 const weeklyUserService = new UserService(); // Fixed instantiation
@@ -80,6 +81,20 @@ export async function handleWeeklyStreakCommand(ctx: Context): Promise<void> {
       message += `🎯 Next Milestone: ${streakStats.weeksUntilNextMilestone} week${streakStats.weeksUntilNextMilestone === 1 ? '' : 's'} away\n`;
       message += `Reward: ${streakStats.nextMilestoneReward} bonus points\n\n`;
     }
+    
+    // Points system explanation
+    message += `💡 How Points Work:\n`;
+    message += `• Base: 50 points per weekly reflection\n`;
+    message += `• Streak bonus: +10 points per streak week\n`;
+    message += `• Extra entries: +20 bonus points same week\n`;
+    message += `• Milestones: Big bonuses at 4, 12, 26, 52+ weeks\n\n`;
+    
+    // Week reset explanation
+    message += `📅 Weekly Schedule:\n`;
+    message += `• Weeks run Monday to Sunday (ISO standard)\n`;
+    message += `• Reset at midnight ${config.timezone} time\n`;
+    message += `• Miss a week = streak resets to 1\n`;
+    message += `• Multiple entries same week = bonus points only\n\n`;
     
     // Recent activity
     if (streakStats.pointsHistory.length > 0) {
