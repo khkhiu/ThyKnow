@@ -7,7 +7,7 @@ const esbuild = require('esbuild');
 const path = require('path');
 
 // Define the build options that will be shared between all bundles
-// This ensures consistency across your main app and pet app builds
+// This ensures consistency across your main app, pet app, and streak app builds
 const buildOptions = {
   // Output format as ES modules - this is modern and works well with browsers
   format: 'esm',
@@ -70,7 +70,7 @@ const buildOptions = {
 };
 
 /**
- * Main build function that creates both app bundles
+ * Main build function that creates all app bundles
  * This function handles the complete build process for your miniapp
  */
 async function build() {
@@ -106,6 +106,20 @@ async function build() {
     });
     console.log('✅ Built pet.js bundle successfully');
     
+    // Build the streak app bundle for weekly progress tracking
+    // This creates a separate bundle for your weekly streak functionality
+    console.log('Building streak app bundle...');
+    await esbuild.build({
+      ...buildOptions,
+      // Entry point for the streak/weekly progress app
+      entryPoints: ['public/miniapp/src/streak.ts'],
+      outfile: 'public/miniapp/dist/streak.js',
+      
+      // Streak app uses the same configuration as other apps
+      // But you can add streak-specific options here if needed
+    });
+    console.log('✅ Built streak.js bundle successfully');
+    
     console.log('🎉 All bundles built successfully!');
     
     // Provide useful information about the build output
@@ -115,10 +129,12 @@ async function build() {
     try {
       const mainStats = fs.statSync('public/miniapp/dist/main.js');
       const petStats = fs.statSync('public/miniapp/dist/pet.js');
+      const streakStats = fs.statSync('public/miniapp/dist/streak.js');
       
       console.log(`📊 Bundle sizes:`);
       console.log(`   main.js: ${(mainStats.size / 1024).toFixed(2)} KB`);
       console.log(`   pet.js: ${(petStats.size / 1024).toFixed(2)} KB`);
+      console.log(`   streak.js: ${(streakStats.size / 1024).toFixed(2)} KB`);
     } catch (error) {
       console.log('📊 Could not determine bundle sizes');
     }
@@ -156,7 +172,7 @@ async function buildWatch() {
   try {
     console.log('👀 Starting development build with watch mode...');
     
-    // Create contexts for both bundles to enable watching
+    // Create contexts for all three bundles to enable watching
     const mainContext = await esbuild.context({
       ...buildOptions,
       entryPoints: ['public/miniapp/src/main.ts'],
@@ -169,14 +185,22 @@ async function buildWatch() {
       outfile: 'public/miniapp/dist/pet.js',
     });
     
-    // Initial build
+    const streakContext = await esbuild.context({
+      ...buildOptions,
+      entryPoints: ['public/miniapp/src/streak.ts'],
+      outfile: 'public/miniapp/dist/streak.js',
+    });
+    
+    // Initial build for all bundles
     await mainContext.rebuild();
     await petContext.rebuild();
+    await streakContext.rebuild();
     console.log('✅ Initial build complete');
     
-    // Start watching for changes
+    // Start watching for changes on all bundles
     await mainContext.watch();
     await petContext.watch();
+    await streakContext.watch();
     console.log('👀 Watching for changes... Press Ctrl+C to stop');
     
     // Handle graceful shutdown
@@ -184,6 +208,7 @@ async function buildWatch() {
       console.log('\n🛑 Stopping watch mode...');
       await mainContext.dispose();
       await petContext.dispose();
+      await streakContext.dispose();
       process.exit(0);
     });
     
