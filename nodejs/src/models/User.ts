@@ -399,7 +399,7 @@ export class User {
           longestStreak: newLongestStreak,
           totalPoints: newTotalPoints,
           lastEntryWeek: rewardResult.weekId,
-          promptCount: user.promptCount + 1
+          //promptCount: user.promptCount + 1
         });
 
         logger.info(

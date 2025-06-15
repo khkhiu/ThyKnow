@@ -53,7 +53,6 @@ export class PromptService {
    */
   async getNextPromptForUser(userId: string, promptType?: PromptType): Promise<Prompt> {
     try {
-      // Ensure userId is a string
       userId = String(userId);
       
       // Get user from database
@@ -62,10 +61,16 @@ export class PromptService {
       
       if (user) {
         // Increment prompt count
-        promptCount = (user.promptCount || 0) + 1;
+        const oldCount = user.promptCount || 0;
+        promptCount = oldCount + 1;
+        
+        // DEBUG: Log the prompt count change
+        logger.info(`🔄 Prompt rotation debug - User ${userId}: ${oldCount} → ${promptCount}`);
+        
         await User.update(userId, { promptCount });
       } else {
         // Create new user with count = 1
+        logger.info(`🔄 New user ${userId}: promptCount = 1`);
         await User.create({
           id: userId,
           createdAt: new Date(),
@@ -77,13 +82,12 @@ export class PromptService {
       let selectedPromptType: PromptType;
       
       if (promptType) {
-        // If a specific type was requested, use that
         selectedPromptType = promptType;
+        logger.info(`🎯 User ${userId}: Using chosen type: ${selectedPromptType}`);
       } else {
         // Otherwise, alternate based on prompt count
-        // Odd numbers (including 1) get self-awareness
-        // Even numbers get connections
         selectedPromptType = promptCount % 2 === 1 ? 'self_awareness' : 'connections';
+        logger.info(`🔄 User ${userId}: Count ${promptCount} → Type: ${selectedPromptType} (${promptCount % 2 === 1 ? 'ODD' : 'EVEN'})`);
       }
       
       // Get prompt of determined type
@@ -99,7 +103,6 @@ export class PromptService {
       throw error;
     }
   }
-
   /**
    * Create a journal entry object
    */
