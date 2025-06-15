@@ -1,4 +1,4 @@
-// src/controllers/index.ts (Updated with Fixed Streak MiniApp Command)
+// src/controllers/index.ts (Updated with Combined Streak Handler)
 import { Telegraf, Context } from 'telegraf';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { handleStart, handleShowHelp } from './userController';
@@ -15,12 +15,17 @@ import { handleResponseCallback } from './responseController';
 import { handleChooseCommand, handleChooseCallback } from './chooseController';
 import { handleMiniAppCommand } from './miniAppController';
 import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText } from './feedbackController';
-// Import both streak handlers
+// Import streak handlers
 import { 
   handleWeeklyStreakCommand, 
   handleWeeklyJournalSubmission 
 } from './weeklyStreakController';
 import { handleStreakMiniAppCommand } from './streakMiniAppController';
+// Import new combined streak handler
+import { 
+  handleCombinedStreakCommand, 
+  handleNewPromptCallback 
+} from './combinedStreakController';
 import { logger } from '../utils/logger';
 import { MESSAGES } from '../constants';
 
@@ -42,11 +47,12 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.command('feedback', handleFeedbackCommand);
   bot.command('cancel', handleCancelCommand);
   
-  // FIXED: Use the miniapp version for /streak command (like index.html/prompt pattern)
-  bot.command('streak', handleStreakMiniAppCommand);
+  // MAIN STREAK COMMAND: Combined text + miniapp approach
+  bot.command('streak', handleCombinedStreakCommand);
   
-  // Optional: Add a text-based streak command for users who prefer text
-  bot.command('streakinfo', handleWeeklyStreakCommand);
+  // Alternative commands for specific use cases
+  bot.command('streakinfo', handleWeeklyStreakCommand);        // Text-only version
+  bot.command('streakapp', handleStreakMiniAppCommand);        // Miniapp-only version
   
   // Register callback query handlers
   bot.on('callback_query', (ctx) => {
@@ -54,16 +60,24 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     
     if (!callbackData) return; // Return explicitly
     
+    // Schedule-related callbacks
     if (callbackData.startsWith('set_day:') || callbackData.startsWith('set_time:')) {
       return handleScheduleCallback(ctx);
     }
     
+    // Response-related callbacks
     if (callbackData.startsWith('save_response:') || callbackData === 'new_prompt') {
       return handleResponseCallback(ctx);
     }
     
+    // Choose prompt type callbacks
     if (callbackData.startsWith('choose:')) {
       return handleChooseCallback(ctx);
+    }
+    
+    // NEW: Handle new prompt callback from streak command
+    if (callbackData === 'new_prompt') {
+      return handleNewPromptCallback(ctx);
     }
     
     // Add a default return
@@ -79,15 +93,14 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     ctx.reply(MESSAGES.ERROR);
   });
   
-  // Set up bot commands menu - UPDATED WITH CORRECT DESCRIPTIONS
+  // Set up bot commands menu - UPDATED WITH COMBINED APPROACH
   bot.telegram.setMyCommands([
     { command: 'start', description: 'Initialize the bot and get started' },
     { command: 'prompt', description: 'Get a new reflection prompt' },
     { command: 'choose', description: 'Choose a specific type of prompt' },
     { command: 'history', description: 'View your recent journal entries' },
     { command: 'miniapp', description: 'Open the ThyKnow mini app (all pages)' },
-    { command: 'streak', description: 'View your weekly reflection streak (visual)' },
-    { command: 'streakinfo', description: 'Get streak info as text message' },
+    { command: 'streak', description: 'View streak summary + detailed progress' },
     { command: 'feedback', description: 'Share your thoughts with us' },
     { command: 'schedule', description: 'Manage your prompt schedule' },
     { command: 'help', description: 'Show available commands and usage' }
