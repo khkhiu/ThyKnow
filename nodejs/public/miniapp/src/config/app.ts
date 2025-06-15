@@ -49,7 +49,7 @@ export const API: ApiEndpoints = {
   TODAYS_PROMPT: '/api/miniapp/prompts/today/',
   NEW_PROMPT: '/api/miniapp/prompts/new/',
   HISTORY: '/api/miniapp/history/',
-  RESPONSES: '/api/miniapp/responses',
+  RESPONSES: '/api/miniapp/responses/weekly',
   RANDOM_AFFIRMATION: '/api/miniapp/pet/random',
   RANDOM_MESSAGE: '/api/miniapp/dinoMessages/random'
 };
