@@ -867,9 +867,20 @@
 }
 
 /* Empty states */
-.empty-history,
+.empty-history {
+  padding: 30px;
+  text-align: center;
+  background-color: var(--card-color);
+  border-radius: var(--border-radius);
+  color: var(--text-light);
+  font-style: italic;
+}
 
-.empty-history i,
+.empty-history i {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
 
 /* Responsive design */
 @media (max-width: 768px) {
