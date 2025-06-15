@@ -8,7 +8,6 @@ import { promptService } from '../src/services/promptService';
 import { MESSAGES } from '../src/constants';
 import { describe, beforeEach, afterEach, it, before } from 'node:test';
 
-
 describe('Telegram Bot Commands Integration Tests', () => {
   let bot: Telegraf;
   let mockContext: any;

@@ -50,7 +50,14 @@
     "test:bot:commands": "npm run test -- test/bot-commands.test.ts",
     "test:bot:quick": "ts-node -e \"require('./scripts/verify-bot-commands.ts').testAllCommands()\"",
     "test:bot:scenarios": "ts-node -e \"require('./scripts/verify-bot-commands.ts').testCommandScenarios()\"",
-    "test:bot:callbacks": "ts-node -e \"require('./scripts/verify-bot-commands.ts').testCallbackQueries()\""
+    "test:bot:callbacks": "ts-node -e \"require('./scripts/verify-bot-commands.ts').testCallbackQueries()\"",
+    "test:miniapp": "ts-node scripts/verify-miniapp.ts",
+    "test:miniapp:full": "npm run test -- test/miniapp.test.ts",
+    "test:miniapp:pages": "ts-node -e \"require('./scripts/verify-miniapp.ts').testPageLoading()\"",
+    "test:miniapp:api": "ts-node -e \"require('./scripts/verify-miniapp.ts').testApiEndpoints()\"",
+    "test:miniapp:files": "ts-node -e \"require('./scripts/verify-miniapp.ts').testFileStructure()\"",
+    "verify:miniapp": "npm run test:miniapp",
+    "build:miniapp": "npm run copy-images && npm run fix-html-imports"
   },
   "keywords": [
     "telegram",
@@ -89,6 +96,7 @@
     "npm-check-updates": "^18.0.1",
     "pg": "^8.16.0",
     "sinon": "^21.0.0",
+    "supertest": "^7.1.1",
     "telegraf": "^4.16.3",
     "winston": "^3.17.0"
   },
