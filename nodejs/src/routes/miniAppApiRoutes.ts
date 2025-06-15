@@ -43,14 +43,6 @@ interface StreakStats {
   }>;
 }
 
-interface LeaderboardEntry {
-  rank: number;
-  userId: string;
-  currentStreak: number;
-  longestStreak: number;
-  totalPoints: number;
-}
-
 interface SystemStats {
   totalActiveStreaks: number;
   totalUsers: number;
@@ -490,31 +482,6 @@ function getWeeklyStreakInfo(req: Request, res: Response, _next: NextFunction): 
     });
 }
 
-/**
- * Handler for GET /api/miniapp/leaderboard
- * Get weekly leaderboard data with optional limit
- */
-function getWeeklyLeaderboard(req: Request, res: Response, _next: NextFunction): void {
-  const limit = parseInt(req.query.limit as string) || 10;
-  
-  weeklyStreakUserService.getLeaderboard(limit)
-    .then((leaderboard: LeaderboardEntry[]) => {
-      res.json({
-        leaderboard: leaderboard.map((entry: LeaderboardEntry) => ({
-          rank: entry.rank,
-          userId: entry.userId,
-          currentStreak: entry.currentStreak,
-          longestStreak: entry.longestStreak,
-          totalPoints: entry.totalPoints,
-          streakLabel: `${entry.currentStreak} week${entry.currentStreak === 1 ? '' : 's'}`
-        }))
-      });
-    })
-    .catch((err: any) => {
-      logger.error('Error fetching weekly leaderboard:', err);
-      res.status(500).json({ error: 'Failed to fetch weekly leaderboard' });
-    });
-}
 
 /**
  * Handler for GET /api/miniapp/prompt/:userId
@@ -723,26 +690,6 @@ function getWeeklyMilestones(_req: Request, res: Response, _next: NextFunction):
   });
 
   /**
-   * GET /miniapp/streak
-   * Serves the mini-app weekly streak page
-   */
-  router.get('/streak', (req: Request, res: Response) => {
-    try {
-      const streakPath = resolvePublicPath('miniapp/streak.html');
-      logger.debug(`Serving weekly streak page at ${req.originalUrl} from ${streakPath}`);
-      res.sendFile(streakPath, (err) => {
-        if (err) {
-          logger.error(`Error sending file ${streakPath}:`, err);
-          res.status(500).send(`Error loading weekly streak page: ${err.message}`);
-        }
-      });
-    } catch (error) {
-      logger.error('Error serving weekly streak page:', error);
-      res.status(500).send('Error loading weekly streak page');
-    }
-  });
-
-  /**
    * GET /miniapp/config
    * Provides configuration data for the mini-app
    */
@@ -754,7 +701,6 @@ function getWeeklyMilestones(_req: Request, res: Response, _next: NextFunction):
         version: '1.0.0',
         features: {
           weeklyStreaks: true,
-          leaderboard: true,
           petInteraction: true,
           darkMode: true
         },
@@ -763,7 +709,6 @@ function getWeeklyMilestones(_req: Request, res: Response, _next: NextFunction):
           responses: '/api/miniapp/responses',
           history: '/api/miniapp/history',
           streak: '/api/miniapp/streak',
-          leaderboard: '/api/miniapp/leaderboard',
           pet: '/api/miniapp/pet'
         }
       };
@@ -813,7 +758,6 @@ router.get('/dinoMessages/random', getRandomDinoMessage);
 // Weekly streak functionality routes
 router.post('/responses/weekly', saveResponseWithWeeklyRewards);
 router.get('/streak/:userId', getWeeklyStreakInfo);
-router.get('/leaderboard', getWeeklyLeaderboard);
 router.get('/prompt/:userId', getPromptWithWeeklyStreak);
 router.get('/history/:userId/weekly', getHistoryWithWeeklyStats);
 router.get('/system/stats', getWeeklySystemStats);

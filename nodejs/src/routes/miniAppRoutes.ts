@@ -113,4 +113,24 @@ router.get('/user/:userId', (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /miniapp/streak
+ * Serves the mini-app weekly streak page
+ */
+router.get('/streak', (req: Request, res: Response) => {
+  try {
+    const streakPath = resolvePublicPath('miniapp/streak.html');
+    logger.debug(`Serving weekly streak page at ${req.originalUrl} from ${streakPath}`);
+    res.sendFile(streakPath, (err) => {
+      if (err) {
+        logger.error(`Error sending file ${streakPath}:`, err);
+        res.status(500).send(`Error loading weekly streak page: ${err.message}`);
+      }
+    });
+  } catch (error) {
+    logger.error('Error serving weekly streak page:', error);
+    res.status(500).send('Error loading weekly streak page');
+  }
+});
+
 export default router;
