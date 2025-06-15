@@ -22,14 +22,6 @@ interface IStreakStats {
   pointsHistory: IPointsHistory[];
 }
 
-interface ILeaderboardEntry {
-  rank: number;
-  userId: string;
-  currentStreak: number;
-  longestStreak: number;
-  totalPoints: number;
-}
-
 interface ISubmissionResult {
   entry: {
     id: number;
@@ -103,56 +95,6 @@ export async function handleWeeklyStreakCommand(ctx: Context): Promise<void> {
   } catch (error) {
     logger.error('Error in weekly streak command:', error);
     await ctx.reply('Sorry, there was an error fetching your weekly streak information. Please try again later.');
-  }
-}
-
-/**
- * Handle the /leaderboard command - show top weekly performers
- */
-export async function handleLeaderboardCommand(ctx: Context): Promise<void> {
-  try {
-    const userId = ctx.from?.id.toString();
-    
-    if (!userId) {
-      logger.error('No user ID found in leaderboard command');
-      return;
-    }
-    
-    const leaderboard: ILeaderboardEntry[] = await weeklyUserService.getLeaderboard(10);
-    
-    let message = `🏆 Weekly Reflection Leaderboard\n\n`;
-    
-    if (leaderboard.length === 0) {
-      message += `No weekly streaks yet! Be the first to start your journey.\n\n`;
-      message += `Use any prompt command to begin your weekly reflection streak!`;
-    } else {
-      leaderboard.forEach((user: ILeaderboardEntry, index: number) => {
-        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔸';
-        message += `${medal} #${user.rank}: ${user.currentStreak} weeks (${user.totalPoints.toLocaleString()} pts)\n`;
-      });
-      
-      // Find current user's rank in the leaderboard
-      const currentUser = leaderboard.find((user: ILeaderboardEntry) => user.userId === userId);
-      if (!currentUser && leaderboard.length === 10) {
-        // User might be ranked lower than top 10, get extended leaderboard to find them
-        try {
-          const extendedLeaderboard: ILeaderboardEntry[] = await weeklyUserService.getLeaderboard(100);
-          const userInExtended = extendedLeaderboard.find((user: ILeaderboardEntry) => user.userId === userId);
-          if (userInExtended) {
-            message += `\n⭐ Your rank: #${userInExtended.rank}`;
-          }
-        } catch (error) {
-          // If we can't get extended leaderboard, just skip showing user rank
-          logger.warn('Could not fetch extended leaderboard for user rank');
-        }
-      }
-    }
-    
-    await ctx.reply(message);
-    
-  } catch (error) {
-    logger.error('Error in leaderboard command:', error);
-    await ctx.reply('Sorry, there was an error fetching the leaderboard. Please try again later.');
   }
 }
 

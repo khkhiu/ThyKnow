@@ -577,7 +577,6 @@
 .streak-section,
 .progress-section,
 .history-section,
-.leaderboard-section,
 .milestones-section {
   margin-bottom: 32px;
 }
@@ -585,7 +584,6 @@
 .streak-section h2,
 .progress-section h2,
 .history-section h2,
-.leaderboard-section h2,
 .milestones-section h2 {
   color: var(--primary-color);
   margin-bottom: 16px;
@@ -781,54 +779,6 @@
   flex-shrink: 0;
 }
 
-/* Leaderboard styling */
-.leaderboard-header {
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.leaderboard-header h3 {
-  margin: 0;
-  color: var(--text-color);
-  font-size: 1.1rem;
-}
-
-.leaderboard-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.leaderboard-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: var(--card-color);
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
-}
-
-.leaderboard-item.current-user {
-  background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(139, 92, 246, 0.1));
-  border-color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(108, 99, 255, 0.2);
-}
-
-.leaderboard-item .rank {
-  font-size: 1.2rem;
-  font-weight: bold;
-  min-width: 40px;
-  text-align: center;
-}
-
-.leaderboard-item .user-info {
-  flex: 1;
-  position: relative;
-}
-
 .streak-info {
   font-weight: 600;
   color: var(--text-color);
@@ -918,21 +868,8 @@
 
 /* Empty states */
 .empty-history,
-.empty-leaderboard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 40px 20px;
-  text-align: center;
-  color: var(--text-light);
-}
 
 .empty-history i,
-.empty-leaderboard i {
-  font-size: 2rem;
-  opacity: 0.5;
-}
 
 /* Responsive design */
 @media (max-width: 768px) {
@@ -942,10 +879,6 @@
   
   .milestones-grid {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  }
-  
-  .leaderboard-item {
-    padding: 12px;
   }
   
   .history-item {
@@ -966,14 +899,4 @@
 
 .dark-theme .history-item {
   background: rgba(108, 99, 255, 0.1);
-}
-
-.dark-theme .leaderboard-item {
-  background: var(--card-color);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.dark-theme .leaderboard-item.current-user {
-  background: linear-gradient(135deg, rgba(108, 99, 255, 0.2), rgba(139, 92, 246, 0.2));
-  border-color: var(--primary-color);
 }

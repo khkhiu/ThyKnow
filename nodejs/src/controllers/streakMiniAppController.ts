@@ -39,7 +39,6 @@ export async function handleStreakMiniAppCommand(ctx: Context): Promise<void> {
     await ctx.reply(
       "📊 *Weekly Streak Progress*\n\n" +
       "🔥 View your weekly reflection streak\n" +
-      "🏆 Check your position on the leaderboard\n" +
       "💎 See your total points and milestones\n" +
       "📈 Track your progress over time\n\n" +
       "Your weekly reflection journey awaits!",

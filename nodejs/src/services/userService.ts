@@ -19,14 +19,6 @@ interface IStreakStats {
   pointsHistory: IPointsHistory[];
 }
 
-interface ILeaderboardEntry {
-  rank: number;
-  userId: string;
-  currentStreak: number;
-  longestStreak: number;
-  totalPoints: number;
-}
-
 interface ISystemStats {
   totalActiveStreaks: number;
   totalUsers: number;
@@ -251,18 +243,6 @@ export class UserService {
    */
   getCurrentWeekId(): string {
     return Points.getWeekIdentifier();
-  }
-
-  /**
-   * Get leaderboard data
-   */
-  async getLeaderboard(limit: number = 10): Promise<ILeaderboardEntry[]> {
-    try {
-      return await User.getWeeklyLeaderboard(limit);
-    } catch (error) {
-      logger.error('Error getting leaderboard:', error);
-      throw error;
-    }
   }
 
   /**

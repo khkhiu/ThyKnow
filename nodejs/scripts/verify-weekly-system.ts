@@ -4,7 +4,6 @@
 import { query } from '../src/database';
 import { Points } from '../src/models/Points';
 import { UserService } from '../src/services/userService';
-import { logger } from '../src/utils/logger';
 
 /**
  * Main verification function for the weekly streak system

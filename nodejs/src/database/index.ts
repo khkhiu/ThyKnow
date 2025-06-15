@@ -194,11 +194,6 @@ async function applyMigrations(currentVersion: number): Promise<void> {
       version: 3,
       description: 'Create points_history table and indices',
       migration: applyMigration3_PointsHistoryAndIndices
-    },
-    {
-      version: 4,
-      description: 'Create database views for leaderboard and statistics',
-      migration: applyMigration4_DatabaseViews
     }
   ];
 
@@ -337,37 +332,6 @@ async function applyMigration3_PointsHistoryAndIndices(client: PoolClient): Prom
 /**
  * Migration 4: Create database views
  */
-async function applyMigration4_DatabaseViews(client: PoolClient): Promise<void> {
-  // Create user leaderboard view
-  await client.query(`
-    CREATE OR REPLACE VIEW user_leaderboard AS
-    SELECT 
-      id,
-      current_streak,
-      longest_streak,
-      total_points,
-      prompt_count,
-      ROW_NUMBER() OVER (ORDER BY total_points DESC, current_streak DESC) as rank
-    FROM users
-    WHERE total_points > 0
-    ORDER BY total_points DESC, current_streak DESC
-  `);
-
-  // Create weekly streak statistics view
-  await client.query(`
-    CREATE OR REPLACE VIEW weekly_streak_stats AS
-    SELECT 
-      COUNT(*) as total_users,
-      COUNT(CASE WHEN current_streak > 0 THEN 1 END) as active_streaks,
-      ROUND(AVG(CASE WHEN current_streak > 0 THEN current_streak END), 2) as avg_active_streak,
-      MAX(current_streak) as longest_current_streak,
-      MAX(longest_streak) as longest_streak_ever,
-      SUM(total_points) as total_points_awarded,
-      COUNT(CASE WHEN last_entry_week = to_char(CURRENT_DATE, 'IYYY-"W"IW') THEN 1 END) as entries_this_week
-    FROM users
-  `);
-}
-
 /**
  * Verify the weekly streak system is properly set up
  */
@@ -404,7 +368,7 @@ async function verifyWeeklyStreakSystem(): Promise<void> {
     }
     
     // Check that views exist
-    const views = ['user_leaderboard', 'weekly_streak_stats'];
+    const views = ['weekly_streak_stats'];
     for (const view of views) {
       const exists = await query<ExistsResult>(`
         SELECT EXISTS (

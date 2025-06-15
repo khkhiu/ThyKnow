@@ -421,41 +421,6 @@ export class User {
   }
 
   /**
-   * Get leaderboard data for weekly streaks
-   */
-  static async getWeeklyLeaderboard(limit: number = 10): Promise<Array<{
-    userId: string;
-    currentStreak: number;
-    longestStreak: number;
-    totalPoints: number;
-    rank: number;
-  }>> {
-    try {
-      return await query<{
-        userId: string;
-        currentStreak: number;
-        longestStreak: number;
-        totalPoints: number;
-        rank: number;
-      }>(`
-        SELECT 
-          id as "userId",
-          current_streak as "currentStreak",
-          longest_streak as "longestStreak", 
-          total_points as "totalPoints",
-          ROW_NUMBER() OVER (ORDER BY total_points DESC, current_streak DESC) as rank
-        FROM users
-        WHERE total_points > 0
-        ORDER BY total_points DESC, current_streak DESC
-        LIMIT $1
-      `, [limit]);
-    } catch (error) {
-      logger.error('Error fetching weekly leaderboard:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Check if user has made an entry this week
    */
   static async hasEntryThisWeek(userId: string): Promise<boolean> {

@@ -14,12 +14,10 @@ import {
 import { handleResponseCallback } from './responseController';
 import { handleChooseCommand, handleChooseCallback } from './chooseController';
 import { handleMiniAppCommand } from './miniAppController';
-//import { handleStreakMiniAppCommand } from './streakMiniAppController'; // NEW IMPORT
 import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText } from './feedbackController';
 // ADD WEEKLY STREAK IMPORTS
 import { 
   handleWeeklyStreakCommand, 
-  //handleLeaderboardCommand, 
   handleWeeklyJournalSubmission 
 } from './weeklyStreakController';
 import { logger } from '../utils/logger';
@@ -40,13 +38,11 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   bot.command('schedule_toggle', handleScheduleToggleCommand);
   bot.command('choose', handleChooseCommand);
   bot.command('miniapp', handleMiniAppCommand);
-  //bot.command('streaks', handleStreakMiniAppCommand); // NEW COMMAND FOR DIRECT STREAK ACCESS
   bot.command('feedback', handleFeedbackCommand);
   bot.command('cancel', handleCancelCommand);
   
   // STREAK COMMANDS (text-based)
   bot.command('streak', handleWeeklyStreakCommand);
-  //bot.command('leaderboard', handleLeaderboardCommand);
   
   // Register callback query handlers
   bot.on('callback_query', (ctx) => {
@@ -86,9 +82,7 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     { command: 'choose', description: 'Choose a specific type of prompt' },
     { command: 'history', description: 'View your recent journal entries' },
     { command: 'miniapp', description: 'Open the ThyKnow mini app (all pages)' },
-    //{ command: 'streaks', description: 'View your weekly streak progress (mini app)' },
-    { command: 'streak', description: 'View your weekly reflection streak (text)' },
-    //{ command: 'leaderboard', description: 'See top weekly performers (text)' },
+    { command: 'streak', description: 'View your weekly reflection streak' },
     { command: 'feedback', description: 'Share your thoughts with us' },
     { command: 'schedule', description: 'Manage your prompt schedule' },
     { command: 'help', description: 'Show available commands and usage' }

@@ -8,7 +8,6 @@ import { WeeklyStreakData, PointsData, createWeeklyStreakDisplay } from './compo
 const API_BASE = '/api/miniapp';
 const API_ENDPOINTS = {
   STREAK: (userId: string) => `${API_BASE}/streak/${userId}`,
-  LEADERBOARD: `${API_BASE}/leaderboard`,
   MILESTONES: `${API_BASE}/milestones`
 };
 
@@ -22,7 +21,6 @@ const ELEMENTS = {
   WEEKLY_STATUS: 'weekly-status',
   MILESTONE_INFO: 'milestone-info',
   POINTS_HISTORY: 'points-history',
-  LEADERBOARD: 'leaderboard-container',
   MILESTONES_GRID: 'milestones-grid',
   NOTIFICATION_CONTAINER: 'notification-container'
 };
@@ -38,18 +36,6 @@ interface StreakApiResponse {
   milestones: Record<string, string>;
 }
 
-interface LeaderboardEntry {
-  rank: number;
-  userId: string;
-  currentStreak: number;
-  longestStreak: number;
-  totalPoints: number;
-  streakLabel: string;
-}
-
-interface LeaderboardResponse {
-  leaderboard: LeaderboardEntry[];
-}
 
 /**
  * Initialize the streak page
@@ -105,9 +91,8 @@ async function loadStreakData(): Promise<void> {
   
   try {
     // Load data in parallel
-    const [streakData, leaderboardData] = await Promise.all([
+    const [streakData] = await Promise.all([
       fetchStreakData(),
-      fetchLeaderboardData()
     ]);
 
     // Populate the page
@@ -116,10 +101,6 @@ async function loadStreakData(): Promise<void> {
       populateProgressSection(streakData);
       populatePointsHistory(streakData.points);
       populateMilestones(streakData.milestones);
-    }
-
-    if (leaderboardData) {
-      populateLeaderboard(leaderboardData);
     }
 
     showContent();
@@ -141,22 +122,6 @@ async function fetchStreakData(): Promise<StreakApiResponse | null> {
     return await response.json();
   } catch (error) {
     console.error('Error fetching streak data:', error);
-    return null;
-  }
-}
-
-/**
- * Fetch leaderboard data
- */
-async function fetchLeaderboardData(): Promise<LeaderboardResponse | null> {
-  try {
-    const response = await fetch(API_ENDPOINTS.LEADERBOARD);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching leaderboard data:', error);
     return null;
   }
 }
@@ -256,54 +221,6 @@ function populatePointsHistory(pointsData: PointsData): void {
     </div>
     <div class="history-list">
       ${historyHtml}
-    </div>
-  `;
-}
-
-/**
- * Populate leaderboard
- */
-function populateLeaderboard(data: LeaderboardResponse): void {
-  const container = document.getElementById(ELEMENTS.LEADERBOARD);
-  if (!container) return;
-
-  if (data.leaderboard.length === 0) {
-    container.innerHTML = `
-      <div class="empty-leaderboard">
-        <i class="fas fa-trophy"></i>
-        <p>No streaks yet! Be the first to start your weekly reflection journey.</p>
-      </div>
-    `;
-    return;
-  }
-
-  const leaderboardHtml = data.leaderboard
-    .map((entry, index) => {
-      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${entry.rank}`;
-      const isCurrentUser = entry.userId === currentUserId;
-      
-      return `
-        <div class="leaderboard-item ${isCurrentUser ? 'current-user' : ''}">
-          <div class="rank">${medal}</div>
-          <div class="user-info">
-            <div class="streak-info">${entry.streakLabel}</div>
-            <div class="points-info">${entry.totalPoints.toLocaleString()} points</div>
-            ${isCurrentUser ? '<div class="you-indicator">You</div>' : ''}
-          </div>
-          <div class="best-streak">
-            <div class="best-number">${entry.longestStreak}</div>
-            <div class="best-label">best</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-  container.innerHTML = `
-    <div class="leaderboard-header">
-      <h3>Top Weekly Performers</h3>
-    </div>
-    <div class="leaderboard-list">
-      ${leaderboardHtml}
     </div>
   `;
 }

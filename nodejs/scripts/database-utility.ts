@@ -123,7 +123,7 @@ async function verifyDatabase(): Promise<void> {
   
   const requiredTables = ['users', 'journal_entries', 'last_prompts', 'feedback', 'points_history'];
   const requiredColumns = ['current_streak', 'longest_streak', 'total_points', 'last_entry_week'];
-  const requiredViews = ['user_leaderboard', 'weekly_streak_stats'];
+  const requiredViews = ['weekly_streak_stats'];
   
   // Check tables
   console.log('\n📋 Checking Tables:');
@@ -181,10 +181,6 @@ async function verifyDatabase(): Promise<void> {
     // Test points history
     await query<CountResult>('SELECT COUNT(*) as count FROM points_history');
     console.log('  ✅ Points history table query');
-    
-    // Test views
-    await query<CountResult>('SELECT COUNT(*) as count FROM user_leaderboard');
-    console.log('  ✅ User leaderboard view');
     
     console.log('\n🎉 All verification tests passed!');
   } catch (error) {
