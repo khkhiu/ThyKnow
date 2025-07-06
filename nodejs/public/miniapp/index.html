@@ -4,15 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ThyKnow - Reflection Journal</title>
+    <title>ThyKnow - Reflection & Growth</title>
     
-    <!-- Telegram Web App stylesheet and script -->
+    <!-- Telegram Mini App Meta Tags -->
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="telegram:app_name" content="ThyKnow" />
+    <meta name="telegram:description" content="Build reflective habits, grow your awareness! 🧠✨" />
+    
+    <!-- Telegram Web App Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Prevent mobile double-tap zoom and ensure proper touch handling -->
+    <!-- Prevent mobile double-tap zoom -->
     <style>
         * { touch-action: manipulation; }
         body { overscroll-behavior: none; }
@@ -20,118 +25,212 @@
     
     <!-- App styles -->
     <link rel="stylesheet" href="src/css/styles.css">
-    <link rel="stylesheet" href="src/css/streak.css">
+    <link rel="stylesheet" href="src/css/modern-ui.css">
     
-    <!-- Main entry point (compiled from TypeScript) -->
+    <!-- Main entry point -->
     <script type="module" src="dist/main.js"></script>
 </head>
 <body>
+    <!-- Loading spinner -->
     <div id="loading" class="loading">
-        <div class="spinner"></div>
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <p>Growing your reflection journey...</p>
+        </div>
     </div>
 
-    <div class="container" id="content" style="display: none;">
-        <header class="header">
+    <div class="app-container" id="content" style="display: none;">
+        <!-- App Header -->
+        <header class="app-header">
             <div class="header-content">
-                <h1><i class="fas fa-lightbulb"></i> ThyKnow</h1>
-                <p class="tagline">Discover yourself through thoughtful reflection</p>
+                <div class="brand-section">
+                    <div class="app-icon">🧠</div>
+                    <div class="brand-text">
+                        <h1>ThyKnow</h1>
+                        <p class="tagline">Reflect, Grow, Thrive 🌱📝</p>
+                    </div>
+                </div>
+                <div class="user-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-fire"></i>
+                        <span id="user-streak">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-star"></i>
+                        <span id="user-points">0</span>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <main class="main-content">
-            <!-- Prompt section -->
-            <section class="prompt-section">
-                <div class="prompt-container card">
-                    <div class="prompt-header">
-                        <span id="prompt-type" class="prompt-type">🧠 Self-Awareness</span>
-                        <button id="new-prompt-button" class="btn icon-btn" title="Get new prompt">
-                            <i class="fas fa-refresh"></i>
-                        </button>
-                    </div>
-                    <div id="prompt-text" class="prompt-text">
-                        What moment today made you feel most alive?
-                    </div>
-                    <div id="prompt-hint" class="prompt-hint">
-                        Take a moment to reflect on this question deeply.
-                    </div>
-                </div>
-                
-                <!-- Response section -->
-                <div class="response-container card">
-                    <textarea 
-                        id="response" 
-                        class="response-field" 
-                        placeholder="Share your thoughts and reflections here..."
-                        rows="4"
-                    ></textarea>
-                    <div class="response-actions">
-                        <button id="submit-response" class="btn primary">
-                            <i class="fas fa-paper-plane"></i>
-                            Save Reflection
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- History section -->
-            <section class="history-section">
-                <div class="history-header">
-                    <h2><i class="fas fa-history"></i> Your Reflections</h2>
-                    <div class="history-controls">
-                        <select id="date-filter" class="filter-select">
-                            <option value="all">All entries</option>
-                            <option value="today">Today</option>
-                            <option value="week">This week</option>
-                            <option value="month">This month</option>
-                            <option value="custom">Custom date</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div id="custom-date-container" class="custom-date-container" style="display: none;">
-                    <input type="date" id="custom-date" class="date-input">
-                    <button id="apply-date" class="btn secondary small">Apply</button>
-                </div>
-                    <div id="history-entries" class="history-container">
-                      <!-- History entries will be populated here -->
-                    </div>
-                    <div id="empty-history" class="empty-history" style="display: none;">
-                      <p>No journal entries found for the selected date range.</p>
-                    </div>
-                  </section>
+        <!-- Pet Display Section -->
+        <section class="pet-section">
+            <div id="pet-display-container" class="pet-display">
+                <!-- Pet component will be rendered here -->
             </div>
-            
-            <!-- Error state -->
-            <div id="error" class="error-container" style="display: none;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p class="error-message">Sorry, something went wrong.</p>
-                <button id="retry-button" class="btn secondary">Try Again</button>
+        </section>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-navigation">
+            <div class="tab-list">
+                <button class="tab-button active" data-tab="journal">
+                    <i class="fas fa-book-open"></i>
+                    <span>Journal</span>
+                </button>
+                <button class="tab-button" data-tab="progress">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Progress</span>
+                </button>
+                <button class="tab-button" data-tab="achievements">
+                    <i class="fas fa-trophy"></i>
+                    <span>Awards</span>
+                </button>
+                <button class="tab-button" data-tab="care">
+                    <i class="fas fa-heart"></i>
+                    <span>Care</span>
+                </button>
+                <button class="tab-button" data-tab="stats">
+                    <i class="fas fa-home"></i>
+                    <span>Stats</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="tab-content-container">
+            <!-- Journal Tab -->
+            <div class="tab-content active" id="journal-content">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-pen-fancy"></i> Today's Reflection</h2>
+                        <p>Take a moment to explore your thoughts</p>
+                    </div>
+                    
+                    <div class="prompt-section">
+                        <div id="prompt-display" class="prompt-card">
+                            <!-- Prompt will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <div class="response-section">
+                        <div class="input-group">
+                            <textarea 
+                                id="response-field" 
+                                placeholder="Share your thoughts..." 
+                                rows="4"
+                                class="response-input"
+                            ></textarea>
+                            <button id="submit-button" class="submit-btn">
+                                <i class="fas fa-paper-plane"></i>
+                                Submit Reflection
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="new-prompt-button" class="secondary-btn">
+                            <i class="fas fa-refresh"></i>
+                            New Prompt
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Tab -->
+            <div class="tab-content" id="progress-content">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line"></i> Your Growth Journey</h2>
+                        <p>Track your reflection consistency</p>
+                    </div>
+                    
+                    <div id="streak-display-container" class="streak-container">
+                        <!-- Streak display will be rendered here -->
+                    </div>
+                    
+                    <div id="progress-charts" class="charts-container">
+                        <!-- Progress visualizations -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements Tab -->
+            <div class="tab-content" id="achievements-content">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-trophy"></i> Achievements</h2>
+                        <p>Celebrate your milestones</p>
+                    </div>
+                    
+                    <div id="achievements-grid" class="achievements-grid">
+                        <!-- Achievement cards will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Care Tab -->
+            <div class="tab-content" id="care-content">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-heart"></i> Mindful Care</h2>
+                        <p>Nurture your reflection practice</p>
+                    </div>
+                    
+                    <div id="care-activities" class="care-grid">
+                        <!-- Care activities will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Tab -->
+            <div class="tab-content" id="stats-content">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-bar"></i> Statistics</h2>
+                        <p>Your reflection insights</p>
+                    </div>
+                    
+                    <div id="stats-overview" class="stats-grid">
+                        <!-- Statistics will be rendered here -->
+                    </div>
+                    
+                    <div id="history-section" class="history-section">
+                        <h3>Recent Reflections</h3>
+                        <div id="history-entries" class="history-list">
+                            <!-- History entries will be rendered here -->
+                        </div>
+                        <div id="empty-history" class="empty-state" style="display: none;">
+                            <i class="fas fa-journal-whills"></i>
+                            <p>No reflections yet. Start your journey!</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
+
+        <!-- Notification Container -->
+        <div id="notification-container" class="notification-container"></div>
         
-        <footer>
-            <div class="nav-bar">
-                <a href="/miniapp" class="nav-item active">
-                    <i class="fas fa-home nav-icon"></i>
-                    <span class="nav-label">Home</span>
-                </a>
-                <a href="/miniapp/pet" class="nav-item">
-                    <i class="fas fa-dragon nav-icon"></i>
-                    <span class="nav-label">Dino Friend</span>
-                </a>
-                <a href="/miniapp/streak" class="nav-item">
-                    <i class="fas fa-chart-line nav-icon"></i>
-                    <span class="nav-label">Streak</span>
-                </a>
+        <!-- Error Display -->
+        <div id="error" class="error-message" style="display: none;">
+            <div class="error-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="error-text">Something went wrong. Please try again.</p>
+                <button id="retry-button" class="retry-btn">Try Again</button>
             </div>
-            <div class="footer-info">
-                <p>© 2025 ThyKnow - Helping you evolve, one prompt at a time.</p>
-                <div class="theme-toggle">
-                    <i class="fas fa-moon"></i>
-                    <span class="toggle-label">Dark Mode</span>
-                </div>
-            </div>
-        </footer>
+        </div>
     </div>
+
+    <!-- Telegram Mini App Initialization -->
+    <script>
+        // Initialize Telegram Web App with modern theme
+        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            // Set modern theme colors matching habit-pet-telegram-pal
+            Telegram.WebApp.setHeaderColor('#3B82F6');
+            Telegram.WebApp.setBackgroundColor('#F8FAFC');
+        }
+    </script>
 </body>
 </html>
