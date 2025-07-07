@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ThyKnow - Your Dino Friend</title>
+    <title>ThyKnow - Dino Friend</title>
     
-    <!-- Telegram Web App script -->
+    <!-- Telegram Web App stylesheet and script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Prevent mobile double-tap zoom -->
+    <!-- Prevent mobile double-tap zoom and ensure proper touch handling -->
     <style>
         * { touch-action: manipulation; }
         body { overscroll-behavior: none; }
@@ -21,431 +21,104 @@
     <!-- App styles -->
     <link rel="stylesheet" href="src/css/styles.css">
     <link rel="stylesheet" href="src/css/pet.css">
-    <link rel="stylesheet" href="src/css/app-tabs.css">
     
-    <!-- Pet page script -->
+    <!-- Main entry point (compiled from TypeScript) -->
     <script type="module" src="dist/pet.js"></script>
 </head>
 <body>
-    <!-- Loading spinner -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
-        <p>Waking up your dino friend...</p>
     </div>
 
-    <!-- Background container -->
     <div class="background-container" id="background"></div>
 
-    <!-- Main pet container -->
-    <div class="pet-page-container" id="content" style="display: none;">
+    <div class="affirmation-container">
+        <div class="header fade-in" style="animation-delay: 0.2s">
+            <!-- Theme toggle button added to header -->
+            <div class="header-top">
+                <h1>Meet Your Dino Friend</h1>
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark theme">
+                    <i class="fas fa-sun theme-icon light-icon" id="light-icon"></i>
+                    <i class="fas fa-moon theme-icon dark-icon" id="dark-icon"></i>
+                </button>
+            </div>
+            <p class="tagline">Tap on your dino friend to make it blink!</p>
+            <p class="hint-text"><i class="fas fa-hand-point-up"></i> Tap to see different messages too!</p>
+        </div>
+
+        <!-- Spacer to push dino closer to nav bar -->
+        <div style="flex-grow: 1;"></div>
         
-        <!-- Header -->
-        <div class="pet-header">
-            <div class="header-content">
-                <h1 class="pet-title">
-                    <i class="fas fa-arrow-left back-button" onclick="history.back()"></i>
-                    <span>Your Dino Friend</span>
-                    <i class="fas fa-cog settings-button"></i>
-                </h1>
-                <p class="pet-subtitle">Tap your dino to interact and see different messages!</p>
-            </div>
+        <!-- Dino container positioned just above nav bar -->
+        <div class="dino-container fade-in" style="animation-delay: 0.6s">
+            <div class="speech-bubble" id="speech-bubble">Rawr! That means "You've got this!" in dinosaur.</div>
+            <img src="#" alt="Friendly dinosaur" class="dino-image" id="dino-image" role="button" tabindex="0" aria-label="Interactive dinosaur. Tap to make it blink and show messages">
         </div>
 
-        <!-- Pet interaction area -->
-        <div class="pet-interaction-container">
-            
-            <!-- Pet stats -->
-            <div class="pet-stats-panel">
-                <div class="stat-group">
-                    <div class="stat-item">
-                        <div class="stat-icon">❤️</div>
-                        <div class="stat-bar">
-                            <div class="stat-fill" style="width: 85%"></div>
-                        </div>
-                        <div class="stat-label">Health</div>
-                    </div>
-                    
-                    <div class="stat-item">
-                        <div class="stat-icon">😊</div>
-                        <div class="stat-bar">
-                            <div class="stat-fill happiness" style="width: 92%"></div>
-                        </div>
-                        <div class="stat-label">Happiness</div>
-                    </div>
-                    
-                    <div class="stat-item">
-                        <div class="stat-icon">⭐</div>
-                        <div class="stat-number">7</div>
-                        <div class="stat-label">Level</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main dino interaction area -->
-            <div class="dino-interaction-area">
-                <!-- Speech bubble -->
-                <div class="speech-bubble" id="speech-bubble">
-                    Rawr! That means "You've got this!" in dinosaur.
-                </div>
-                
-                <!-- Dino character -->
-                <div class="dino-character-container">
-                    <img src="#" alt="Friendly dinosaur" 
-                         class="dino-image" 
-                         id="dino-image" 
-                         role="button" 
-                         tabindex="0" 
-                         aria-label="Interactive dinosaur. Tap to make it blink and show messages">
-                    
-                    <!-- Interaction effects -->
-                    <div class="interaction-effects" id="interaction-effects"></div>
-                </div>
-                
-                <!-- Interaction hint -->
-                <div class="interaction-hint">
-                    <i class="fas fa-hand-point-up"></i>
-                    <span>Tap to interact with your dino!</span>
-                </div>
-            </div>
-
-            <!-- Pet actions -->
-            <div class="pet-actions">
-                <button class="action-button feed" id="feed-button">
-                    <i class="fas fa-apple-alt"></i>
-                    <span>Feed</span>
-                </button>
-                
-                <button class="action-button play" id="play-button">
-                    <i class="fas fa-gamepad"></i>
-                    <span>Play</span>
-                </button>
-                
-                <button class="action-button clean" id="clean-button">
-                    <i class="fas fa-shower"></i>
-                    <span>Clean</span>
-                </button>
-                
-                <button class="action-button rest" id="rest-button">
-                    <i class="fas fa-bed"></i>
-                    <span>Rest</span>
-                </button>
-            </div>
-
-        </div>
-
-        <!-- Quick navigation -->
-        <div class="quick-nav">
-            <a href="/miniapp" class="nav-link">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
+        <div class="nav-bar fade-in" style="animation-delay: 1s">
+            <a href="/miniapp" class="nav-item">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-label">Home</span>
             </a>
-            <a href="/miniapp/streak" class="nav-link">
-                <i class="fas fa-chart-line"></i>
-                <span>Stats</span>
+            <a href="/miniapp/pet" class="nav-item active">
+                <i class="fas fa-dragon nav-icon"></i>
+                <span class="nav-label">Dino Friend</span>
+            </a>
+            <a href="/miniapp/streak" class="nav-item">
+                <i class="fas fa-chart-line nav-icon"></i>
+                <span class="nav-label">Streak</span>
             </a>
         </div>
-
     </div>
 
-    <!-- Telegram Mini App Initialization -->
+    <!-- Theme toggle functionality script -->
     <script>
-        // Initialize Telegram Web App
-        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-            Telegram.WebApp.ready();
-            Telegram.WebApp.expand();
-            Telegram.WebApp.setHeaderColor('#10B981');
-            Telegram.WebApp.setBackgroundColor('#F0FDF4');
-        }
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('light-icon');
+            const darkIcon = document.getElementById('dark-icon');
+            
+            // Function to update theme toggle button appearance
+            function updateThemeToggle(isDark) {
+                if (isDark) {
+                    lightIcon.style.opacity = '0';
+                    darkIcon.style.opacity = '1';
+                    themeToggle.setAttribute('aria-label', 'Switch to light theme');
+                } else {
+                    lightIcon.style.opacity = '1';
+                    darkIcon.style.opacity = '0';
+                    themeToggle.setAttribute('aria-label', 'Switch to dark theme');
+                }
+            }
+            
+            // Initialize theme from localStorage or system preference
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+            
+            if (isDark) {
+                document.body.classList.add('dark-theme');
+            }
+            updateThemeToggle(isDark);
+            
+            // Theme toggle click handler
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    const currentlyDark = document.body.classList.contains('dark-theme');
+                    
+                    if (currentlyDark) {
+                        document.body.classList.remove('dark-theme');
+                        localStorage.setItem('theme', 'light');
+                        updateThemeToggle(false);
+                    } else {
+                        document.body.classList.add('dark-theme');
+                        localStorage.setItem('theme', 'dark');
+                        updateThemeToggle(true);
+                    }
+                });
+            }
+        });
     </script>
-
-    <!-- Additional styles for the enhanced pet page -->
-    <style>
-        .pet-page-container {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
-            position: relative;
-            z-index: 10;
-        }
-
-        .pet-header {
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            color: white;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .pet-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 0 0 8px 0;
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .back-button, .settings-button {
-            font-size: 18px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 6px;
-            transition: background-color 0.2s;
-        }
-
-        .back-button:hover, .settings-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .pet-subtitle {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .pet-interaction-container {
-            padding: 20px;
-        }
-
-        .pet-stats-panel {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-group {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-        }
-
-        .stat-item {
-            flex: 1;
-            text-align: center;
-        }
-
-        .stat-icon {
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-
-        .stat-bar {
-            width: 100%;
-            height: 8px;
-            background: #E5E7EB;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 6px;
-        }
-
-        .stat-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #EF4444 0%, #F59E0B 50%, #10B981 100%);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-
-        .stat-fill.happiness {
-            background: linear-gradient(90deg, #F59E0B 0%, #10B981 100%);
-        }
-
-        .stat-number {
-            font-size: 18px;
-            font-weight: 700;
-            color: #10B981;
-            margin-bottom: 6px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #6B7280;
-            font-weight: 600;
-        }
-
-        .dino-interaction-area {
-            text-align: center;
-            margin-bottom: 24px;
-            position: relative;
-        }
-
-        .speech-bubble {
-            background: white;
-            border-radius: 20px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            position: relative;
-            max-width: 280px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .speech-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 12px solid transparent;
-            border-right: 12px solid transparent;
-            border-top: 12px solid white;
-        }
-
-        .dino-character-container {
-            position: relative;
-            display: inline-block;
-            margin: 20px 0;
-        }
-
-        .dino-image {
-            width: 120px;
-            height: 120px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-        }
-
-        .dino-image:hover {
-            transform: scale(1.05);
-        }
-
-        .dino-image:active {
-            transform: scale(0.95);
-        }
-
-        .interaction-effects {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            font-size: 24px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .interaction-hint {
-            color: #6B7280;
-            font-size: 14px;
-            margin-top: 12px;
-            opacity: 0.8;
-        }
-
-        .interaction-hint i {
-            margin-right: 6px;
-            animation: pointBounce 2s infinite;
-        }
-
-        @keyframes pointBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
-
-        .pet-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .action-button {
-            background: white;
-            border: 2px solid #E5E7EB;
-            border-radius: 12px;
-            padding: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .action-button:hover {
-            border-color: #10B981;
-            background: #F0FDF4;
-            transform: translateY(-2px);
-        }
-
-        .action-button:active {
-            transform: translateY(0) scale(0.98);
-        }
-
-        .action-button i {
-            font-size: 20px;
-            color: #10B981;
-        }
-
-        .action-button.feed i { color: #EF4444; }
-        .action-button.play i { color: #3B82F6; }
-        .action-button.clean i { color: #06B6D4; }
-        .action-button.rest i { color: #8B5CF6; }
-
-        .quick-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            padding: 12px 20px;
-            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .nav-link {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            text-decoration: none;
-            color: #6B7280;
-            font-size: 12px;
-            font-weight: 600;
-            transition: color 0.2s;
-        }
-
-        .nav-link:hover {
-            color: #10B981;
-        }
-
-        .nav-link i {
-            font-size: 18px;
-        }
-
-        @media (max-width: 480px) {
-            .pet-interaction-container {
-                padding: 16px;
-            }
-            
-            .stat-group {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .stat-item {
-                width: 100%;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                text-align: left;
-            }
-            
-            .stat-bar {
-                flex: 1;
-                margin-bottom: 0;
-            }
-            
-            .dino-image {
-                width: 100px;
-                height: 100px;
-            }
-        }
-    </style>
 </body>
 </html>
