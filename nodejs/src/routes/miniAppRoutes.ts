@@ -1,4 +1,4 @@
-// src/routes/miniAppRoutes.ts
+// src/routes/miniAppRoutes.ts - Updated for React Frontend
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import config from '../config';
@@ -6,59 +6,60 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
-// Helper function to resolve the correct file path depending on environment
-function resolvePublicPath(relativePath: string): string {
-  // In production (Railway), the files will be in a different location after build
-  if (config.nodeEnv === 'production') {
-    // First try the path relative to the current directory
-    const prodPath = path.join(process.cwd(), 'public', relativePath);
-    logger.debug(`Resolved production path: ${prodPath}`);
-    return prodPath;
-  } else {
-    // In development, use the path relative to the src directory
-    const devPath = path.join(__dirname, '../../public', relativePath);
-    logger.debug(`Resolved development path: ${devPath}`);
-    return devPath;
-  }
+// Helper function to serve the React app
+function serveReactApp(res: Response, route: string = '') {
+  const frontendPath = path.join(process.cwd(), 'dist', 'frontend');
+  const indexPath = path.join(frontendPath, 'index.html');
+  
+  logger.debug(`Serving React app for route: ${route} from ${indexPath}`);
+  
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      logger.error(`Error serving React app for ${route}:`, err);
+      res.status(500).send(`Error loading application: ${err.message}`);
+    }
+  });
 }
 
 /**
  * GET /miniapp
- * Serves the mini-app main entry point
+ * Serves the React app main entry point
  */
 router.get('/', (req: Request, res: Response) => {
   try {
-    const indexPath = resolvePublicPath('miniapp/index.html');
-    logger.debug(`Serving mini-app at ${req.originalUrl} from ${indexPath}`);
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        logger.error(`Error sending file ${indexPath}:`, err);
-        res.status(500).send(`Error loading mini-app: ${err.message}`);
-      }
-    });
+    logger.debug(`Serving React miniapp at ${req.originalUrl}`);
+    serveReactApp(res, req.originalUrl);
   } catch (error) {
-    logger.error('Error serving mini-app:', error);
+    logger.error('Error serving React miniapp:', error);
     res.status(500).send('Error loading mini-app');
   }
 });
 
 /**
  * GET /miniapp/pet
- * Serves the mini-app dino friend page
+ * Serves the React app (pet page will be handled by React Router)
  */
 router.get('/pet', (req: Request, res: Response) => {
   try {
-    const petPath = resolvePublicPath('miniapp/pet.html');
-    logger.debug(`Serving dino friend page at ${req.originalUrl} from ${petPath}`);
-    res.sendFile(petPath, (err) => {
-      if (err) {
-        logger.error(`Error sending file ${petPath}:`, err);
-        res.status(500).send(`Error loading dino friend page: ${err.message}`);
-      }
-    });
+    logger.debug(`Serving React app pet page at ${req.originalUrl}`);
+    serveReactApp(res, req.originalUrl);
   } catch (error) {
-    logger.error('Error serving dino friend page:', error);
-    res.status(500).send('Error loading dino friend page');
+    logger.error('Error serving React pet page:', error);
+    res.status(500).send('Error loading pet page');
+  }
+});
+
+/**
+ * GET /miniapp/streak
+ * Serves the React app (streak page will be handled by React Router)
+ */
+router.get('/streak', (req: Request, res: Response) => {
+  try {
+    logger.debug(`Serving React app streak page at ${req.originalUrl}`);
+    serveReactApp(res, req.originalUrl);
+  } catch (error) {
+    logger.error('Error serving React streak page:', error);
+    res.status(500).send('Error loading streak page');
   }
 });
 
@@ -68,18 +69,28 @@ router.get('/pet', (req: Request, res: Response) => {
  */
 router.get('/config', (_req: Request, res: Response) => {
   try {
-    // Provide necessary configuration to the mini-app front-end
+    // Provide necessary configuration to the React app
     // Avoid exposing sensitive information
     const miniAppConfig = {
       appName: 'ThyKnow',
-      version: '1.0.0', 
+      version: '2.0.0', // Updated version for React app
       timezone: config.timezone,
       features: {
         selfAwareness: true,
         connections: true,
         history: true,
         affirmations: true,
-        pet: true
+        pet: true,
+        weeklyStreaks: true,
+        reactUI: true // New feature flag
+      },
+      apiEndpoints: {
+        base: '/api/miniapp',
+        prompts: '/api/miniapp/prompts',
+        responses: '/api/miniapp/responses',
+        history: '/api/miniapp/history',
+        streak: '/api/miniapp/streak',
+        pet: '/api/miniapp/pet'
       }
     };
     
@@ -100,9 +111,12 @@ router.get('/user/:userId', (req: Request, res: Response) => {
     // and fetch actual user data
     const userData = {
       userId: req.params.userId,
+      appVersion: '2.0.0',
       // Don't include sensitive data here
       preferences: {
         // Public preferences only
+        theme: 'light',
+        notifications: true
       }
     };
     
@@ -113,23 +127,54 @@ router.get('/user/:userId', (req: Request, res: Response) => {
   }
 });
 
-/**
- * GET /miniapp/streak
- * Serves the mini-app weekly streak page
- */
-router.get('/streak', (req: Request, res: Response) => {
+// Handle specific additional routes that might be needed
+router.get('/journal', (req: Request, res: Response) => {
   try {
-    const streakPath = resolvePublicPath('miniapp/streak.html');
-    logger.debug(`Serving weekly streak page at ${req.originalUrl} from ${streakPath}`);
-    res.sendFile(streakPath, (err) => {
-      if (err) {
-        logger.error(`Error sending file ${streakPath}:`, err);
-        res.status(500).send(`Error loading weekly streak page: ${err.message}`);
-      }
-    });
+    logger.debug(`Serving React app journal page at ${req.originalUrl}`);
+    serveReactApp(res, req.originalUrl);
   } catch (error) {
-    logger.error('Error serving weekly streak page:', error);
-    res.status(500).send('Error loading weekly streak page');
+    logger.error('Error serving React journal page:', error);
+    res.status(500).send('Error loading journal page');
+  }
+});
+
+router.get('/care', (req: Request, res: Response) => {
+  try {
+    logger.debug(`Serving React app care page at ${req.originalUrl}`);
+    serveReactApp(res, req.originalUrl);
+  } catch (error) {
+    logger.error('Error serving React care page:', error);
+    res.status(500).send('Error loading care page');
+  }
+});
+
+router.get('/shop', (req: Request, res: Response) => {
+  try {
+    logger.debug(`Serving React app shop page at ${req.originalUrl}`);
+    serveReactApp(res, req.originalUrl);
+  } catch (error) {
+    logger.error('Error serving React shop page:', error);
+    res.status(500).send('Error loading shop page');
+  }
+});
+
+router.get('/achievements', (req: Request, res: Response) => {
+  try {
+    logger.debug(`Serving React app achievements page at ${req.originalUrl}`);
+    serveReactApp(res, req.originalUrl);
+  } catch (error) {
+    logger.error('Error serving React achievements page:', error);
+    res.status(500).send('Error loading achievements page');
+  }
+});
+
+router.get('/stats', (req: Request, res: Response) => {
+  try {
+    logger.debug(`Serving React app stats page at ${req.originalUrl}`);
+    serveReactApp(res, req.originalUrl);
+  } catch (error) {
+    logger.error('Error serving React stats page:', error);
+    res.status(500).send('Error loading stats page');
   }
 });
 

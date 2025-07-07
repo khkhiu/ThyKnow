@@ -77,20 +77,26 @@ app.use(express.static(frontendPath));
 // Legacy miniapp routes (for backwards compatibility)
 app.use('/miniapp', miniAppRoutes);
 
-// Handle React Router (client-side routing)
-app.get('*', (req: express.Request, res: express.Response) => {
-  // Don't serve the React app for API routes
-  if (req.path.startsWith('/api') || 
-      req.path.startsWith('/webhook') || 
-      req.path.startsWith('/miniapp') ||
-      req.path.startsWith('/pubsub') ||
-      req.path.startsWith('/health') ||
-      req.path.startsWith('/ping')) {
-    res.status(404).json({ error: 'Not found' });
-    return;
+// Serve React app
+logger.info(`Serving React app from: ${frontendPath}`);
+
+// Serve static files
+app.use(express.static(frontendPath, {
+  dotfiles: 'ignore',
+  etag: true,
+  extensions: ['html', 'js', 'css', 'png', 'jpg', 'gif', 'svg'],
+  index: false,
+  maxAge: '1d',
+  redirect: false,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.set('Cache-Control', 'no-cache');
+    }
   }
-  
-  // Serve React app for all other routes
+}));
+
+// Handle specific React routes
+const serveReactApp = (_req: express.Request, res: express.Response) => {
   const indexPath = path.join(frontendPath, 'index.html');
   res.sendFile(indexPath, (err: any) => {
     if (err) {
@@ -100,6 +106,30 @@ app.get('*', (req: express.Request, res: express.Response) => {
       }
     }
   });
+};
+
+// Define React routes explicitly (no wildcards)
+app.get('/', serveReactApp);
+app.get('/pet', serveReactApp);
+app.get('/journal', serveReactApp);
+app.get('/care', serveReactApp);
+app.get('/shop', serveReactApp);
+app.get('/achievements', serveReactApp);
+app.get('/stats', serveReactApp);
+
+// Handle all other routes with middleware instead of wildcard
+app.use((req: express.Request, res: express.Response) => {
+  // API routes should return JSON errors
+  if (req.path.startsWith('/api') || 
+      req.path.startsWith('/webhook') || 
+      req.path.startsWith('/miniapp') ||
+      req.path.startsWith('/pubsub')) {
+    res.status(404).json({ error: 'API endpoint not found' });
+    return;
+  }
+  
+  // All other routes serve the React app
+  serveReactApp(req, res);
 });
 
 // Error handling middleware (should be last)
