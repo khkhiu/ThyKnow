@@ -1,184 +1,290 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PetDisplay from '@/components/PetDisplay';
+import WeeklyJournal from '@/components/WeeklyJournal';
+import PetCare from '@/components/PetCare';
+import AchievementSystem from '@/components/AchievementSystem';
+import PetAccessories from '@/components/PetAccessories';
+import { Home, BookOpen, Heart, Trophy, ShoppingBag } from 'lucide-react';
+
+interface JournalEntry {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  completed: boolean;
+  week: string;
+}
 
 const Index = () => {
-  const [prompt, setPrompt] = useState<string>("");
-  const [response, setResponse] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [petHealth, setPetHealth] = useState(75);
+  const [petHappiness, setPetHappiness] = useState(60);
+  const [petLevel, setPetLevel] = useState(1);
+  const [streakPoints, setStreakPoints] = useState(3);
+  const [totalEntriesCompleted, setTotalEntriesCompleted] = useState(0);
+  const [longestStreak, setLongestStreak] = useState(0);
+  const [promptDay, setPromptDay] = useState('sunday');
+  const [promptTime, setPromptTime] = useState('09:00');
+  const [ownedAccessories, setOwnedAccessories] = useState<string[]>([]);
+  const [equippedAccessories, setEquippedAccessories] = useState<string[]>([]);
 
-  // Initialize Telegram WebApp if available
+  // Load data from localStorage on mount
   useEffect(() => {
-    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-      
-      // Set theme colors
-      document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
-      document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
+    const savedData = localStorage.getItem('habitPetApp');
+    if (savedData) {
+      const data = JSON.parse(savedData);
+      setEntries(data.entries || []);
+      setPetHealth(data.petHealth || 75);
+      setPetHappiness(data.petHappiness || 60);
+      setPetLevel(data.petLevel || 1);
+      setStreakPoints(data.streakPoints || 3);
+      setTotalEntriesCompleted(data.totalEntriesCompleted || 0);
+      setLongestStreak(data.longestStreak || 0);
+      setPromptDay(data.promptDay || 'sunday');
+      setPromptTime(data.promptTime || '09:00');
+      setOwnedAccessories(data.ownedAccessories || []);
+      setEquippedAccessories(data.equippedAccessories || []);
     }
   }, []);
 
-  // Fetch today's prompt
+  // Save data to localStorage whenever state changes
   useEffect(() => {
-    const fetchPrompt = async () => {
-      try {
-        // Try to get user ID from Telegram WebApp
-        const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '12345';
-        
-        const response = await fetch(`/api/miniapp/prompts/today/${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPrompt(data.prompt || data.text || "What are you grateful for today?");
-        } else {
-          setPrompt("What are you grateful for today?");
-        }
-      } catch (error) {
-        console.error('Error fetching prompt:', error);
-        setPrompt("What are you grateful for today?");
-      } finally {
-        setLoading(false);
-      }
+    const dataToSave = {
+      entries,
+      petHealth,
+      petHappiness,
+      petLevel,
+      streakPoints,
+      totalEntriesCompleted,
+      longestStreak,
+      promptDay,
+      promptTime,
+      ownedAccessories,
+      equippedAccessories
     };
+    localStorage.setItem('habitPetApp', JSON.stringify(dataToSave));
+  }, [entries, petHealth, petHappiness, petLevel, streakPoints, totalEntriesCompleted, longestStreak, promptDay, promptTime, ownedAccessories, equippedAccessories]);
 
-    fetchPrompt();
-  }, []);
-
-  const handleSubmit = async () => {
-    if (!response.trim()) return;
-    
-    setSubmitting(true);
-    try {
-      const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '12345';
-      
-      const submitResponse = await fetch(`/api/miniapp/responses`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          prompt,
-          response: response.trim(),
-        }),
-      });
-
-      if (submitResponse.ok) {
-        // Show success feedback
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+  const handleEntryComplete = (entryId: string) => {
+    setEntries(prevEntries => 
+      prevEntries.map(entry => {
+        if (entry.id === entryId && !entry.completed) {
+          setStreakPoints(prev => prev + 2); // More points for journaling
+          setPetHappiness(prev => Math.min(100, prev + 8));
+          setPetHealth(prev => Math.min(100, prev + 5));
+          setTotalEntriesCompleted(prev => prev + 1);
+          
+          // Calculate streak and level up pet
+          const newLevel = Math.floor((totalEntriesCompleted + 1) / 7) + 1; // Level up every 7 entries
+          if (newLevel > petLevel) {
+            setPetLevel(newLevel);
+          }
+          
+          return { ...entry, completed: true };
         }
-        
-        // Clear the response
-        setResponse("");
-        
-        // You could show a success message or navigate to another page
-        alert("Thank you for your reflection! 🦕");
-      } else {
-        throw new Error('Failed to submit response');
-      }
-    } catch (error) {
-      console.error('Error submitting response:', error);
-      alert("Sorry, there was an error saving your response. Please try again.");
-    } finally {
-      setSubmitting(false);
+        return entry;
+      })
+    );
+  };
+
+  const handleAddEntry = (newEntry: Omit<JournalEntry, 'id'>) => {
+    const entry: JournalEntry = {
+      ...newEntry,
+      id: Date.now().toString()
+    };
+    setEntries(prev => [...prev, entry]);
+  };
+
+  const handleUpdateEntry = (entryId: string, content: string) => {
+    setEntries(prevEntries =>
+      prevEntries.map(entry =>
+        entry.id === entryId ? { ...entry, content } : entry
+      )
+    );
+  };
+
+  const handleFeedPet = () => {
+    setPetHealth(prev => Math.min(100, prev + 10));
+    setStreakPoints(prev => prev - 1);
+  };
+
+  const handlePlayWithPet = () => {
+    setPetHappiness(prev => Math.min(100, prev + 15));
+    setStreakPoints(prev => prev - 1);
+  };
+
+  const handleCleanPet = () => {
+    setPetHealth(prev => Math.min(100, prev + 5));
+    setPetHappiness(prev => Math.min(100, prev + 5));
+    setStreakPoints(prev => prev - 1);
+  };
+
+  const handlePromptSettingsChange = (day: string, time: string) => {
+    setPromptDay(day);
+    setPromptTime(time);
+  };
+
+  const handleBuyAccessory = (accessoryId: string, cost: number) => {
+    if (streakPoints >= cost && !ownedAccessories.includes(accessoryId)) {
+      setStreakPoints(prev => prev - cost);
+      setOwnedAccessories(prev => [...prev, accessoryId]);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-4 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin text-4xl mb-4">🦕</div>
-          <p className="text-gray-600">Loading your prompt...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleEquipAccessory = (accessoryId: string, type: string) => {
+    if (ownedAccessories.includes(accessoryId)) {
+      setEquippedAccessories(prev => {
+        const filtered = prev.filter(id => {
+          const accessories: Record<string, string> = {
+            'explorer-hat': 'hat', 'safari-hat': 'hat',
+            'leaf-necklace': 'necklace', 'flower-crown': 'necklace',
+            'prehistoric-glasses': 'glasses', 'bone-glasses': 'glasses'
+          };
+          return accessories[id] !== type;
+        });
+        return [...filtered, accessoryId];
+      });
+    }
+  };
+
+  const handleUnequipAccessory = (type: string) => {
+    setEquippedAccessories(prev => {
+      const accessories: Record<string, string> = {
+        'explorer-hat': 'hat', 'safari-hat': 'hat',
+        'leaf-necklace': 'necklace', 'flower-crown': 'necklace',
+        'prehistoric-glasses': 'glasses', 'bone-glasses': 'glasses'
+      };
+      return prev.filter(id => accessories[id] !== type);
+    });
+  };
+
+  const completedEntriesToday = entries.filter(e => 
+    e.completed && e.date === new Date().toISOString().split('T')[0]
+  ).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-4">
-      <div className="max-w-md mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-amber-50 to-orange-50">
+      <div className="container mx-auto px-4 py-6 max-w-md">
         {/* Header */}
-        <div className="text-center py-6">
-          <div className="text-6xl mb-4">🦕</div>
-          <h1 className="text-2xl font-bold text-gray-800">ThyKnow</h1>
-          <p className="text-gray-600 mt-2">Reflect, grow, and discover yourself</p>
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-amber-600 bg-clip-text text-transparent mb-2">
+            Dino Journal
+          </h1>
+          <p className="text-gray-600">Write reflections, raise your dino! 🦕📝</p>
         </div>
 
-        {/* Daily Prompt Card */}
-        <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-lg text-center">💭 Today's Reflection</CardTitle>
-            <CardDescription className="text-center">Take a moment to think deeply</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-gray-700 text-lg">{prompt}</p>
-            </div>
-            
-            <Textarea
-              placeholder="Share your thoughts here..."
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-              className="min-h-[120px] resize-none"
+        {/* Pet Display */}
+        <div className="mb-6">
+          <PetDisplay 
+            petHealth={petHealth}
+            petHappiness={petHappiness}
+            petLevel={petLevel}
+            completedHabitsToday={completedEntriesToday}
+            equippedAccessories={equippedAccessories}
+          />
+        </div>
+
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="journal" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-6 bg-white shadow-lg rounded-2xl p-1">
+            <TabsTrigger value="journal" className="rounded-xl">
+              <BookOpen className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Journal</span>
+            </TabsTrigger>
+            <TabsTrigger value="care" className="rounded-xl">
+              <Heart className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Care</span>
+            </TabsTrigger>
+            <TabsTrigger value="shop" className="rounded-xl">
+              <ShoppingBag className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Boutique</span>
+            </TabsTrigger>
+            <TabsTrigger value="achievements" className="rounded-xl">
+              <Trophy className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Awards</span>
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="rounded-xl">
+              <Home className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Stats</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="journal" className="space-y-4">
+            <WeeklyJournal 
+              entries={entries}
+              onEntryComplete={handleEntryComplete}
+              onAddEntry={handleAddEntry}
+              onUpdateEntry={handleUpdateEntry}
+              promptDay={promptDay}
+              promptTime={promptTime}
+              onPromptSettingsChange={handlePromptSettingsChange}
             />
-            
-            <Button 
-              onClick={handleSubmit}
-              disabled={!response.trim() || submitting}
-              className="w-full bg-green-600 hover:bg-green-700"
-            >
-              {submitting ? "Saving..." : "💚 Submit Reflection"}
-            </Button>
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        {/* Navigation Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/pet'}
-            className="bg-white/80 h-12"
-          >
-            🦖 Dino Friend
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/streak'}
-            className="bg-white/80 h-12"
-          >
-            📊 Progress
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/journal'}
-            className="bg-white/80 h-12"
-          >
-            📔 Journal
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/achievements'}
-            className="bg-white/80 h-12"
-          >
-            🏆 Achievements
-          </Button>
-        </div>
+          <TabsContent value="care" className="space-y-4">
+            <PetCare 
+              petHealth={petHealth}
+              petHappiness={petHappiness}
+              streakPoints={streakPoints}
+              onFeedPet={handleFeedPet}
+              onPlayWithPet={handlePlayWithPet}
+              onCleanPet={handleCleanPet}
+            />
+          </TabsContent>
 
-        {/* Additional Actions */}
-        <div className="space-y-3">
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.reload()}
-            className="w-full bg-white/80"
-          >
-            🎲 Get New Prompt
-          </Button>
-        </div>
+          <TabsContent value="shop" className="space-y-4">
+            <PetAccessories 
+              streakPoints={streakPoints}
+              ownedAccessories={ownedAccessories}
+              equippedAccessories={equippedAccessories}
+              onBuyAccessory={handleBuyAccessory}
+              onEquipAccessory={handleEquipAccessory}
+              onUnequipAccessory={handleUnequipAccessory}
+            />
+          </TabsContent>
+
+          <TabsContent value="achievements" className="space-y-4">
+            <AchievementSystem 
+              totalHabitsCompleted={totalEntriesCompleted}
+              longestStreak={longestStreak}
+              petLevel={petLevel}
+              achievements={[]}
+            />
+          </TabsContent>
+
+          <TabsContent value="stats" className="space-y-4">
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Your Progress</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Total Entries Completed</span>
+                  <span className="font-bold text-purple-600">{totalEntriesCompleted}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Longest Streak</span>
+                  <span className="font-bold text-orange-600">{longestStreak} days</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Pet Level</span>
+                  <span className="font-bold text-purple-600">Level {petLevel}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Available Points</span>
+                  <span className="font-bold text-green-600">{streakPoints}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Active Entries</span>
+                  <span className="font-bold text-indigo-600">{entries.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Accessories Owned</span>
+                  <span className="font-bold text-pink-600">{ownedAccessories.length}</span>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
