@@ -1,6 +1,11 @@
 # Use Node.js v23 as the base image
 FROM node:23-slim
 
+# Build frontend dependencies
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+
 # Set working directory
 WORKDIR /app
 
@@ -93,6 +98,7 @@ ENV NODE_ENV=production
 
 # Expose the port that the app will run on
 EXPOSE 3000
+EXPOSE 8080
 
 # Add health check for the weekly streak system
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

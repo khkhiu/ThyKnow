@@ -1,4 +1,4 @@
-// src/app.ts (Static File Configuration Update)
+// src/app.ts
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -37,7 +37,8 @@ app.use(helmet({
       connectSrc: ["'self'", "telegram.org", "*.telegram.org"],
       frameSrc: ["'self'", "telegram.org", "*.telegram.org"],
       imgSrc: ["'self'", "data:", "telegram.org", "*.telegram.org"],
-      styleSrc: ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com"]
+      styleSrc: ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com"],
+      fontSrc: ["'self'", "cdnjs.cloudflare.com"]
     }
   }
 }));
@@ -47,18 +48,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Add Morgan request logging middleware
 app.use(morgan('combined', { stream }));
-
-// Serve static files - updated for Railway deployment
-// Using process.cwd() to ensure correct paths in production
-const publicPath = path.join(process.cwd(), 'public');
-logger.info(`Serving static files from: ${publicPath}`);
-app.use(express.static(publicPath));
-
-// Add a path logging middleware to help debug file paths
-app.use((req, _res, next) => {
-  logger.debug(`Request path: ${req.path}`);
-  next();
-});
 
 // Setup bot commands and handlers
 setupBotCommands(bot);
@@ -72,80 +61,48 @@ app.use('/webhook', express.json(), (req, res) => {
   bot.handleUpdate(req.body, res);
 });
 
-// Set up Pub/Sub routes (used for scheduled messages)
+// Set up API routes
 app.use('/pubsub', pubSubRoutes);
-
-// Set up Mini-App routes
-app.use('/miniapp', miniAppRoutes);
 app.use('/api/miniapp', miniAppApiRouter);
 
-// Health check endpoints (required for Railway)
-app.get('/health', minimalHealthCheck); // Fast endpoint for Railway's health checks
-app.get('/health/detailed', healthCheck); // Detailed health check for monitoring
+// Health check endpoints
+app.get('/health', healthCheck);
+app.get('/ping', minimalHealthCheck);
 
-// API version and info endpoint
-app.get('/api/info', (_req, res) => {
-  res.status(200).json({
-    name: 'ThyKnow API',
-    version: '1.0.0',
-    description: 'API for ThyKnow Telegram bot',
-    environment: config.nodeEnv
+// Serve React app static files
+const frontendPath = path.join(process.cwd(), 'dist', 'frontend');
+logger.info(`Serving React app from: ${frontendPath}`);
+app.use(express.static(frontendPath));
+
+// Legacy miniapp routes (for backwards compatibility)
+app.use('/miniapp', miniAppRoutes);
+
+// Handle React Router (client-side routing)
+app.get('*', (req: express.Request, res: express.Response) => {
+  // Don't serve the React app for API routes
+  if (req.path.startsWith('/api') || 
+      req.path.startsWith('/webhook') || 
+      req.path.startsWith('/miniapp') ||
+      req.path.startsWith('/pubsub') ||
+      req.path.startsWith('/health') ||
+      req.path.startsWith('/ping')) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  
+  // Serve React app for all other routes
+  const indexPath = path.join(frontendPath, 'index.html');
+  res.sendFile(indexPath, (err: any) => {
+    if (err) {
+      logger.error('Error serving React app:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to load application' });
+      }
+    }
   });
 });
 
-// Simple home page with file path information for debugging
-app.get('/', (_req, res) => {
-  res.status(200).send(`
-    <html>
-      <head>
-        <title>ThyKnow - API Server</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-          h1 { color: #333; }
-          .container { max-width: 800px; margin: 0 auto; }
-          .debug { background: #f0f0f0; padding: 10px; border-radius: 5px; font-family: monospace; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>ThyKnow API Server</h1>
-          <p>This is the ThyKnow API server. It's working correctly!</p>
-          <p>Check <a href="/health">health status</a> or <a href="/api/info">API info</a>.</p>
-          <p>To interact with ThyKnow, please visit our <a href="https://t.me/your_bot_username">Telegram Bot</a>.</p>
-          <p>Our <a href="/miniapp">Telegram Mini App</a> is also available.</p>
-          
-          <div class="debug">
-            <h3>Debug Information:</h3>
-            <p>Environment: ${config.nodeEnv}</p>
-            <p>Current Directory: ${process.cwd()}</p>
-            <p>Public Path: ${publicPath}</p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `);
-});
-
-// Error handling middleware
+// Error handling middleware (should be last)
 app.use(errorHandler);
-
-// Handle 404 errors
-app.use((req, res) => {
-  logger.debug(`404 Not Found: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({ error: 'Not found', path: req.originalUrl });
-});
-
-// Global error handlers
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  // Don't exit the process in production, as Railway will just restart it
-  if (config.nodeEnv !== 'production') {
-    process.exit(1);
-  }
-});
 
 export default app;
