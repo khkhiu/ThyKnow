@@ -4,15 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ThyKnow - Reflection Journal</title>
+    <title>Dino Journal - Gamified Habit Tracker</title>
     
-    <!-- Telegram Web App stylesheet and script -->
+    <!-- Meta tags matching habit-pet-telegram-pal -->
+    <meta name="description" content="Build habits and raise your virtual pet! A gamified habit tracking experience for Telegram mini-apps." />
+    <meta name="author" content="ThyKnow App" />
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="telegram:app_name" content="Dino Journal" />
+    <meta name="telegram:description" content="Build habits, raise your pet! 🐾" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Dino Journal" />
+    
+    <!-- Telegram Web App script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Prevent mobile double-tap zoom and ensure proper touch handling -->
+    <!-- Prevent mobile double-tap zoom -->
     <style>
         * { touch-action: manipulation; }
         body { overscroll-behavior: none; }
@@ -20,118 +33,129 @@
     
     <!-- App styles -->
     <link rel="stylesheet" href="src/css/styles.css">
-    <link rel="stylesheet" href="src/css/streak.css">
+    <link rel="stylesheet" href="src/css/app-tabs.css">
     
-    <!-- Main entry point (compiled from TypeScript) -->
+    <!-- Main entry point -->
     <script type="module" src="dist/main.js"></script>
 </head>
 <body>
+    <!-- Loading spinner -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
+        <p>Loading your dino journal...</p>
     </div>
 
-    <div class="container" id="content" style="display: none;">
-        <header class="header">
+    <!-- Main App Container -->
+    <div id="app" class="app-container" style="display: none;">
+        <!-- Header with Dino Display -->
+        <div class="app-header">
             <div class="header-content">
-                <h1><i class="fas fa-lightbulb"></i> ThyKnow</h1>
-                <p class="tagline">Discover yourself through thoughtful reflection</p>
-            </div>
-        </header>
-
-        <main class="main-content">
-            <!-- Prompt section -->
-            <section class="prompt-section">
-                <div class="prompt-container card">
-                    <div class="prompt-header">
-                        <span id="prompt-type" class="prompt-type">🧠 Self-Awareness</span>
-                        <button id="new-prompt-button" class="btn icon-btn" title="Get new prompt">
-                            <i class="fas fa-refresh"></i>
-                        </button>
-                    </div>
-                    <div id="prompt-text" class="prompt-text">
-                        What moment today made you feel most alive?
-                    </div>
-                    <div id="prompt-hint" class="prompt-hint">
-                        Take a moment to reflect on this question deeply.
-                    </div>
-                </div>
-                
-                <!-- Response section -->
-                <div class="response-container card">
-                    <textarea 
-                        id="response" 
-                        class="response-field" 
-                        placeholder="Share your thoughts and reflections here..."
-                        rows="4"
-                    ></textarea>
-                    <div class="response-actions">
-                        <button id="submit-response" class="btn primary">
-                            <i class="fas fa-paper-plane"></i>
-                            Save Reflection
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- History section -->
-            <section class="history-section">
-                <div class="history-header">
-                    <h2><i class="fas fa-history"></i> Your Reflections</h2>
-                    <div class="history-controls">
-                        <select id="date-filter" class="filter-select">
-                            <option value="all">All entries</option>
-                            <option value="today">Today</option>
-                            <option value="week">This week</option>
-                            <option value="month">This month</option>
-                            <option value="custom">Custom date</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div id="custom-date-container" class="custom-date-container" style="display: none;">
-                    <input type="date" id="custom-date" class="date-input">
-                    <button id="apply-date" class="btn secondary small">Apply</button>
-                </div>
-                    <div id="history-entries" class="history-container">
-                      <!-- History entries will be populated here -->
-                    </div>
-                    <div id="empty-history" class="empty-history" style="display: none;">
-                      <p>No journal entries found for the selected date range.</p>
-                    </div>
-                  </section>
+                <h1 class="app-title">
+                    <span class="dino-emoji">🦕</span>
+                    Dino Journal
+                    <span class="journal-emoji">📝</span>
+                </h1>
+                <p class="app-subtitle">Write reflections, raise your dino!</p>
             </div>
             
-            <!-- Error state -->
-            <div id="error" class="error-container" style="display: none;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p class="error-message">Sorry, something went wrong.</p>
-                <button id="retry-button" class="btn secondary">Try Again</button>
+            <!-- Pet Display Section (Your Dino Pal) -->
+            <div id="pet-display" class="pet-display-container">
+                <!-- This will be populated by the pet display component -->
             </div>
-        </main>
-        
-        <footer>
-            <div class="nav-bar">
-                <a href="/miniapp" class="nav-item active">
-                    <i class="fas fa-home nav-icon"></i>
-                    <span class="nav-label">Home</span>
-                </a>
-                <a href="/miniapp/pet" class="nav-item">
-                    <i class="fas fa-dragon nav-icon"></i>
-                    <span class="nav-label">Dino Friend</span>
-                </a>
-                <a href="/miniapp/streak" class="nav-item">
-                    <i class="fas fa-chart-line nav-icon"></i>
-                    <span class="nav-label">Streak</span>
-                </a>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <div class="tab-list">
+                <button class="tab-trigger active" data-tab="journal">
+                    <i class="fas fa-book-open"></i>
+                    <span>Journal</span>
+                </button>
+                <button class="tab-trigger" data-tab="care">
+                    <i class="fas fa-heart"></i>
+                    <span>Care</span>
+                </button>
+                <button class="tab-trigger" data-tab="shop">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>Boutique</span>
+                </button>
+                <button class="tab-trigger" data-tab="achievements">
+                    <i class="fas fa-trophy"></i>
+                    <span>Awards</span>
+                </button>
+                <button class="tab-trigger" data-tab="stats">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Stats</span>
+                </button>
             </div>
-            <div class="footer-info">
-                <p>© 2025 ThyKnow - Helping you evolve, one prompt at a time.</p>
-                <div class="theme-toggle">
-                    <i class="fas fa-moon"></i>
-                    <span class="toggle-label">Dark Mode</span>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content-container">
+            
+            <!-- Journal Tab (Original index.html functionality) -->
+            <div id="tab-journal" class="tab-content active">
+                <div class="journal-section">
+                    <h2><i class="fas fa-edit"></i> Weekly Reflection</h2>
+                    <div id="journal-container">
+                        <!-- Journal content will be loaded here -->
+                    </div>
                 </div>
             </div>
-        </footer>
+
+            <!-- Care Tab (Coming Soon) -->
+            <div id="tab-care" class="tab-content">
+                <div class="coming-soon">
+                    <div class="coming-soon-icon">🚧</div>
+                    <h2>Pet Care</h2>
+                    <p>Feed, play with, and care for your dino friend!</p>
+                    <div class="coming-soon-subtitle">Coming Soon...</div>
+                </div>
+            </div>
+
+            <!-- Shop Tab (Coming Soon) -->
+            <div id="tab-shop" class="tab-content">
+                <div class="coming-soon">
+                    <div class="coming-soon-icon">🛍️</div>
+                    <h2>Dino Boutique</h2>
+                    <p>Customize your dino with accessories and decorations!</p>
+                    <div class="coming-soon-subtitle">Coming Soon...</div>
+                </div>
+            </div>
+
+            <!-- Achievements Tab (Coming Soon) -->
+            <div id="tab-achievements" class="tab-content">
+                <div class="coming-soon">
+                    <div class="coming-soon-icon">🏆</div>
+                    <h2>Achievement Gallery</h2>
+                    <p>Unlock rewards and celebrate your progress!</p>
+                    <div class="coming-soon-subtitle">Coming Soon...</div>
+                </div>
+            </div>
+
+            <!-- Stats Tab (Original streak.html functionality) -->
+            <div id="tab-stats" class="tab-content">
+                <div class="stats-section">
+                    <h2><i class="fas fa-chart-line"></i> Your Progress</h2>
+                    <div id="stats-container">
+                        <!-- Stats content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
+
+    <!-- Telegram Mini App Initialization -->
+    <script>
+        // Initialize Telegram Web App
+        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            // Set theme colors to match the design
+            Telegram.WebApp.setHeaderColor('#3B82F6');
+            Telegram.WebApp.setBackgroundColor('#F8FAFC');
+        }
+    </script>
 </body>
 </html>

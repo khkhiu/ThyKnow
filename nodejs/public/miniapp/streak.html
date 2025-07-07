@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ThyKnow - Weekly Streak</title>
+    <title>ThyKnow - Progress & Stats</title>
     
-    <!-- Telegram Web App stylesheet and script -->
+    <!-- Telegram Web App script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Prevent mobile double-tap zoom and ensure proper touch handling -->
+    <!-- Prevent mobile double-tap zoom -->
     <style>
         * { touch-action: manipulation; }
         body { overscroll-behavior: none; }
@@ -21,258 +21,528 @@
     <!-- App styles -->
     <link rel="stylesheet" href="src/css/styles.css">
     <link rel="stylesheet" href="src/css/streak.css">
+    <link rel="stylesheet" href="src/css/app-tabs.css">
     
-    <!-- Main entry point (compiled from TypeScript) - FIXED TO USE MODULE TYPE -->
+    <!-- Streak page script -->
     <script type="module" src="dist/streak.js"></script>
 </head>
 <body>
     <!-- Loading spinner -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
-        <p>Loading your weekly progress...</p>
+        <p>Loading your progress...</p>
     </div>
 
-    <div class="container" id="content" style="display: none;">
-        <header class="header">
-            <div class="header-content">
-                <h1><i class="fas fa-chart-line"></i> Weekly Progress</h1>
-                <p class="tagline">Track your reflection journey and celebrate growth</p>
-            </div>
-        </header>
-
-        <main class="main-content">
-            <!-- User's Personal Streak Section -->
-            <section class="streak-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-fire"></i> Your Weekly Streak</h2>
-                    <p>Building consistency, one week at a time</p>
-                </div>
-                <div id="user-streak-container" class="streak-container">
-                    <!-- Streak display will be populated here -->
-                </div>
-            </section>
-
-            <!-- Weekly Progress Section -->
-            <section class="progress-section">
-                <div class="progress-grid">
-                    <div class="progress-card">
-                        <h3><i class="fas fa-calendar-week"></i> This Week</h3>
-                        <div id="weekly-status" class="weekly-status">
-                            <!-- Weekly status will be populated here -->
-                        </div>
-                    </div>
-                    
-                    <div class="progress-card">
-                        <h3><i class="fas fa-trophy"></i> Next Milestone</h3>
-                        <div id="milestone-info" class="milestone-info">
-                            <!-- Milestone information will be populated here -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Points History Section -->
-            <section class="history-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-history"></i> Recent Activity</h2>
-                    <p>Your journey through reflection and growth</p>
-                </div>
-                <div id="points-history" class="points-history">
-                    <!-- Points history will be populated here -->
-                </div>
-            </section>
-
-            <!-- Milestones Section -->
-            <section class="milestones-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-star"></i> Achievement Milestones</h2>
-                    <p>Celebrating your dedication to weekly reflection</p>
-                </div>
-                <div id="milestones-grid" class="milestones-grid">
-                    <!-- Milestones will be populated here -->
-                </div>
-            </section>
-
-            <!-- Weekly Schedule & Reset Section -->
-            <section class="weekly-schedule-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-calendar-week"></i> Weekly Schedule & Reset</h2>
-                    <p>Understanding how weeks work and when streaks reset</p>
-                </div>
-                <div class="schedule-explanation-content">
-                    <div class="schedule-breakdown">
-                        <div class="schedule-item">
-                            <div class="schedule-icon">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="schedule-details">
-                                <h4>Week Definition</h4>
-                                <p>Weeks run <strong>Monday to Sunday</strong> following the international ISO standard<br>
-                                <span class="example">Each week gets a unique identifier like "2025-W03"</span></p>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-icon">
-                                <i class="fas fa-sync-alt"></i>
-                            </div>
-                            <div class="schedule-details">
-                                <h4>Reset Timing</h4>
-                                <p>New weeks begin at <strong>midnight Monday</strong> in your system timezone<br>
-                                <span class="example">Sunday 11:59 PM → Monday 12:00 AM = new week starts</span></p>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-icon">
-                                <i class="fas fa-fire"></i>
-                            </div>
-                            <div class="schedule-details">
-                                <h4>Streak Continuation</h4>
-                                <p>Make at least <strong>one entry per week</strong> to keep your streak alive<br>
-                                <span class="example">Miss any full week = streak resets to 1</span></p>
-                            </div>
-                        </div>
-                        
-                        <div class="schedule-item">
-                            <div class="schedule-icon">
-                                <i class="fas fa-plus-circle"></i>
-                            </div>
-                            <div class="schedule-details">
-                                <h4>Same-Week Entries</h4>
-                                <p>Multiple reflections in one week earn <strong>bonus points</strong> but don't change your streak count<br>
-                                <span class="example">3 entries in Week 5 = still Week 5 streak + bonus points</span></p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="current-week-info">
-                        <h4><i class="fas fa-calendar-day"></i> This Week's Status</h4>
-                        <div class="week-status-display">
-                            <div class="week-detail">
-                                <span class="week-label">Current Week:</span>
-                                <span class="week-value" id="current-week-display">Loading...</span>
-                            </div>
-                            <div class="week-detail">
-                                <span class="week-label">Week Ends:</span>
-                                <span class="week-value" id="week-ends-display">Loading...</span>
-                            </div>
-                            <div class="week-detail">
-                                <span class="week-label">Your Status:</span>
-                                <span class="week-value" id="week-completion-status">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Points System Explanation Section -->
-            <section class="points-explanation-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-lightbulb"></i> How Points Work</h2>
-                    <p>Understanding your weekly reflection rewards</p>
-                </div>
-                <div class="points-explanation-content">
-                    <div class="points-breakdown">
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">
-                                <i class="fas fa-coins"></i>
-                            </div>
-                            <div class="breakdown-details">
-                                <h4>Base Points</h4>
-                                <p>Earn <strong>50 points</strong> for each weekly reflection entry</p>
-                            </div>
-                        </div>
-                        
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">
-                                <i class="fas fa-fire"></i>
-                            </div>
-                            <div class="breakdown-details">
-                                <h4>Streak Bonus</h4>
-                                <p>Get <strong>+10 points per week</strong> of your current streak<br>
-                                <span class="example">Week 5 streak = +50 bonus points!</span></p>
-                            </div>
-                        </div>
-                        
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">
-                                <i class="fas fa-plus-circle"></i>
-                            </div>
-                            <div class="breakdown-details">
-                                <h4>Multiple Entry Bonus</h4>
-                                <p>Additional reflections in the same week earn <strong>+20 bonus points</strong></p>
-                            </div>
-                        </div>
-                        
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">
-                                <i class="fas fa-trophy"></i>
-                            </div>
-                            <div class="breakdown-details">
-                                <h4>Milestone Rewards</h4>
-                                <p>Special bonuses for major achievements:<br>
-                                <span class="milestones-list">
-                                    4 weeks: +200 pts • 12 weeks: +500 pts • 26 weeks: +1,000 pts
-                                </span></p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="points-summary-card">
-                        <h4><i class="fas fa-calculator"></i> Example: Week 5 Streak</h4>
-                        <div class="calculation-example">
-                            <div class="calc-line">
-                                <span>Base points:</span>
-                                <span>50 pts</span>
-                            </div>
-                            <div class="calc-line">
-                                <span>Streak bonus (5 × 10):</span>
-                                <span>+50 pts</span>
-                            </div>
-                            <div class="calc-line total">
-                                <span><strong>Total earned:</strong></span>
-                                <span><strong>100 pts</strong></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
+    <!-- Main stats container -->
+    <div class="stats-page-container" id="content" style="display: none;">
         
-        <!-- Error state -->
-        <div id="error" class="error-container" style="display: none;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p class="error-message">Sorry, something went wrong loading your streak data.</p>
-            <button id="retry-button" class="btn secondary">Try Again</button>
+        <!-- Header -->
+        <div class="stats-header">
+            <div class="header-content">
+                <h1 class="stats-title">
+                    <i class="fas fa-arrow-left back-button" onclick="history.back()"></i>
+                    <span>Your Progress</span>
+                    <i class="fas fa-share-alt share-button"></i>
+                </h1>
+                <p class="stats-subtitle">Track your reflection journey and celebrate growth</p>
+            </div>
         </div>
 
-        <footer>
-            <div class="nav-bar">
-                <a href="/miniapp" class="nav-item">
-                    <i class="fas fa-home nav-icon"></i>
-                    <span class="nav-label">Home</span>
-                </a>
-                <a href="/miniapp/pet" class="nav-item">
-                    <i class="fas fa-dragon nav-icon"></i>
-                    <span class="nav-label">Dino Friend</span>
-                </a>
-                <a href="/miniapp/streak" class="nav-item active">
-                    <i class="fas fa-chart-line nav-icon"></i>
-                    <span class="nav-label">Streak</span>
-                </a>
-            </div>
-            <div class="footer-info">
-                <p>© 2025 ThyKnow - Celebrating your weekly reflection journey</p>
-                <div class="theme-toggle">
-                    <i class="fas fa-moon"></i>
-                    <span class="toggle-label">Dark Mode</span>
+        <!-- Main content area -->
+        <div class="stats-content">
+            
+            <!-- Key metrics overview -->
+            <section class="metrics-overview">
+                <h2><i class="fas fa-chart-line"></i> Overview</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">🔥</div>
+                        <div class="metric-value" id="current-streak">-</div>
+                        <div class="metric-label">Week Streak</div>
+                        <div class="metric-trend positive">+1 this week</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">📝</div>
+                        <div class="metric-value" id="total-entries">-</div>
+                        <div class="metric-label">Total Entries</div>
+                        <div class="metric-trend">All time</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">⭐</div>
+                        <div class="metric-value" id="total-points">-</div>
+                        <div class="metric-label">Points Earned</div>
+                        <div class="metric-trend positive">+50 this week</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">🏆</div>
+                        <div class="metric-value" id="milestones-reached">-</div>
+                        <div class="metric-label">Milestones</div>
+                        <div class="metric-trend">Achieved</div>
+                    </div>
                 </div>
-            </div>
-        </footer>
+            </section>
+
+            <!-- Weekly progress -->
+            <section class="weekly-progress-section">
+                <h2><i class="fas fa-calendar-week"></i> This Week</h2>
+                <div class="progress-card">
+                    <div class="progress-header">
+                        <div class="week-info">
+                            <div class="week-dates" id="current-week-dates">Loading...</div>
+                            <div class="week-status" id="week-status">
+                                <span class="status-indicator pending"></span>
+                                <span>Awaiting entry</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-details" id="weekly-progress">
+                        <!-- Weekly progress content will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Streak visualization -->
+            <section class="streak-visualization">
+                <h2><i class="fas fa-fire"></i> Streak History</h2>
+                <div class="streak-card">
+                    <div class="streak-display" id="user-streak-container">
+                        <!-- Streak display will be populated here -->
+                    </div>
+                    
+                    <div class="streak-insights">
+                        <div class="insight-item">
+                            <span class="insight-label">Longest Streak:</span>
+                            <span class="insight-value" id="longest-streak">- weeks</span>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-label">Next Milestone:</span>
+                            <span class="insight-value" id="next-milestone">- weeks</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent activity -->
+            <section class="recent-activity">
+                <h2><i class="fas fa-history"></i> Recent Activity</h2>
+                <div class="activity-list" id="recent-activity-list">
+                    <!-- Recent activity will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Achievements -->
+            <section class="achievements-section">
+                <h2><i class="fas fa-trophy"></i> Achievements</h2>
+                <div class="achievements-grid" id="achievements-container">
+                    <!-- Achievements will be loaded here -->
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Quick navigation -->
+        <div class="quick-nav">
+            <a href="/miniapp" class="nav-link">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/miniapp/pet" class="nav-link">
+                <i class="fas fa-dragon"></i>
+                <span>Dino Friend</span>
+            </a>
+        </div>
+
     </div>
 
-    <!-- Notification container for success/error messages -->
-    <div id="notification-container" class="notification-container"></div>
+    <!-- Telegram Mini App Initialization -->
+    <script>
+        // Initialize Telegram Web App
+        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            Telegram.WebApp.setHeaderColor('#3B82F6');
+            Telegram.WebApp.setBackgroundColor('#EFF6FF');
+        }
+    </script>
+
+    <!-- Enhanced styles for the stats page -->
+    <style>
+        .stats-page-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+        }
+
+        .stats-header {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .back-button, .share-button {
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .back-button:hover, .share-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .stats-subtitle {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .stats-content {
+            padding: 20px;
+            padding-bottom: 100px; /* Space for navigation */
+        }
+
+        .stats-content section {
+            margin-bottom: 32px;
+        }
+
+        .stats-content h2 {
+            color: #1E293B;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-content h2 i {
+            color: #3B82F6;
+        }
+
+        /* Metrics Overview */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-card.primary {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+        }
+
+        .metric-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: inherit;
+        }
+
+        .metric-card.primary .metric-value {
+            color: white;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6B7280;
+            margin-bottom: 6px;
+        }
+
+        .metric-card.primary .metric-label {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .metric-trend {
+            font-size: 12px;
+            color: #9CA3AF;
+            font-weight: 500;
+        }
+
+        .metric-trend.positive {
+            color: #10B981;
+        }
+
+        .metric-card.primary .metric-trend {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .metric-card.primary .metric-trend.positive {
+            color: #6EE7B7;
+        }
+
+        /* Weekly Progress */
+        .progress-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-header {
+            margin-bottom: 20px;
+        }
+
+        .week-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .week-dates {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .week-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6B7280;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #F59E0B;
+        }
+
+        .status-indicator.completed {
+            background: #10B981;
+        }
+
+        .status-indicator.pending {
+            background: #F59E0B;
+        }
+
+        /* Streak Visualization */
+        .streak-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .streak-insights {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .insight-item {
+            text-align: center;
+        }
+
+        .insight-label {
+            display: block;
+            font-size: 12px;
+            color: #6B7280;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .insight-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #3B82F6;
+        }
+
+        /* Recent Activity */
+        .activity-list {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .activity-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid #F3F4F6;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #EFF6FF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #3B82F6;
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 2px;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: #6B7280;
+        }
+
+        /* Achievements */
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .achievement-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .achievement-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .achievement-item.locked {
+            opacity: 0.5;
+            background: #F9FAFB;
+        }
+
+        .achievement-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .achievement-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        /* Quick Navigation */
+        .quick-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 20px;
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: #6B7280;
+            font-size: 12px;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #3B82F6;
+        }
+
+        .nav-link i {
+            font-size: 18px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .stats-content {
+                padding: 16px;
+                padding-bottom: 80px;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .achievements-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .week-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .streak-insights {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+
+        /* Loading states */
+        .loading-placeholder {
+            background: #F3F4F6;
+            border-radius: 4px;
+            height: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
 </body>
 </html>
