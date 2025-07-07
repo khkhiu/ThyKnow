@@ -1,0 +1,52 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Habit Pet - Gamified Habit Tracker</title>
+    <meta name="description" content="Build habits and raise your virtual pet! A gamified habit tracking experience for Telegram mini-apps." />
+    <meta name="author" content="Habit Pet App" />
+
+    <!-- Telegram Mini App Meta Tags -->
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="telegram:app_name" content="Habit Pet" />
+    <meta name="telegram:description" content="Build habits, raise your pet! 🐾" />
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Habit Pet - Gamified Habit Tracker" />
+    <meta property="og:description" content="Build habits and raise your virtual pet! A gamified habit tracking experience." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Habit Pet" />
+
+    <!-- Telegram Web App Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Telegram Mini App Initialization -->
+    <script>
+      // Initialize Telegram Web App
+      if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        // Set theme colors
+        Telegram.WebApp.setHeaderColor('#3B82F6');
+        Telegram.WebApp.setBackgroundColor('#F8FAFC');
+      }
+    </script>
+  </body>
+</html>
