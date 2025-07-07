@@ -1,4 +1,4 @@
-// src/app.ts
+// src/app.ts - Alternative approach with middleware-based routing
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -12,7 +12,6 @@ import { logger } from './utils/logger';
 import { stream } from './utils/logger';
 import dotenv from 'dotenv';
 import pubSubRoutes from './routes/pubSubRoutes';
-import miniAppRoutes from './routes/miniAppRoutes';
 import miniAppApiRouter from './routes/miniAppApiRoutes';
 
 // Import health check controllers
@@ -61,7 +60,7 @@ app.use('/webhook', express.json(), (req, res) => {
   bot.handleUpdate(req.body, res);
 });
 
-// Set up API routes
+// Set up API routes FIRST (before static file serving)
 app.use('/pubsub', pubSubRoutes);
 app.use('/api/miniapp', miniAppApiRouter);
 
@@ -71,44 +70,56 @@ app.get('/ping', minimalHealthCheck);
 
 // Serve React app static files
 const frontendPath = path.join(process.cwd(), 'dist', 'frontend');
-logger.info(`Serving React app from: ${frontendPath}`);
-app.use(express.static(frontendPath));
+logger.info(`Serving React app static files from: ${frontendPath}`);
 
-// Legacy miniapp routes (for backwards compatibility)
-app.use('/miniapp', miniAppRoutes);
-
-// Serve React app
-logger.info(`Serving React app from: ${frontendPath}`);
-
-// Serve static files
+// Serve static assets (JS, CSS, images) but not HTML files
+app.use('/assets', express.static(path.join(frontendPath, 'assets')));
 app.use(express.static(frontendPath, {
   dotfiles: 'ignore',
   etag: true,
-  extensions: ['html', 'js', 'css', 'png', 'jpg', 'gif', 'svg'],
-  index: false,
+  extensions: ['js', 'css', 'png', 'jpg', 'gif', 'svg', 'ico'], // Don't include 'html'
+  index: false, // Don't serve index.html automatically
   maxAge: '1d',
   redirect: false,
-  setHeaders: (res, path) => {
-    if (path.endsWith('.html')) {
+  setHeaders: (res, filePath) => {
+    if (path.extname(filePath) === '.html') {
       res.set('Cache-Control', 'no-cache');
     }
   }
 }));
 
-// Handle specific React routes
-const serveReactApp = (_req: express.Request, res: express.Response) => {
+// Helper function to serve the React app
+const serveReactApp = (req: express.Request, res: express.Response) => {
   const indexPath = path.join(frontendPath, 'index.html');
+  logger.debug(`Serving React app for ${req.originalUrl} from ${indexPath}`);
+  
   res.sendFile(indexPath, (err: any) => {
     if (err) {
-      logger.error('Error serving React app:', err);
+      logger.error(`Error serving React app for ${req.originalUrl}:`, err);
       if (!res.headersSent) {
-        res.status(500).json({ error: 'Failed to load application' });
+        res.status(500).json({ 
+          error: 'Failed to load application',
+          message: err.message,
+          path: indexPath
+        });
       }
     }
   });
 };
 
-// Define React routes explicitly (no wildcards)
+// Middleware to handle miniapp routes (safer than wildcard routes)
+app.use('/miniapp', (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // Check if this is an API call (should not be handled by React app)
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  
+  // All miniapp routes serve the React app
+  logger.debug(`Miniapp middleware handling: ${req.originalUrl}`);
+  serveReactApp(req, res);
+});
+
+// Define other React routes explicitly
 app.get('/', serveReactApp);
 app.get('/pet', serveReactApp);
 app.get('/journal', serveReactApp);
@@ -117,18 +128,19 @@ app.get('/shop', serveReactApp);
 app.get('/achievements', serveReactApp);
 app.get('/stats', serveReactApp);
 
-// Handle all other routes with middleware instead of wildcard
+// Catch-all handler for any other routes (should be last)
 app.use((req: express.Request, res: express.Response) => {
+  logger.debug(`Catch-all handler for: ${req.originalUrl}`);
+  
   // API routes should return JSON errors
   if (req.path.startsWith('/api') || 
       req.path.startsWith('/webhook') || 
-      req.path.startsWith('/miniapp') ||
       req.path.startsWith('/pubsub')) {
     res.status(404).json({ error: 'API endpoint not found' });
     return;
   }
   
-  // All other routes serve the React app
+  // All other routes serve the React app (SPA behavior)
   serveReactApp(req, res);
 });
 

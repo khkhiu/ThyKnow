@@ -16,7 +16,26 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          
+          {/* MiniApp Routes */}
+          <Route path="/miniapp" element={<Index />} />
+          <Route path="/miniapp/pet" element={<Index />} />
+          <Route path="/miniapp/streak" element={<Index />} />
+          <Route path="/miniapp/journal" element={<Index />} />
+          <Route path="/miniapp/care" element={<Index />} />
+          <Route path="/miniapp/shop" element={<Index />} />
+          <Route path="/miniapp/achievements" element={<Index />} />
+          <Route path="/miniapp/stats" element={<Index />} />
+          
+          {/* Other Routes */}
+          <Route path="/pet" element={<Index />} />
+          <Route path="/journal" element={<Index />} />
+          <Route path="/care" element={<Index />} />
+          <Route path="/shop" element={<Index />} />
+          <Route path="/achievements" element={<Index />} />
+          <Route path="/stats" element={<Index />} />
+          
+          {/* Catch-all route - MUST BE LAST */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
