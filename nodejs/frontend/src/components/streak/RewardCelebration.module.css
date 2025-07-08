@@ -1,0 +1,127 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  transition: opacity 0.3s ease;
+}
+
+.overlay.visible {
+  opacity: 1;
+}
+
+.overlay.hidden {
+  opacity: 0;
+}
+
+.content {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px 32px;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: scale(1);
+  transition: transform 0.3s ease;
+}
+
+.hidden .content {
+  transform: scale(0.9);
+}
+
+.icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  animation: celebration-bounce 1s ease-in-out;
+}
+
+@keyframes celebration-bounce {
+  0%, 20%, 60%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  80% { transform: translateY(-10px); }
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #000000;
+  margin-bottom: 12px;
+}
+
+.points {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #22c55e;
+  margin-bottom: 8px;
+}
+
+.streak {
+  font-size: 1rem;
+  color: #000000;
+  margin-bottom: 16px;
+}
+
+.message {
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  color: #000000;
+  font-style: italic;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.weekInfo {
+  background: #2481cc;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  margin-bottom: 24px;
+}
+
+.closeButton {
+  background: #2481cc;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.closeButton:hover {
+  background: #1e40af;
+}
+
+.normal {
+  border-top: 4px solid #22c55e;
+}
+
+.record {
+  border-top: 4px solid #f59e0b;
+}
+
+.milestone {
+  border-top: 4px solid #8b5cf6;
+}
+
+.restart {
+  border-top: 4px solid #06b6d4;
+}
+
+.bonus {
+  border-top: 4px solid #ec4899;
+}

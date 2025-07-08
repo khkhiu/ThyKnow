@@ -1,0 +1,235 @@
+.container {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 16px 0;
+  color: white;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.container:hover {
+  transform: translateY(-2px);
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: gentle-shimmer 5s infinite;
+}
+
+@keyframes gentle-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.updating {
+  transform: scale(1.02);
+  transition: transform 0.8s ease;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.streakMain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.streakFlame {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  animation: gentle-pulse 4s ease-in-out infinite;
+}
+
+@keyframes gentle-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+.streakNumber {
+  font-size: 3rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.streakLabel {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
+.thisWeekBadge {
+  position: absolute;
+  top: -8px;
+  right: -20px;
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pointsDisplay {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.pointsNumber {
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pointsLabel {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.progressSection {
+  margin-bottom: 24px;
+}
+
+.progressContainer {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.progressBar {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  height: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progressFill {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  height: 100%;
+  border-radius: 12px;
+  transition: width 1.2s ease-out;
+  position: relative;
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: progress-glow 3s infinite;
+}
+
+@keyframes progress-glow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.milestoneInfo {
+  text-align: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.milestoneReward {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.milestoneEncouragement {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.statsRow {
+  display: flex;
+  justify-content: space-around;
+  gap: 16px;
+}
+
+.statItem {
+  text-align: center;
+  flex: 1;
+  padding: 8px;
+}
+
+.statNumber {
+  font-size: 1.3rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .pointsDisplay {
+    align-items: center;
+  }
+  
+  .statsRow {
+    gap: 12px;
+  }
+  
+  .streakNumber,
+  .pointsNumber {
+    font-size: 2.5rem;
+  }
+}

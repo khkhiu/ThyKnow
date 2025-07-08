@@ -1,0 +1,95 @@
+.progressGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+  .progressGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.progressCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.progressCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.progressCard h3 {
+  margin: 0 0 16px 0;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.weeklyStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.statusIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.statusText h4 {
+  margin: 0 0 4px 0;
+  color: #000000;
+  font-size: 0.9rem;
+}
+
+.statusText p {
+  margin: 0;
+  color: #999999;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.milestoneProgress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.milestoneWeeks {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2481cc;
+  line-height: 1;
+}
+
+.milestoneLabel {
+  font-size: 0.8rem;
+  color: #999999;
+  text-align: center;
+}
+
+.milestoneReward {
+  background: linear-gradient(135deg, #2481cc, #2481cc);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}

@@ -1,0 +1,100 @@
+.container {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header h3 {
+  margin: 0;
+  color: #000000;
+  font-size: 1.1rem;
+}
+
+.totalPoints {
+  background: #2481cc;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #2481cc;
+  transition: background-color 0.2s ease;
+}
+
+.historyItem:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.historyIcon {
+  color: #22c55e;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.historyContent {
+  flex: 1;
+}
+
+.historyPoints {
+  font-weight: 600;
+  color: #22c55e;
+  margin-bottom: 2px;
+}
+
+.historyReason {
+  font-size: 0.9rem;
+  color: #000000;
+  margin-bottom: 2px;
+}
+
+.historyDate {
+  font-size: 0.8rem;
+  color: #999999;
+}
+
+.historyWeek {
+  background: #2481cc;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999999;
+}
+
+.emptyState p {
+  margin: 0;
+  font-style: italic;
+}
