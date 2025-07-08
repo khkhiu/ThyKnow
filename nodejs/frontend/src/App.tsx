@@ -1,46 +1,20 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+// frontend/src/App.tsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Index from './pages/Index';
+import './App.css';
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <Router>
+      <div className="App">
         <Routes>
           <Route path="/" element={<Index />} />
-          
-          {/* MiniApp Routes */}
-          <Route path="/miniapp" element={<Index />} />
-          <Route path="/miniapp/pet" element={<Index />} />
-          <Route path="/miniapp/streak" element={<Index />} />
-          <Route path="/miniapp/journal" element={<Index />} />
-          <Route path="/miniapp/care" element={<Index />} />
-          <Route path="/miniapp/shop" element={<Index />} />
-          <Route path="/miniapp/achievements" element={<Index />} />
-          <Route path="/miniapp/stats" element={<Index />} />
-          
-          {/* Other Routes */}
-          <Route path="/pet" element={<Index />} />
-          <Route path="/journal" element={<Index />} />
-          <Route path="/care" element={<Index />} />
-          <Route path="/shop" element={<Index />} />
-          <Route path="/achievements" element={<Index />} />
-          <Route path="/stats" element={<Index />} />
-          
-          {/* Catch-all route - MUST BE LAST */}
-          <Route path="*" element={<NotFound />} />
+          {/* No separate /streak route needed - it's embedded in stats tab */}
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </div>
+    </Router>
+  );
+}
 
 export default App;

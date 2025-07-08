@@ -1,273 +1,313 @@
+// ==================================================
+// frontend/src/pages/Index.tsx
+// Updated Index page with streak components in the stats tab
+// ==================================================
+
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Heart, ShoppingBag, Trophy, Home, Gift } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import WeeklyJournal from '@/components/WeeklyJournal';
-import PetDisplay from '@/components/PetDisplay';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-interface JournalEntry {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-  completed: boolean;
-  week: string;
-}
+// Import the new streak components
+import { WeeklyStreakDisplay } from '../components/streak/WeeklyStreakDisplay';
+import { ProgressSection } from '../components/streak/ProgressSection';
+import { PointsHistory } from '../components/streak/PointsHistory';
+import { MilestonesGrid } from '../components/streak/MilestonesGrid';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { ErrorDisplay } from '../components/ui/ErrorDisplay';
 
-const Index = () => {
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [petHealth, setPetHealth] = useState(85);
-  const [petHappiness, setPetHappiness] = useState(92);
-  const [petLevel, setPetLevel] = useState(3);
-  const [streakPoints, setStreakPoints] = useState(42);
-  const [longestStreak, setLongestStreak] = useState(12);
-  const [promptDay, setPromptDay] = useState('daily');
-  const [promptTime, setPromptTime] = useState('19:00');
-  const [ownedAccessories, setOwnedAccessories] = useState<string[]>(['explorer-hat']);
-  const [equippedAccessories, setEquippedAccessories] = useState<string[]>(['explorer-hat']);
+// Import the hooks
+import { useStreakData } from '../hooks/useStreakData';
+import { useTelegramIntegration } from '../hooks/useTelegramIntegration';
 
-  const handleEntryComplete = (id: string) => {
-    setEntries(prev => 
-      prev.map(entry => 
-        entry.id === id 
-          ? { ...entry, completed: !entry.completed }
-          : entry
-      )
-    );
-    
-    if (!entries.find(e => e.id === id)?.completed) {
-      setPetHealth(prev => Math.min(100, prev + 2));
-      setPetHappiness(prev => Math.min(100, prev + 3));
-      setStreakPoints(prev => prev + 1);
+const Index: React.FC = () => {
+  // Telegram integration hook
+  const { telegramWebApp, user, isReady } = useTelegramIntegration();
+  const [userId, setUserId] = useState<string>('');
+
+  // Initialize user ID from Telegram or use a default for testing
+  useEffect(() => {
+    if (user?.id) {
+      setUserId(user.id.toString());
+    } else {
+      // For development/testing when not in Telegram
+      setUserId('demo-user-123');
     }
-  };
+  }, [user]);
 
-  const handleAddEntry = (entry: Omit<JournalEntry, 'id'>) => {
-    const newEntry = {
-      id: Date.now().toString(),
-      ...entry
-    };
-    setEntries(prev => [...prev, newEntry]);
-  };
+  // Fetch streak data
+  const {
+    data: streakData,
+    isLoading: streakLoading,
+    error: streakError,
+    refetch: refetchStreak
+  } = useStreakData(userId);
 
-  const handleUpdateEntry = (id: string, content: string) => {
-    setEntries(prev =>
-      prev.map(entry =>
-        entry.id === id 
-          ? { ...entry, content } : entry
-      )
-    );
-  };
-
-  const handleFeedPet = () => {
-    setPetHealth(prev => Math.min(100, prev + 10));
-    setStreakPoints(prev => prev - 1);
-  };
-
-  const handlePlayWithPet = () => {
-    setPetHappiness(prev => Math.min(100, prev + 15));
-    setStreakPoints(prev => prev - 1);
-  };
-
-  const handleCleanPet = () => {
-    setPetHealth(prev => Math.min(100, prev + 5));
-    setPetHappiness(prev => Math.min(100, prev + 5));
-    setStreakPoints(prev => prev - 1);
-  };
-
-  const handlePromptSettingsChange = (day: string, time: string) => {
-    setPromptDay(day);
-    setPromptTime(time);
-  };
-
-  const handleBuyAccessory = (accessoryId: string, cost: number) => {
-    if (streakPoints >= cost && !ownedAccessories.includes(accessoryId)) {
-      setStreakPoints(prev => prev - cost);
-      setOwnedAccessories(prev => [...prev, accessoryId]);
-    }
-  };
-
-  const handleEquipAccessory = (accessoryId: string, type: string) => {
-    if (ownedAccessories.includes(accessoryId)) {
-      setEquippedAccessories(prev => {
-        const filtered = prev.filter(id => {
-          const accessories: Record<string, string> = {
-            'explorer-hat': 'hat', 'safari-hat': 'hat',
-            'leaf-necklace': 'necklace', 'flower-crown': 'necklace',
-            'prehistoric-glasses': 'glasses', 'bone-glasses': 'glasses'
-          };
-          return accessories[id] !== type;
-        });
-        return [...filtered, accessoryId];
-      });
-    }
-  };
-
-  const handleUnequipAccessory = (type: string) => {
-    setEquippedAccessories(prev => {
-      const accessories: Record<string, string> = {
-        'explorer-hat': 'hat', 'safari-hat': 'hat',
-        'leaf-necklace': 'necklace', 'flower-crown': 'necklace',
-        'prehistoric-glasses': 'glasses', 'bone-glasses': 'glasses'
-      };
-      return prev.filter(id => accessories[id] !== type);
-    });
-  };
-
-  const completedEntriesToday = entries.filter(e => 
-    e.completed && e.date === new Date().toISOString().split('T')[0]
-  ).length;
-
-  const totalEntriesCompleted = entries.filter(e => e.completed).length;
+  // Sample data for other tabs (replace with your actual data hooks)
+  const totalEntriesCompleted = streakData?.points.recentHistory.length || 0;
+  const currentStreak = streakData?.streak.current || 0;
+  const longestStreak = streakData?.streak.longest || 0;
+  const streakPoints = streakData?.points.total || 0;
+  const petLevel = 3; // Replace with actual pet level data
+  const entries = []; // Your entries array
+  const ownedAccessories = []; // Your accessories array
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-amber-50 to-orange-50">
-      <div className="container mx-auto px-4 py-6 max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-amber-600 bg-clip-text text-transparent mb-2">
-            Dino Journal
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-gray-900">
+            Welcome to ThyKnow
           </h1>
-          <p className="text-gray-600">Write reflections, raise your dino! 🦕📝</p>
+          <p className="text-lg text-gray-600">
+            Your personal reflection companion
+          </p>
         </div>
 
-        {/* Pet Display */}
-        <div className="mb-6">
-          <PetDisplay 
-            petHealth={petHealth}
-            petHappiness={petHappiness}
-            petLevel={petLevel}
-            completedHabitsToday={completedEntriesToday}
-            equippedAccessories={equippedAccessories}
-          />
+        {/* Quick Stats Cards - Now powered by real streak data */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Current Streak Card */}
+          <Card className="bg-gradient-to-r from-orange-400 to-red-500 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center space-x-2">
+                <span>🔥</span>
+                <span>Current Streak</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {streakLoading ? '...' : `${currentStreak} weeks`}
+              </div>
+              <p className="text-orange-100 text-sm">Keep it going!</p>
+            </CardContent>
+          </Card>
+
+          {/* Total Points Card */}
+          <Card className="bg-gradient-to-r from-green-400 to-blue-500 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center space-x-2">
+                <span>💎</span>
+                <span>Total Points</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {streakLoading ? '...' : streakPoints.toLocaleString()}
+              </div>
+              <p className="text-green-100 text-sm">Weekly reflections!</p>
+            </CardContent>
+          </Card>
+
+          {/* Best Streak Card */}
+          <Card className="bg-gradient-to-r from-purple-400 to-pink-500 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center space-x-2">
+                <span>🏆</span>
+                <span>Best Streak</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {streakLoading ? '...' : `${longestStreak} weeks`}
+              </div>
+              <p className="text-purple-100 text-sm">Personal record!</p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="journal" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6 bg-white shadow-lg rounded-2xl p-1">
-            <TabsTrigger value="journal" className="rounded-xl">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Journal</span>
-            </TabsTrigger>
-            <TabsTrigger value="care" className="rounded-xl">
-              <Heart className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Care</span>
-            </TabsTrigger>
-            <TabsTrigger value="shop" className="rounded-xl">
-              <ShoppingBag className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Boutique</span>
-            </TabsTrigger>
-            <TabsTrigger value="achievements" className="rounded-xl">
-              <Trophy className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Awards</span>
-            </TabsTrigger>
-            <TabsTrigger value="stats" className="rounded-xl">
-              <Home className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Stats</span>
-            </TabsTrigger>
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 text-lg"
+          >
+            📝 New Reflection
+          </Button>
+          
+          <Button 
+            variant="outline"
+            className="border-2 border-purple-500 text-purple-600 hover:bg-purple-50 px-8 py-3 text-lg"
+          >
+            🦕 Visit Pet
+          </Button>
+        </div>
+
+        {/* Updated Tabs - Stats tab now contains full streak functionality */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="pet">Pet</TabsTrigger>
+            <TabsTrigger value="journal">Journal</TabsTrigger>
+            <TabsTrigger value="stats">📊 Weekly Progress</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="overview" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>📈 Progress Overview</CardTitle>
+                <CardDescription>
+                  Your reflection journey at a glance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Current Weekly Streak</span>
+                    <span className="font-bold text-orange-600">
+                      {streakLoading ? '...' : `${currentStreak} weeks`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Points Earned</span>
+                    <span className="font-bold text-green-600">
+                      {streakLoading ? '...' : streakPoints.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Longest Streak</span>
+                    <span className="font-bold text-purple-600">
+                      {streakLoading ? '...' : `${longestStreak} weeks`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Reflections</span>
+                    <span className="font-bold text-blue-600">
+                      {streakLoading ? '...' : totalEntriesCompleted}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pet" className="space-y-4">
+            {/* Your existing pet content */}
+            <Card>
+              <CardHeader>
+                <CardTitle>🦕 Your Reflection Pet</CardTitle>
+                <CardDescription>
+                  Your companion grows as you reflect
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center space-y-4">
+                  <div className="text-6xl">🦕</div>
+                  <div className="space-y-2">
+                    <div className="text-xl font-bold">Level {petLevel}</div>
+                    <div className="text-gray-600">Happy Reflection Dino</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="journal" className="space-y-4">
-            <WeeklyJournal 
-              entries={entries}
-              onEntryComplete={handleEntryComplete}
-              onAddEntry={handleAddEntry}
-              onUpdateEntry={handleUpdateEntry}
-              promptDay={promptDay}
-              promptTime={promptTime}
-              onPromptSettingsChange={handlePromptSettingsChange}
-            />
+            {/* Your existing journal content */}
+            <Card>
+              <CardHeader>
+                <CardTitle>📝 Recent Journal Entries</CardTitle>
+                <CardDescription>
+                  Your latest reflections and thoughts
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  <p>No journal entries yet.</p>
+                  <p className="text-sm">Start your reflection journey today!</p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="care" className="space-y-4">
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-              <div className="mb-4">
-                <Heart className="w-16 h-16 mx-auto text-gray-300" />
+          {/* NEW: Complete Streak Functionality in Stats Tab */}
+          <TabsContent value="stats" className="space-y-6">
+            {/* Loading State */}
+            {streakLoading && (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <LoadingSpinner size="large" />
+                <p className="text-gray-600">Loading your weekly progress...</p>
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Pet Care</h3>
-              <p className="text-gray-600 text-lg">Coming Soon</p>
-              <p className="text-gray-500 text-sm mt-2">
-                Feed, play with, and care for your dino companion!
-              </p>
-            </div>
-          </TabsContent>
+            )}
 
-          <TabsContent value="shop" className="space-y-4">
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-              <div className="mb-4">
-                <ShoppingBag className="w-16 h-16 mx-auto text-gray-300" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Dino Boutique</h3>
-              <p className="text-gray-600 text-lg">Coming Soon</p>
-              <p className="text-gray-500 text-sm mt-2">
-                Dress up your dino with awesome accessories!
-              </p>
-            </div>
-          </TabsContent>
+            {/* Error State */}
+            {streakError && (
+              <ErrorDisplay 
+                message="Failed to load your streak data"
+                onRetry={refetchStreak}
+              />
+            )}
 
-          <TabsContent value="achievements" className="space-y-4">
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-              <div className="mb-4">
-                <Trophy className="w-16 h-16 mx-auto text-gray-300" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Achievements</h3>
-              <p className="text-gray-600 text-lg">Coming Soon</p>
-              <p className="text-gray-500 text-sm mt-2">
-                Unlock badges and rewards for your progress!
-              </p>
-            </div>
-          </TabsContent>
+            {/* Streak Content */}
+            {!streakLoading && !streakError && streakData && (
+              <>
+                {/* Header for the stats section */}
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
+                    <span>📊</span>
+                    Weekly Progress & Statistics
+                  </h2>
+                  <p className="text-gray-600">
+                    Track your reflection journey and celebrate growth
+                  </p>
+                </div>
 
-          <TabsContent value="stats" className="space-y-4">
-            <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Your Progress</h3>
-              
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gradient-to-r from-green-100 to-green-200 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-bold text-green-700">{totalEntriesCompleted}</div>
-                  <div className="text-sm text-green-600">Habits Completed</div>
+                {/* Main Streak Display */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <span>🔥</span>
+                    Your Weekly Streak
+                  </h3>
+                  <WeeklyStreakDisplay 
+                    streak={streakData.streak} 
+                    points={streakData.points}
+                  />
                 </div>
-                <div className="bg-gradient-to-r from-blue-100 to-blue-200 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-700">{longestStreak}</div>
-                  <div className="text-sm text-blue-600">Longest Streak</div>
+
+                {/* Progress Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <span>📈</span>
+                    Weekly Progress
+                  </h3>
+                  <ProgressSection streak={streakData.streak} />
                 </div>
-                <div className="bg-gradient-to-r from-purple-100 to-purple-200 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-bold text-purple-700">{petLevel}</div>
-                  <div className="text-sm text-purple-600">Pet Level</div>
+
+                {/* Points History */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <span>📋</span>
+                    Recent Activity
+                  </h3>
+                  <PointsHistory points={streakData.points} />
                 </div>
-                <div className="bg-gradient-to-r from-amber-100 to-amber-200 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-bold text-amber-700">{streakPoints}</div>
-                  <div className="text-sm text-amber-600">Fossil Coins</div>
+
+                {/* Milestones */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <span>🏆</span>
+                    Milestones
+                  </h3>
+                  <MilestonesGrid 
+                    milestones={streakData.milestones}
+                    currentStreak={streakData.streak.current}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* No Data State */}
+            {!streakLoading && !streakError && !streakData && (
+              <div className="text-center py-12 space-y-4">
+                <div className="text-6xl">📊</div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-gray-900">No Streak Data Yet</h3>
+                  <p className="text-gray-600">Start your weekly reflection journey to see your progress!</p>
+                  <Button className="mt-4">
+                    📝 Begin Your First Reflection
+                  </Button>
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Pet Health</span>
-                    <span className="text-sm text-gray-600">{petHealth}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-red-400 to-red-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${petHealth}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Pet Happiness</span>
-                    <span className="text-sm text-gray-600">{petHappiness}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${petHappiness}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
