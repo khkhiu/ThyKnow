@@ -1,4 +1,5 @@
 // components/EnhancedWeeklyJournal.tsx
+// Refactored to use the exact same backend as index.html and /prompt command
 import React, { useState, useEffect } from 'react';
 import { Plus, Check, Calendar, BookOpen, Edit3, History, Settings, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import JournalPrompt from './JournalPrompt';
 import JournalResponse from './JournalResponse';
 import JournalSettings from './JournalSettings';
 import { useTelegram } from './TelegramProvider';
-import { usePrompts } from '../hooks/usePrompts';
+import { usePrompts } from '../hooks/usePrompts'; // Our enhanced hook
 import { useJournalData } from '../hooks/useJournalData';
 
 interface JournalEntry {
@@ -50,11 +51,12 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
   const { user } = useTelegram();
   const userId = user?.id?.toString();
 
-  // Use the new hooks
+  // Use the enhanced hooks that match index.html exactly
   const {
     currentPrompt,
     isLoading: promptLoading,
     error: promptError,
+    fetchTodaysPrompt,
     getNewPrompt,
     submitPromptResponse
   } = usePrompts(userId);
@@ -80,14 +82,14 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     return Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
   };
 
-  // Handle prompt response submission
-  const handlePromptSubmit = async (response: string) => {
+  // Handle prompt response submission - exactly like index.html
+  const handlePromptSubmit = async (response: string): Promise<boolean> => {
     if (!response.trim()) return false;
 
     try {
       const success = await submitPromptResponse(response);
       if (success) {
-        // Add entry to local state
+        // Add entry to local state to match the previous behavior
         onAddEntry({
           title: currentPrompt?.typeLabel || 'Daily Reflection',
           content: response,
@@ -96,8 +98,9 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
           week: getCurrentWeek()
         });
         
-        // Refresh history
+        // Refresh history to get the latest entries
         fetchHistory();
+        
         return true;
       }
       return false;
@@ -107,33 +110,45 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     }
   };
 
-  // Handle manual entry addition
-  const handleAddEntry = () => {
-    if (newEntry.title.trim() && newEntry.content.trim()) {
-      onAddEntry({
-        title: newEntry.title,
-        content: newEntry.content,
-        date: new Date().toISOString().split('T')[0],
-        completed: false,
-        week: getCurrentWeek()
-      });
-      setNewEntry({ title: '', content: '' });
-      setShowAddForm(false);
+  // Handle new prompt request - exactly like index.html
+  const handleNewPrompt = async () => {
+    try {
+      await getNewPrompt();
+      // The prompt state will be updated automatically by the hook
+    } catch (error) {
+      console.error('Error getting new prompt:', error);
     }
+  };
+
+  // Handle manual entry addition (for the "Entries" tab)
+  const handleAddEntry = () => {
+    if (!newEntry.title.trim() || !newEntry.content.trim()) return;
+
+    onAddEntry({
+      title: newEntry.title,
+      content: newEntry.content,
+      date: new Date().toISOString().split('T')[0],
+      completed: true,
+      week: getCurrentWeek()
+    });
+
+    setNewEntry({ title: '', content: '' });
+    setShowAddForm(false);
   };
 
   // Handle entry editing
-  const handleStartEdit = (entry: JournalEntry) => {
-    setEditingId(entry.id);
-    setEditContent(entry.content);
+  const handleEditEntry = (entryId: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    if (entry) {
+      setEditingId(entryId);
+      setEditContent(entry.content);
+    }
   };
 
-  const handleSaveEdit = () => {
-    if (editingId && editContent.trim()) {
-      onUpdateEntry(editingId, editContent);
-      setEditingId(null);
-      setEditContent('');
-    }
+  const handleSaveEdit = (entryId: string) => {
+    onUpdateEntry(entryId, editContent);
+    setEditingId(null);
+    setEditContent('');
   };
 
   const handleCancelEdit = () => {
@@ -141,23 +156,35 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     setEditContent('');
   };
 
-  // Get streak info
+  // Get streak information
   const streakInfo = getStreakInfo();
 
   return (
-    <div className="space-y-6">
-      {/* Header with streak info */}
-      <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 text-white">
+    <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
+      {/* Header with Weekly Stats - enhanced version */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white mb-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold mb-2">Weekly Journal</h2>
             <p className="text-purple-100">
-              Week {getWeekNumber()} • {streakInfo.currentStreak} day streak
+              Week {getWeekNumber()} • {getCurrentWeek()}
             </p>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold">{streakInfo.totalEntries}</div>
-            <div className="text-sm text-purple-100">Total Entries</div>
+            <div className="flex space-x-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{streakInfo.currentStreak}</div>
+                <div className="text-sm text-purple-100">Current Streak</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{streakInfo.longestStreak}</div>
+                <div className="text-sm text-purple-100">Best Streak</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{streakInfo.totalEntries}</div>
+                <div className="text-sm text-purple-100">Total Entries</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -183,13 +210,13 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
           </TabsTrigger>
         </TabsList>
 
-        {/* Today's Reflection Tab */}
+        {/* Today's Reflection Tab - Using enhanced components */}
         <TabsContent value="today" className="space-y-6">
           <JournalPrompt
             prompt={currentPrompt}
             isLoading={promptLoading}
             error={promptError}
-            onNewPrompt={getNewPrompt}
+            onNewPrompt={handleNewPrompt}
           />
           
           <JournalResponse
@@ -199,7 +226,7 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
           />
         </TabsContent>
 
-        {/* Weekly Entries Tab */}
+        {/* Weekly Entries Tab - Keep existing functionality */}
         <TabsContent value="entries" className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-800">This Week's Entries</h3>
@@ -245,43 +272,36 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
                 key={entry.id}
                 className={`bg-white rounded-2xl p-4 shadow-lg border-2 transition-all duration-300 ${
                   entry.completed 
-                    ? 'border-green-200 bg-gradient-to-r from-green-50 to-purple-50' 
-                    : 'border-gray-100 hover:border-purple-200'
+                    ? 'border-green-200 bg-green-50' 
+                    : 'border-gray-200 hover:border-purple-300'
                 }`}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className="text-2xl">📝</div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{entry.title}</h3>
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Calendar className="w-4 h-4 text-purple-500" />
-                        <span>{new Date(entry.date).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => handleStartEdit(entry)}
-                      variant="outline"
-                      size="sm"
-                      className="w-10 h-10"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </Button>
                     <Button
                       onClick={() => onEntryComplete(entry.id)}
-                      disabled={entry.completed}
-                      className={`w-10 h-10 transition-all ${
-                        entry.completed
-                          ? 'bg-green-500 hover:bg-green-500'
-                          : 'bg-gray-200 hover:bg-purple-500 hover:text-white'
+                      variant="ghost"
+                      size="sm"
+                      className={`w-6 h-6 rounded-full p-0 ${
+                        entry.completed 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : 'border-2 border-gray-300 hover:border-purple-500'
                       }`}
                     >
-                      <Check className="w-4 h-4" />
+                      {entry.completed && <Check className="w-3 h-3" />}
                     </Button>
+                    <div>
+                      <h4 className="font-medium text-gray-800">{entry.title}</h4>
+                      <p className="text-sm text-gray-500">{entry.date}</p>
+                    </div>
                   </div>
+                  <Button
+                    onClick={() => handleEditEntry(entry.id)}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </Button>
                 </div>
                 
                 {editingId === entry.id ? (
@@ -289,30 +309,30 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
                     <Textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full min-h-[120px]"
+                      className="w-full min-h-[100px]"
                     />
                     <div className="flex space-x-2">
-                      <Button onClick={handleSaveEdit} size="sm" className="flex-1">
-                        Save
-                      </Button>
-                      <Button onClick={handleCancelEdit} variant="outline" size="sm" className="flex-1">
-                        Cancel
-                      </Button>
+                      <Button onClick={() => handleSaveEdit(entry.id)} size="sm">Save</Button>
+                      <Button onClick={handleCancelEdit} variant="outline" size="sm">Cancel</Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-gray-700 text-sm leading-relaxed">
-                      {entry.content}
-                    </p>
-                  </div>
+                  <p className="text-gray-700 leading-relaxed">{entry.content}</p>
                 )}
               </div>
             ))}
+            
+            {entries.length === 0 && (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-3">📝</div>
+                <h3 className="font-semibold text-gray-800 mb-2">No entries this week</h3>
+                <p className="text-gray-600">Start your week with a reflection!</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
-        {/* History Tab */}
+        {/* History Tab - Shows API data */}
         <TabsContent value="history" className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-800">Journal History</h3>
@@ -321,16 +341,12 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
               variant="outline"
               disabled={historyLoading}
             >
-              {historyLoading ? (
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin mr-2" />
-              ) : (
-                <RefreshCw className="w-4 h-4 mr-2" />
-              )}
+              <RefreshCw className={`w-4 h-4 mr-2 ${historyLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
 
-          <div className="space-y-3">
+          <div>
             {historyLoading ? (
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto mb-3"></div>

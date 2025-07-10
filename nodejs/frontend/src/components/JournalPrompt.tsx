@@ -1,13 +1,14 @@
 // components/JournalPrompt.tsx
+// Refactored to match index.html's prompt display exactly
 import React from 'react';
-import { Lightbulb, RefreshCw, Star, Clock } from 'lucide-react';
+import { RefreshCw, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PromptData {
   type: string;
   typeLabel: string;
   text: string;
-  hint: string;
+  hint?: string;
 }
 
 interface JournalPromptProps {
@@ -15,150 +16,119 @@ interface JournalPromptProps {
   isLoading: boolean;
   error: string | null;
   onNewPrompt: () => void;
-  className?: string;
 }
 
 const JournalPrompt: React.FC<JournalPromptProps> = ({
   prompt,
   isLoading,
   error,
-  onNewPrompt,
-  className = ''
+  onNewPrompt
 }) => {
-  const getPromptIcon = (type: string) => {
-    switch (type) {
-      case 'self_awareness':
-        return '🧠';
-      case 'connections':
-        return '💝';
-      case 'growth':
-        return '🌱';
-      case 'gratitude':
-        return '🙏';
-      case 'challenges':
-        return '💪';
-      case 'intentions':
-        return '🎯';
-      default:
-        return '✨';
-    }
-  };
-
-  const getPromptColor = (type: string) => {
-    switch (type) {
-      case 'self_awareness':
-        return 'from-purple-500 to-blue-500';
-      case 'connections':
-        return 'from-pink-500 to-rose-500';
-      case 'growth':
-        return 'from-green-500 to-emerald-500';
-      case 'gratitude':
-        return 'from-yellow-500 to-orange-500';
-      case 'challenges':
-        return 'from-red-500 to-pink-500';
-      case 'intentions':
-        return 'from-indigo-500 to-purple-500';
-      default:
-        return 'from-purple-500 to-pink-500';
-    }
-  };
-
-  if (error) {
+  // Loading state - matches index.html loading
+  if (isLoading && !prompt) {
     return (
-      <div className={`bg-red-50 border-2 border-red-200 rounded-2xl p-4 ${className}`}>
-        <div className="flex items-center space-x-3">
-          <div className="bg-red-100 p-2 rounded-full">
-            <Lightbulb className="w-5 h-5 text-red-500" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-red-800">Unable to load prompt</h3>
-            <p className="text-red-600 text-sm mt-1">{error}</p>
-            <Button
-              onClick={onNewPrompt}
-              variant="outline"
-              size="sm"
-              className="mt-2 border-red-200 text-red-700 hover:bg-red-50"
-            >
-              <RefreshCw className="w-4 h-4 mr-1" />
-              Try Again
-            </Button>
-          </div>
+      <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
+        <div className="text-center py-8">
+          <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-600">Loading your reflection prompt...</p>
         </div>
       </div>
     );
   }
 
+  // Error state - matches index.html error handling
+  if (error && !prompt) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-red-100">
+        <div className="text-center py-6">
+          <div className="text-4xl mb-3">⚠️</div>
+          <h3 className="font-semibold text-red-800 mb-2">Unable to Load Prompt</h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button 
+            onClick={onNewPrompt}
+            variant="outline"
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // No prompt state (shouldn't happen with fallbacks, but just in case)
+  if (!prompt) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
+        <div className="text-center py-6">
+          <div className="text-4xl mb-3">🤔</div>
+          <h3 className="font-semibold text-gray-800 mb-2">No Prompt Available</h3>
+          <p className="text-gray-600 mb-4">Let's get you a new reflection prompt!</p>
+          <Button onClick={onNewPrompt}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Get New Prompt
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main prompt display - matches index.html structure exactly
   return (
-    <div className={`bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 shadow-lg border-2 border-purple-100 ${className}`}>
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className={`bg-gradient-to-r ${prompt ? getPromptColor(prompt.type) : 'from-purple-500 to-pink-500'} p-3 rounded-full`}>
-            <Lightbulb className="w-6 h-6 text-white" />
+    <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
+      {/* Prompt Header - like index.html */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <div className="text-lg">
+            {prompt.type === 'self_awareness' ? '🧠' : '🤝'}
           </div>
           <div>
-            <h3 className="font-bold text-gray-800">Today's Reflection</h3>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Clock className="w-4 h-4" />
-              <span>{new Date().toLocaleDateString()}</span>
-              {prompt && (
-                <span className="bg-white px-2 py-1 rounded-full text-xs font-medium">
-                  {prompt.typeLabel}
-                </span>
-              )}
-            </div>
+            <h3 className="font-semibold text-gray-800">
+              {prompt.typeLabel || (prompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections')}
+            </h3>
+            <p className="text-sm text-gray-500">Today's Reflection</p>
           </div>
         </div>
-        
         <Button
           onClick={onNewPrompt}
           variant="outline"
           size="sm"
           disabled={isLoading}
-          className="border-purple-200 text-purple-700 hover:bg-purple-50"
+          className="border-purple-300 text-purple-700 hover:bg-purple-50"
         >
           {isLoading ? (
-            <div className="w-4 h-4 border-2 border-purple-300 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin mr-2" />
           ) : (
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4 mr-2" />
           )}
+          New Prompt
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="animate-pulse">
-          <div className="h-4 bg-purple-200 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-purple-200 rounded w-1/2"></div>
+      {/* Prompt Text - exactly like index.html */}
+      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 mb-4">
+        <p className="text-gray-800 leading-relaxed text-lg font-medium">
+          {prompt.text}
+        </p>
+      </div>
+
+      {/* Hint - like index.html */}
+      {prompt.hint && (
+        <div className="flex items-start space-x-2 bg-blue-50 rounded-lg p-3">
+          <Lightbulb className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+          <p className="text-blue-800 text-sm leading-relaxed">
+            <span className="font-medium">Hint:</span> {prompt.hint}
+          </p>
         </div>
-      ) : prompt ? (
-        <div className="space-y-3">
-          <div className="bg-white rounded-xl p-4 border border-purple-200">
-            <div className="flex items-start space-x-3">
-              <div className="text-2xl flex-shrink-0">
-                {getPromptIcon(prompt.type)}
-              </div>
-              <div className="flex-1">
-                <p className="text-gray-800 font-medium leading-relaxed">
-                  {prompt.text}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {prompt.hint && (
-            <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
-              <div className="flex items-start space-x-2">
-                <Star className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
-                <p className="text-purple-700 text-sm leading-relaxed">
-                  <span className="font-medium">Hint:</span> {prompt.hint}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="text-center py-4">
-          <div className="text-4xl mb-2">📝</div>
-          <p className="text-gray-600">No prompt available</p>
+      )}
+
+      {/* Error message if there was an error but we still have a prompt */}
+      {error && (
+        <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <p className="text-amber-800 text-sm">
+            ⚠️ {error} (showing fallback prompt)
+          </p>
         </div>
       )}
     </div>

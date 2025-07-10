@@ -1,120 +1,81 @@
 // hooks/usePrompts.ts
+// Refactored to use the exact same backend as index.html and /prompt command
 import { useState, useEffect, useCallback } from 'react';
 
 interface PromptData {
   type: string;
   typeLabel: string;
   text: string;
-  hint: string;
+  hint?: string;
 }
 
-interface AppConfig {
-  appName: string;
-  version: string;
-  timezone: string;
-  features: {
-    selfAwareness: boolean;
-    connections: boolean;
-    history: boolean;
-    affirmations: boolean;
-    pet: boolean;
-  };
+interface PromptResponse {
+  success: boolean;
+  message?: string;
+  entry?: any;
 }
 
-export const usePrompts = (userId?: string) => {
+interface UsePromptsResult {
+  currentPrompt: PromptData | null;
+  isLoading: boolean;
+  error: string | null;
+  fetchTodaysPrompt: () => Promise<void>;
+  getNewPrompt: () => Promise<void>;
+  submitPromptResponse: (response: string) => Promise<boolean>;
+}
+
+// Default fallback prompts (same as index.html)
+const defaultPrompts: PromptData[] = [
+  {
+    type: 'self_awareness',
+    typeLabel: '🧠 Self-Awareness',
+    text: '🦕 Screen-Free Safari! Spend an hour today without your phone or any screens—just like the good old prehistoric days! What did you do instead? How did it feel to step away from the digital jungle?',
+    hint: '🌿 Think about how your experience compared to your normal routine.'
+  },
+  {
+    type: 'connections',
+    typeLabel: '🤝 Connections',
+    text: '🦖 Fossilized Friendships Await! Reconnect with someone you have not spoken to in a while—send them a message and see what happens!',
+    hint: '💫 Sometimes the smallest gesture can reignite meaningful connections.'
+  }
+];
+
+export const usePrompts = (userId?: string): UsePromptsResult => {
   const [currentPrompt, setCurrentPrompt] = useState<PromptData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [config, setConfig] = useState<AppConfig | null>(null);
 
-  // Default prompts fallback
-  const defaultPrompts: PromptData[] = [
-    {
-      type: 'self_awareness',
-      typeLabel: 'Self Awareness',
-      text: 'What emotions have you experienced most strongly today, and what do you think triggered them?',
-      hint: 'Think about the moments when you felt the most intense emotions - both positive and negative.'
-    },
-    {
-      type: 'connections',
-      typeLabel: 'Connections',
-      text: 'How did you connect with others today? What made those interactions meaningful or challenging?',
-      hint: 'Consider both the quality and quantity of your social interactions.'
-    },
-    {
-      type: 'growth',
-      typeLabel: 'Personal Growth',
-      text: 'What did you learn about yourself today? How did you grow or change?',
-      hint: 'Reflect on moments of insight, challenge, or personal development.'
-    },
-    {
-      type: 'gratitude',
-      typeLabel: 'Gratitude',
-      text: 'What are you most grateful for today? How did gratitude show up in your day?',
-      hint: 'Think about both the big and small things that brought you joy or appreciation.'
-    },
-    {
-      type: 'challenges',
-      typeLabel: 'Challenges',
-      text: 'What challenges did you face today, and how did you handle them?',
-      hint: 'Consider both external obstacles and internal struggles.'
-    },
-    {
-      type: 'intentions',
-      typeLabel: 'Intentions',
-      text: 'What intentions do you want to set for tomorrow? How can you align your actions with your values?',
-      hint: 'Think about what you want to focus on and how you want to show up.'
-    }
-  ];
-
-  // Fetch app configuration
-  const fetchConfig = useCallback(async () => {
-    try {
-      const response = await fetch('/miniapp/config');
-      if (!response.ok) {
-        throw new Error('Failed to fetch config');
-      }
-      const configData = await response.json();
-      setConfig(configData);
-      return configData;
-    } catch (err) {
-      console.error('Error fetching config:', err);
-      // Use default config
-      const defaultConfig: AppConfig = {
-        appName: 'ThyKnow',
-        version: '1.0.0',
-        timezone: 'UTC',
-        features: {
-          selfAwareness: true,
-          connections: true,
-          history: true,
-          affirmations: true,
-          pet: true
-        }
-      };
-      setConfig(defaultConfig);
-      return defaultConfig;
-    }
-  }, []);
-
-  // Fetch today's prompt
+  // Fetch today's prompt - exactly like index.html
   const fetchTodaysPrompt = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.warn('No user ID available');
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
     
     try {
       const response = await fetch(`/api/miniapp/prompts/today/${userId}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch today\'s prompt');
+        if (response.status === 404) {
+          // User not found - use fallback prompt
+          console.log('User not found, using fallback prompt');
+          const randomPrompt = defaultPrompts[Math.floor(Math.random() * defaultPrompts.length)];
+          setCurrentPrompt(randomPrompt);
+          return;
+        }
+        throw new Error(`Failed to fetch prompt: ${response.statusText}`);
       }
+      
       const promptData = await response.json();
       setCurrentPrompt(promptData);
     } catch (err) {
       console.error('Error fetching today\'s prompt:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch prompt');
-      // Use a random default prompt as fallback
+      setError(err instanceof Error ? err.message : 'Failed to fetch today\'s prompt');
+      
+      // Use fallback prompt on error
       const randomPrompt = defaultPrompts[Math.floor(Math.random() * defaultPrompts.length)];
       setCurrentPrompt(randomPrompt);
     } finally {
@@ -122,9 +83,12 @@ export const usePrompts = (userId?: string) => {
     }
   }, [userId]);
 
-  // Get a new prompt
+  // Get new prompt - exactly like index.html
   const getNewPrompt = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.warn('No user ID available');
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
@@ -133,15 +97,21 @@ export const usePrompts = (userId?: string) => {
       const response = await fetch(`/api/miniapp/prompts/new/${userId}`, {
         method: 'POST'
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch new prompt');
+        throw new Error(`Failed to fetch new prompt: ${response.statusText}`);
       }
+      
       const promptData = await response.json();
       setCurrentPrompt(promptData);
+      
+      // Log success like index.html does
+      console.log('New prompt generated successfully');
     } catch (err) {
       console.error('Error fetching new prompt:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch new prompt');
-      // Use a random default prompt as fallback
+      
+      // Use fallback prompt on error
       const randomPrompt = defaultPrompts[Math.floor(Math.random() * defaultPrompts.length)];
       setCurrentPrompt(randomPrompt);
     } finally {
@@ -149,31 +119,45 @@ export const usePrompts = (userId?: string) => {
     }
   }, [userId]);
 
-  // Submit prompt response
-  const submitPromptResponse = useCallback(async (response: string) => {
-    if (!userId || !currentPrompt) return false;
+  // Submit prompt response - exactly like index.html
+  const submitPromptResponse = useCallback(async (response: string): Promise<boolean> => {
+    if (!userId || !currentPrompt) {
+      console.warn('Missing userId or currentPrompt for submission');
+      return false;
+    }
+    
+    if (!response.trim()) {
+      setError('Please enter your response first');
+      return false;
+    }
     
     setIsLoading(true);
     setError(null);
     
     try {
-      const submitResponse = await fetch(`/api/miniapp/responses`, {
+      const submitResponse = await fetch('/api/miniapp/responses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId,
-          response
+          response: response.trim()
         })
       });
       
       if (!submitResponse.ok) {
-        throw new Error('Failed to submit response');
+        throw new Error(`Failed to submit response: ${submitResponse.statusText}`);
       }
       
       const result = await submitResponse.json();
-      return result.success;
+      
+      if (result.success) {
+        console.log('Response saved successfully');
+        return true;
+      } else {
+        throw new Error(result.message || 'Failed to save response');
+      }
     } catch (err) {
       console.error('Error submitting response:', err);
       setError(err instanceof Error ? err.message : 'Failed to submit response');
@@ -183,11 +167,7 @@ export const usePrompts = (userId?: string) => {
     }
   }, [userId, currentPrompt]);
 
-  // Initialize on mount
-  useEffect(() => {
-    fetchConfig();
-  }, [fetchConfig]);
-
+  // Initialize on mount - like index.html
   useEffect(() => {
     if (userId) {
       fetchTodaysPrompt();
@@ -198,10 +178,8 @@ export const usePrompts = (userId?: string) => {
     currentPrompt,
     isLoading,
     error,
-    config,
     fetchTodaysPrompt,
     getNewPrompt,
-    submitPromptResponse,
-    defaultPrompts
+    submitPromptResponse
   };
 };

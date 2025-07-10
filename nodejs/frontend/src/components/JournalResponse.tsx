@@ -1,136 +1,109 @@
 // components/JournalResponse.tsx
-import React, { useState, useEffect } from 'react';
-import { Send, Save, Heart, Sparkles, CheckCircle } from 'lucide-react';
+// Refactored to match index.html's response handling exactly
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useTelegram } from './TelegramProvider';
 
 interface JournalResponseProps {
   onSubmit: (response: string) => Promise<boolean>;
-  onSave?: (response: string) => void;
   isLoading: boolean;
   placeholder?: string;
-  className?: string;
+  disabled?: boolean;
 }
 
 const JournalResponse: React.FC<JournalResponseProps> = ({
   onSubmit,
-  onSave,
   isLoading,
-  placeholder = "Share your thoughts and reflections...",
-  className = ''
+  placeholder = "Take a moment to reflect on today's prompt. There's no right or wrong answer - just share what feels true for you.",
+  disabled = false
 }) => {
   const [response, setResponse] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [wordCount, setWordCount] = useState(0);
-  const [charCount, setCharCount] = useState(0);
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { hapticFeedback } = useTelegram();
-
-  // Update word and character counts
+  // Auto-resize textarea - like index.html
   useEffect(() => {
-    const words = response.trim().split(/\s+/).filter(word => word.length > 0);
-    setWordCount(words.length);
-    setCharCount(response.length);
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto';
+      // Set the height to the scrollHeight
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
   }, [response]);
 
-  // Handle input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setResponse(e.target.value);
-    setSubmitted(false);
-  };
-
-  // Handle save (local storage or callback)
-  const handleSave = async () => {
-    if (!response.trim()) return;
+  // Handle form submission - exactly like index.html
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setIsSaving(true);
-    hapticFeedback?.('light');
-    
-    try {
-      if (onSave) {
-        onSave(response);
-      } else {
-        // Save to localStorage as fallback
-        const savedResponses = JSON.parse(localStorage.getItem('journalResponses') || '[]');
-        savedResponses.push({
-          id: Date.now(),
-          response,
-          timestamp: new Date().toISOString(),
-          saved: true
-        });
-        localStorage.setItem('journalResponses', JSON.stringify(savedResponses));
-      }
-      
-      // Brief success feedback
-      setTimeout(() => setIsSaving(false), 1000);
-    } catch (error) {
-      console.error('Error saving response:', error);
-      setIsSaving(false);
+    const trimmedResponse = response.trim();
+    if (!trimmedResponse) {
+      setSubmitError('Please enter your response first');
+      return;
     }
-  };
 
-  // Handle submit
-  const handleSubmit = async () => {
-    if (!response.trim()) return;
-    
+    if (trimmedResponse.length < 10) {
+      setSubmitError('Please share a bit more about your thoughts (at least 10 characters)');
+      return;
+    }
+
     setIsSubmitting(true);
-    hapticFeedback?.('medium');
-    
+    setSubmitError(null);
+
     try {
-      const success = await onSubmit(response);
+      const success = await onSubmit(trimmedResponse);
+      
       if (success) {
-        setSubmitted(true);
-        hapticFeedback?.('success');
-        // Clear response after successful submission
+        // Clear the response and show success state
+        setResponse('');
+        setJustSubmitted(true);
+        
+        // Reset the just submitted state after 3 seconds
         setTimeout(() => {
-          setResponse('');
-          setSubmitted(false);
-        }, 2000);
+          setJustSubmitted(false);
+        }, 3000);
+
+        // Focus back on textarea for next entry if desired
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
       } else {
-        hapticFeedback?.('error');
+        setSubmitError('Failed to save your response. Please try again.');
       }
     } catch (error) {
       console.error('Error submitting response:', error);
-      hapticFeedback?.('error');
+      setSubmitError('Failed to save your response. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Get dynamic placeholder based on word count
-  const getDynamicPlaceholder = () => {
-    if (wordCount === 0) return placeholder;
-    if (wordCount < 10) return "Keep going, you're doing great! Share more thoughts...";
-    if (wordCount < 25) return "Wonderful reflection! Add more details if you'd like...";
-    return "Beautiful insights! Feel free to continue or submit when ready...";
+  // Handle keyboard shortcuts - like index.html
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Ctrl+Enter or Cmd+Enter
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit(e as any);
+    }
   };
 
-  // Get encouragement message
-  const getEncouragementMessage = () => {
-    if (wordCount === 0) return null;
-    if (wordCount < 5) return "Great start! 🌱";
-    if (wordCount < 15) return "You're building something beautiful! ✨";
-    if (wordCount < 30) return "Wonderful depth of reflection! 🌟";
-    return "Incredible self-awareness! 🚀";
-  };
-
-  if (submitted) {
+  // Show success state after submission
+  if (justSubmitted) {
     return (
-      <div className={`bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200 ${className}`}>
-        <div className="text-center space-y-3">
-          <div className="bg-green-100 p-3 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+      <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-green-200">
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-green-600" />
           </div>
-          <h3 className="font-bold text-green-800">Reflection Submitted!</h3>
-          <p className="text-green-600 text-sm">
-            Thank you for sharing your thoughts. Your reflection has been saved and is contributing to your growth journey.
+          <h3 className="text-lg font-semibold text-green-800 mb-2">Response Saved Successfully!</h3>
+          <p className="text-green-600 mb-4">
+            Your reflection has been saved to your journal. Use the "New Prompt" button when you're ready for another prompt.
           </p>
-          <div className="flex items-center justify-center space-x-1 text-green-600">
-            <Heart className="w-4 h-4" />
-            <span className="text-sm">Keep reflecting, keep growing</span>
+          <div className="text-sm text-gray-500">
+            💡 Tip: Regular reflection helps build self-awareness and meaningful connections.
           </div>
         </div>
       </div>
@@ -138,89 +111,67 @@ const JournalResponse: React.FC<JournalResponseProps> = ({
   }
 
   return (
-    <div className={`bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100 ${className}`}>
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-purple-500" />
-            <h3 className="font-semibold text-gray-800">Your Reflection</h3>
-          </div>
+    <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
+      <h3 className="font-semibold text-gray-800 mb-3">Share Your Reflection</h3>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Response Textarea - matches index.html styling */}
+        <div className="relative">
+          <Textarea
+            ref={textareaRef}
+            value={response}
+            onChange={(e) => setResponse(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled || isLoading || isSubmitting}
+            className="min-h-[120px] max-h-[200px] resize-none border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+            style={{ height: 'auto' }}
+          />
           
-          {/* Word count and encouragement */}
-          <div className="text-right">
-            <div className="text-sm text-gray-500">
-              {wordCount} words • {charCount} characters
-            </div>
-            {getEncouragementMessage() && (
-              <div className="text-xs text-purple-600 font-medium">
-                {getEncouragementMessage()}
-              </div>
-            )}
+          {/* Character count - like index.html */}
+          <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+            {response.length} characters
           </div>
         </div>
 
-        {/* Text area */}
-        <Textarea
-          value={response}
-          onChange={handleInputChange}
-          placeholder={getDynamicPlaceholder()}
-          className="min-h-[120px] border-gray-200 focus:border-purple-300 focus:ring-purple-200 resize-none"
-          disabled={isLoading || isSubmitting}
-        />
+        {/* Error message */}
+        {submitError && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{submitError}</p>
+          </div>
+        )}
 
-        {/* Action buttons */}
-        <div className="flex space-x-3">
+        {/* Submit button - matches index.html */}
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            💡 Press Ctrl+Enter to submit quickly
+          </div>
           <Button
-            onClick={handleSave}
-            variant="outline"
-            disabled={!response.trim() || isSaving || isSubmitting}
-            className="flex-1 border-gray-200 text-gray-700 hover:bg-gray-50"
-          >
-            {isSaving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin mr-2" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Save Draft
-              </>
-            )}
-          </Button>
-          
-          <Button
-            onClick={handleSubmit}
-            disabled={!response.trim() || isSubmitting || isLoading}
-            className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+            type="submit"
+            disabled={!response.trim() || disabled || isLoading || isSubmitting}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2"
           >
             {isSubmitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Submitting...
+                Saving...
               </>
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />
-                Submit
+                Save Response
               </>
             )}
           </Button>
         </div>
+      </form>
 
-        {/* Writing tips */}
-        {wordCount === 0 && (
-          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-            <div className="flex items-start space-x-2">
-              <div className="text-blue-500">💡</div>
-              <div className="text-blue-700 text-sm">
-                <span className="font-medium">Tip:</span> There's no right or wrong way to reflect. 
-                Write freely about whatever comes to mind regarding today's prompt.
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Help text - like index.html */}
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <p className="text-gray-600 text-sm">
+          <strong>Reflection Tips:</strong> Be honest and authentic. There are no wrong answers. 
+          The goal is to better understand yourself and your connections with others.
+        </p>
       </div>
     </div>
   );
