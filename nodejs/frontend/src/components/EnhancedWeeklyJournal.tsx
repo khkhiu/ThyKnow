@@ -1,5 +1,5 @@
 // components/EnhancedWeeklyJournal.tsx
-// Fixed to properly integrate with the weekly streak system
+// Complete enhanced weekly journal with real streak API integration
 import React, { useState, useEffect } from 'react';
 import { Plus, Check, Calendar, BookOpen, Edit3, History, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,19 @@ import JournalPrompt from './JournalPrompt';
 import JournalResponse from './JournalResponse';
 import JournalSettings from './JournalSettings';
 import { useTelegram } from './TelegramProvider';
-import { usePrompts } from '../hooks/usePrompts'; // Our fixed hook
+import { usePrompts } from '../hooks/usePrompts';
 import { useJournalData } from '../hooks/useJournalData';
+
+// Interface for real streak data from API
+interface RealStreakData {
+  currentStreak: number;
+  longestStreak: number;
+  totalPoints: number;
+  hasEntryThisWeek: boolean;
+  currentWeekId: string;
+  weeksUntilNextMilestone: number;
+  nextMilestoneReward: number;
+}
 
 interface JournalEntry {
   id: string;
@@ -31,7 +42,6 @@ interface EnhancedWeeklyJournalProps {
   promptDay: string;
   promptTime: string;
   onPromptSettingsChange: (day: string, time: string) => void;
-  // NEW: Add callback to notify parent about streak updates
   onStreakUpdate?: (streakData: any) => void;
 }
 
@@ -50,11 +60,16 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newEntry, setNewEntry] = useState({ title: '', content: '' });
   const [editContent, setEditContent] = useState('');
+  
+  // State for real streak data from API
+  const [realStreakData, setRealStreakData] = useState<RealStreakData | null>(null);
+  const [streakLoading, setStreakLoading] = useState(false);
+  const [streakError, setStreakError] = useState<string | null>(null);
 
   const { user } = useTelegram();
   const userId = user?.id?.toString();
 
-  // Use the enhanced hooks that match index.html exactly
+  // Enhanced hooks that match index.html exactly
   const {
     currentPrompt,
     isLoading: promptLoading,
@@ -68,9 +83,51 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
   const {
     historyEntries,
     isLoading: historyLoading,
-    getStreakInfo,
+    getStreakInfo, // Keep as fallback
     fetchHistory
   } = useJournalData(userId);
+
+  // Fetch real streak data from weekly streak API
+  const fetchRealStreakData = async () => {
+    if (!userId) return;
+    
+    setStreakLoading(true);
+    setStreakError(null);
+    
+    try {
+      const response = await fetch(`/api/miniapp/streak/${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch streak data: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      setRealStreakData({
+        currentStreak: data.streak.current,
+        longestStreak: data.streak.longest,
+        totalPoints: data.points.total,
+        hasEntryThisWeek: data.streak.hasEntryThisWeek,
+        currentWeekId: data.streak.currentWeekId,
+        weeksUntilNextMilestone: data.streak.weeksUntilNextMilestone,
+        nextMilestoneReward: data.streak.nextMilestoneReward
+      });
+      
+      console.log('Real streak data fetched:', data);
+    } catch (error) {
+      console.error('Error fetching real streak data:', error);
+      setStreakError(error instanceof Error ? error.message : 'Failed to fetch streak data');
+    } finally {
+      setStreakLoading(false);
+    }
+  };
+
+  // Fetch real streak data on mount and when userId changes
+  useEffect(() => {
+    if (userId) {
+      fetchRealStreakData();
+    }
+  }, [userId]);
 
   // Get current week info
   const getCurrentWeek = () => {
@@ -86,12 +143,13 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     return Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
   };
 
-  // Handle prompt response submission - FIXED to properly handle streak rewards
+  // Handle prompt response submission - properly integrated with weekly streak system
   const handlePromptSubmit = async (response: string): Promise<boolean> => {
     if (!response.trim()) return false;
 
     try {
       const success = await submitPromptResponse(response);
+      
       if (success) {
         // Add entry to local state for immediate UI feedback
         onAddEntry({
@@ -104,6 +162,9 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
         
         // Refresh history to get the latest entries
         fetchHistory();
+        
+        // Refresh real streak data after submission to get updated numbers
+        await fetchRealStreakData();
         
         // Notify parent component about streak update if we have reward data
         if (lastRewards && onStreakUpdate) {
@@ -127,11 +188,10 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     }
   };
 
-  // Handle new prompt request - exactly like index.html
+  // Handle new prompt request
   const handleNewPrompt = async () => {
     try {
       await getNewPrompt();
-      // The prompt state will be updated automatically by the hook
     } catch (error) {
       console.error('Error getting new prompt:', error);
     }
@@ -173,29 +233,40 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     setEditContent('');
   };
 
-  // Get streak information (updated with latest data if available)
-  const getUpdatedStreakInfo = () => {
-    const baseStreakInfo = getStreakInfo();
-    
-    // If we have recent reward data, use the updated values
-    if (lastRewards) {
+  // Get display streak info - use real API data if available, fallback to local calculations
+  const getDisplayStreakInfo = () => {
+    if (realStreakData) {
       return {
-        ...baseStreakInfo,
-        currentStreak: lastRewards.newStreak,
-        totalEntries: baseStreakInfo.totalEntries + 1
+        currentStreak: realStreakData.currentStreak,
+        longestStreak: realStreakData.longestStreak,
+        totalEntries: entries.length, // Keep local count for total entries
+        totalPoints: realStreakData.totalPoints,
+        hasEntryThisWeek: realStreakData.hasEntryThisWeek,
+        weeksUntilNextMilestone: realStreakData.weeksUntilNextMilestone,
+        nextMilestoneReward: realStreakData.nextMilestoneReward
       };
     }
     
-    return baseStreakInfo;
+    // Fallback to local calculation if API data unavailable
+    const fallbackInfo = getStreakInfo();
+    return {
+      ...fallbackInfo,
+      totalPoints: 0,
+      hasEntryThisWeek: false,
+      weeksUntilNextMilestone: 4,
+      nextMilestoneReward: 200
+    };
   };
 
-  const streakInfo = getUpdatedStreakInfo();
+  const streakInfo = getDisplayStreakInfo();
 
   // Show streak rewards notification when new rewards are received
   useEffect(() => {
     if (lastRewards) {
-      // You could show a toast notification here
       console.log('🎉 Streak rewards received:', lastRewards);
+      
+      // Refresh real streak data when rewards are received
+      fetchRealStreakData();
       
       if (lastRewards.milestoneReached) {
         console.log(`🏆 Milestone achieved: ${lastRewards.milestoneReached} weeks!`);
@@ -213,7 +284,7 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Header with Weekly Stats - enhanced version with live streak updates */}
+      {/* Header with Weekly Stats - Enhanced with real API data */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white mb-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
@@ -223,26 +294,51 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
             </p>
           </div>
           <div className="text-right">
-            <div className="flex space-x-6">
+            {streakLoading ? (
               <div className="text-center">
-                <div className="text-2xl font-bold">{streakInfo.currentStreak}</div>
-                <div className="text-sm text-purple-100">Current Streak</div>
+                <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <div className="text-sm text-purple-100">Loading streak data...</div>
               </div>
+            ) : streakError ? (
               <div className="text-center">
-                <div className="text-2xl font-bold">{streakInfo.longestStreak}</div>
-                <div className="text-sm text-purple-100">Longest Streak</div>
+                <div className="text-sm text-red-200">⚠️ Error loading streak data</div>
+                <button 
+                  onClick={fetchRealStreakData}
+                  className="text-xs text-purple-100 underline mt-1"
+                >
+                  Retry
+                </button>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{streakInfo.totalEntries}</div>
-                <div className="text-sm text-purple-100">Total Entries</div>
-              </div>
-              {lastRewards && (
+            ) : (
+              <div className="flex space-x-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-300">+{lastRewards.pointsAwarded}</div>
-                  <div className="text-sm text-purple-100">Points Earned</div>
+                  <div className="text-2xl font-bold">{streakInfo.currentStreak}</div>
+                  <div className="text-sm text-purple-100">Current Streak</div>
                 </div>
-              )}
-            </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{streakInfo.longestStreak}</div>
+                  <div className="text-sm text-purple-100">Longest Streak</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{streakInfo.totalEntries}</div>
+                  <div className="text-sm text-purple-100">Total Entries</div>
+                </div>
+                {/* Show total points if available from real data */}
+                {realStreakData && (
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{realStreakData.totalPoints.toLocaleString()}</div>
+                    <div className="text-sm text-purple-100">Total Points</div>
+                  </div>
+                )}
+                {/* Show recently earned points */}
+                {lastRewards && (
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-300">+{lastRewards.pointsAwarded}</div>
+                    <div className="text-sm text-purple-100">Points Earned</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
         
@@ -260,6 +356,25 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
               )}
               {lastRewards.isNewRecord && (
                 <span className="ml-2">🎉 New personal record!</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Show this week's status from real data */}
+        {realStreakData && (
+          <div className="mt-4 p-3 bg-white bg-opacity-10 rounded-lg">
+            <div className="text-sm">
+              {realStreakData.hasEntryThisWeek ? (
+                <span>✅ This week: Reflection complete! You can add more for bonus points.</span>
+              ) : (
+                <span>📅 This week: Ready for your weekly reflection</span>
+              )}
+              {realStreakData.weeksUntilNextMilestone > 0 && (
+                <span className="ml-4">
+                  🎯 Next milestone: {realStreakData.weeksUntilNextMilestone} week{realStreakData.weeksUntilNextMilestone === 1 ? '' : 's'} 
+                  (+{realStreakData.nextMilestoneReward} bonus points)
+                </span>
               )}
             </div>
           </div>
@@ -447,6 +562,30 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
               promptTime={promptTime}
               onSettingsChange={onPromptSettingsChange}
             />
+            
+            {/* Additional streak info section */}
+            {realStreakData && (
+              <div className="mt-6 pt-6 border-t">
+                <h4 className="font-medium mb-3">Your Progress Summary</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="bg-gray-50 rounded p-3">
+                    <div className="font-medium text-purple-600">Current Status</div>
+                    <div className="mt-1">
+                      {realStreakData.hasEntryThisWeek ? 'Weekly reflection complete ✅' : 'Ready for weekly reflection 📅'}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded p-3">
+                    <div className="font-medium text-purple-600">Progress to Next Milestone</div>
+                    <div className="mt-1">
+                      {realStreakData.weeksUntilNextMilestone > 0 
+                        ? `${realStreakData.weeksUntilNextMilestone} weeks remaining`
+                        : 'All milestones achieved! 🏆'
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>

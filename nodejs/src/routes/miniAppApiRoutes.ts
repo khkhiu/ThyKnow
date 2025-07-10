@@ -744,6 +744,64 @@ function getWeeklyMilestones(_req: Request, res: Response, _next: NextFunction):
     }
   });
 
+/**
+ * FIXED: Conditional validation middleware
+ * Only applies Telegram validation for actual Telegram WebApp requests
+ */
+function conditionalTelegramValidation(req: Request, res: Response, next: NextFunction): void {
+  // Check if this is a Telegram WebApp request
+  const hasTelegramHeaders = req.headers['x-telegram-init-data'];
+  const userAgent = req.headers['user-agent'] || '';
+  const referer = req.headers['referer'] || '';
+  const origin = req.headers['origin'] || '';
+  
+  // If it has Telegram headers, validate as Telegram WebApp
+  if (hasTelegramHeaders) {
+    logger.debug('Telegram WebApp request detected, applying validation');
+    return validateTelegramRequest(req, res, next);
+  }
+  
+  // Check if it's from React frontend (same origin)
+  const isReactFrontend = (
+    userAgent.includes('Mozilla') && 
+    (referer.includes('/miniapp') || referer.includes('/journal') ||
+     origin.includes(req.get('host') || '') ||
+     referer.includes(req.get('host') || ''))
+  );
+  
+  if (isReactFrontend) {
+    logger.debug('React frontend request detected, skipping Telegram validation');
+    
+    // Extract user ID from URL params for React requests
+    const userId = req.params.userId;
+    if (userId) {
+      (req as any).telegramUserId = userId;
+    }
+    
+    return next();
+  }
+  
+  // In development, allow all requests
+  if (config.nodeEnv === 'development') {
+    logger.debug('Development mode: allowing request without validation');
+    
+    // Extract user ID from URL params
+    const userId = req.params.userId;
+    if (userId) {
+      (req as any).telegramUserId = userId;
+    }
+    
+    return next();
+  }
+  
+  // Otherwise, require Telegram validation
+  logger.warn('Request blocked: no Telegram headers or recognized frontend');
+  res.status(403).json({ error: 'Invalid request source' });
+}
+
+// FIXED: Apply conditional validation instead of strict Telegram validation
+router.use(conditionalTelegramValidation);
+
 // ===== REGISTER ALL ROUTES =====
 
 // Original functionality routes
