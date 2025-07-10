@@ -1,5 +1,5 @@
 // hooks/usePrompts.ts
-// Refactored to use the exact same backend as index.html and /prompt command
+// Fixed to use the exact same weekly streak backend as index.html and /prompt command
 import { useState, useEffect, useCallback } from 'react';
 
 interface PromptData {
@@ -9,16 +9,31 @@ interface PromptData {
   hint?: string;
 }
 
+interface WeeklyRewardData {
+  pointsAwarded: number;
+  newStreak: number;
+  totalPoints: number;
+  milestoneReached?: number;
+  streakBroken: boolean;
+  isNewRecord: boolean;
+  isMultipleEntry: boolean;
+  weekId: string;
+}
+
 interface PromptResponse {
   success: boolean;
   message?: string;
   entry?: any;
+  rewards?: WeeklyRewardData;
+  motivationalMessage?: string;
+  nextPromptHint?: string;
 }
 
 interface UsePromptsResult {
   currentPrompt: PromptData | null;
   isLoading: boolean;
   error: string | null;
+  lastRewards: WeeklyRewardData | null;
   fetchTodaysPrompt: () => Promise<void>;
   getNewPrompt: () => Promise<void>;
   submitPromptResponse: (response: string) => Promise<boolean>;
@@ -44,6 +59,7 @@ export const usePrompts = (userId?: string): UsePromptsResult => {
   const [currentPrompt, setCurrentPrompt] = useState<PromptData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastRewards, setLastRewards] = useState<WeeklyRewardData | null>(null);
 
   // Fetch today's prompt - exactly like index.html
   const fetchTodaysPrompt = useCallback(async () => {
@@ -73,8 +89,7 @@ export const usePrompts = (userId?: string): UsePromptsResult => {
       setCurrentPrompt(promptData);
     } catch (err) {
       console.error('Error fetching today\'s prompt:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch today\'s prompt');
-      
+      setError(err instanceof Error ? err.message : 'Failed to fetch prompt');
       // Use fallback prompt on error
       const randomPrompt = defaultPrompts[Math.floor(Math.random() * defaultPrompts.length)];
       setCurrentPrompt(randomPrompt);
@@ -104,13 +119,9 @@ export const usePrompts = (userId?: string): UsePromptsResult => {
       
       const promptData = await response.json();
       setCurrentPrompt(promptData);
-      
-      // Log success like index.html does
-      console.log('New prompt generated successfully');
     } catch (err) {
-      console.error('Error fetching new prompt:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch new prompt');
-      
+      console.error('Error getting new prompt:', err);
+      setError(err instanceof Error ? err.message : 'Failed to get new prompt');
       // Use fallback prompt on error
       const randomPrompt = defaultPrompts[Math.floor(Math.random() * defaultPrompts.length)];
       setCurrentPrompt(randomPrompt);
@@ -119,15 +130,10 @@ export const usePrompts = (userId?: string): UsePromptsResult => {
     }
   }, [userId]);
 
-  // Submit prompt response - exactly like index.html
-  const submitPromptResponse = useCallback(async (response: string): Promise<boolean> => {
-    if (!userId || !currentPrompt) {
-      console.warn('Missing userId or currentPrompt for submission');
-      return false;
-    }
-    
-    if (!response.trim()) {
-      setError('Please enter your response first');
+  // Submit prompt response - FIXED to use weekly streak API
+  const submitPromptResponse = useCallback(async (responseText: string): Promise<boolean> => {
+    if (!userId || !responseText.trim()) {
+      console.warn('Missing user ID or response text');
       return false;
     }
     
@@ -135,37 +141,43 @@ export const usePrompts = (userId?: string): UsePromptsResult => {
     setError(null);
     
     try {
-      const submitResponse = await fetch('/api/miniapp/responses', {
+      // Use the WEEKLY STREAK endpoint, not the regular responses endpoint
+      const response = await fetch('/api/miniapp/responses/weekly', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           userId,
-          response: response.trim()
+          response: responseText
         })
       });
       
-      if (!submitResponse.ok) {
-        throw new Error(`Failed to submit response: ${submitResponse.statusText}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save response');
       }
       
-      const result = await submitResponse.json();
+      const responseData: PromptResponse = await response.json();
       
-      if (result.success) {
-        console.log('Response saved successfully');
-        return true;
-      } else {
-        throw new Error(result.message || 'Failed to save response');
+      // Store the reward data for the parent component to use
+      if (responseData.rewards) {
+        setLastRewards(responseData.rewards);
+        
+        // Log the streak rewards for debugging
+        console.log('Weekly streak rewards:', responseData.rewards);
+        console.log('Motivational message:', responseData.motivationalMessage);
       }
+      
+      return responseData.success;
     } catch (err) {
-      console.error('Error submitting response:', err);
+      console.error('Error submitting prompt response:', err);
       setError(err instanceof Error ? err.message : 'Failed to submit response');
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [userId, currentPrompt]);
+  }, [userId]);
 
   // Initialize on mount - like index.html
   useEffect(() => {
@@ -178,6 +190,7 @@ export const usePrompts = (userId?: string): UsePromptsResult => {
     currentPrompt,
     isLoading,
     error,
+    lastRewards,
     fetchTodaysPrompt,
     getNewPrompt,
     submitPromptResponse

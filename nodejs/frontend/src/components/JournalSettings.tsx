@@ -1,9 +1,7 @@
-
-import React, { useState } from 'react';
-import { Settings, Clock, Calendar, Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+// components/JournalSettings.tsx
+import React from 'react';
+//import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 
 interface JournalSettingsProps {
   promptDay: string;
@@ -11,119 +9,102 @@ interface JournalSettingsProps {
   onSettingsChange: (day: string, time: string) => void;
 }
 
-const JournalSettings = ({ promptDay, promptTime, onSettingsChange }: JournalSettingsProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(promptDay);
-  const [selectedTime, setSelectedTime] = useState(promptTime);
-
-  const days = [
-    { value: 'sunday', label: 'Sunday' },
-    { value: 'monday', label: 'Monday' },
-    { value: 'tuesday', label: 'Tuesday' },
-    { value: 'wednesday', label: 'Wednesday' },
-    { value: 'thursday', label: 'Thursday' },
-    { value: 'friday', label: 'Friday' },
-    { value: 'saturday', label: 'Saturday' }
-  ];
-
-  const times = [
-    { value: '09:00', label: '9:00 AM' },
-    { value: '12:00', label: '12:00 PM' },
-    { value: '15:00', label: '3:00 PM' },
-    { value: '18:00', label: '6:00 PM' },
-    { value: '20:00', label: '8:00 PM' },
-    { value: '21:00', label: '9:00 PM' }
-  ];
-
-  const handleSave = () => {
-    onSettingsChange(selectedDay, selectedTime);
-    setIsOpen(false);
+const JournalSettings: React.FC<JournalSettingsProps> = ({
+  promptDay,
+  promptTime,
+  onSettingsChange
+}) => {
+  const handleDayChange = (newDay: string) => {
+    onSettingsChange(newDay, promptTime);
   };
 
-  const formatDayTime = () => {
-    const dayLabel = days.find(d => d.value === promptDay)?.label || 'Sunday';
-    const timeLabel = times.find(t => t.value === promptTime)?.label || '9:00 AM';
-    return `${dayLabel}s at ${timeLabel}`;
+  const handleTimeChange = (newTime: string) => {
+    onSettingsChange(promptDay, newTime);
   };
-
-  if (!isOpen) {
-    return (
-      <div className="bg-white rounded-2xl p-4 shadow-lg border-2 border-blue-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Bell className="w-6 h-6 text-blue-500" />
-            <div>
-              <h3 className="font-semibold text-gray-800">Weekly Prompts</h3>
-              <p className="text-sm text-gray-600">Scheduled for {formatDayTime()}</p>
-            </div>
-          </div>
-          <Button
-            onClick={() => setIsOpen(true)}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-1"
-          >
-            <Settings className="w-4 h-4" />
-            <span>Settings</span>
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-lg border-2 border-blue-100">
-      <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-        <Settings className="w-5 h-5 mr-2 text-blue-500" />
-        Prompt Settings
-      </h3>
-      
-      <div className="space-y-4">
-        <div>
-          <Label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-            <Calendar className="w-4 h-4 mr-1 text-purple-500" />
-            Day of the week
-          </Label>
-          <Select value={selectedDay} onValueChange={setSelectedDay}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a day" />
-            </SelectTrigger>
-            <SelectContent>
-              {days.map((day) => (
-                <SelectItem key={day.value} value={day.value}>
-                  {day.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h4 className="font-medium mb-3">Prompt Schedule</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Preferred Day
+            </label>
+            <Select value={promptDay} onValueChange={handleDayChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="monday">Monday</SelectItem>
+                <SelectItem value="tuesday">Tuesday</SelectItem>
+                <SelectItem value="wednesday">Wednesday</SelectItem>
+                <SelectItem value="thursday">Thursday</SelectItem>
+                <SelectItem value="friday">Friday</SelectItem>
+                <SelectItem value="saturday">Saturday</SelectItem>
+                <SelectItem value="sunday">Sunday</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div>
-          <Label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-            <Clock className="w-4 h-4 mr-1 text-purple-500" />
-            Time of day
-          </Label>
-          <Select value={selectedTime} onValueChange={setSelectedTime}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a time" />
-            </SelectTrigger>
-            <SelectContent>
-              {times.map((time) => (
-                <SelectItem key={time.value} value={time.value}>
-                  {time.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Preferred Time
+            </label>
+            <Select value={promptTime} onValueChange={handleTimeChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="06:00">6:00 AM</SelectItem>
+                <SelectItem value="07:00">7:00 AM</SelectItem>
+                <SelectItem value="08:00">8:00 AM</SelectItem>
+                <SelectItem value="09:00">9:00 AM</SelectItem>
+                <SelectItem value="10:00">10:00 AM</SelectItem>
+                <SelectItem value="12:00">12:00 PM</SelectItem>
+                <SelectItem value="18:00">6:00 PM</SelectItem>
+                <SelectItem value="19:00">7:00 PM</SelectItem>
+                <SelectItem value="20:00">8:00 PM</SelectItem>
+                <SelectItem value="21:00">9:00 PM</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+      </div>
 
-        <div className="flex space-x-2 pt-2">
-          <Button onClick={handleSave} className="flex-1">
-            Save Settings
-          </Button>
-          <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
-            Cancel
-          </Button>
+      <div>
+        <h4 className="font-medium mb-3">Weekly Streak Information</h4>
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <strong>How it works:</strong>
+              <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600">
+                <li>Weeks run Monday to Sunday</li>
+                <li>One reflection per week maintains your streak</li>
+                <li>Multiple entries in one week = bonus points</li>
+                <li>Miss a week = streak resets</li>
+              </ul>
+            </div>
+            <div>
+              <strong>Points System:</strong>
+              <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600">
+                <li>Base: 50 points per weekly reflection</li>
+                <li>Streak bonus: +10 points per streak week</li>
+                <li>Extra entries: +20 bonus points</li>
+                <li>Milestones: Big bonuses at 4, 12, 26, 52+ weeks</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="font-medium mb-3">Data & Privacy</h4>
+        <div className="text-sm text-gray-600 space-y-2">
+          <p>Your journal entries are stored securely and privately.</p>
+          <p>Only you can see your personal reflections and responses.</p>
+          <p>Streak and points data help track your progress over time.</p>
         </div>
       </div>
     </div>

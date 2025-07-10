@@ -1,7 +1,7 @@
 // components/EnhancedWeeklyJournal.tsx
-// Refactored to use the exact same backend as index.html and /prompt command
+// Fixed to properly integrate with the weekly streak system
 import React, { useState, useEffect } from 'react';
-import { Plus, Check, Calendar, BookOpen, Edit3, History, Settings, RefreshCw } from 'lucide-react';
+import { Plus, Check, Calendar, BookOpen, Edit3, History, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import JournalPrompt from './JournalPrompt';
 import JournalResponse from './JournalResponse';
 import JournalSettings from './JournalSettings';
 import { useTelegram } from './TelegramProvider';
-import { usePrompts } from '../hooks/usePrompts'; // Our enhanced hook
+import { usePrompts } from '../hooks/usePrompts'; // Our fixed hook
 import { useJournalData } from '../hooks/useJournalData';
 
 interface JournalEntry {
@@ -31,6 +31,8 @@ interface EnhancedWeeklyJournalProps {
   promptDay: string;
   promptTime: string;
   onPromptSettingsChange: (day: string, time: string) => void;
+  // NEW: Add callback to notify parent about streak updates
+  onStreakUpdate?: (streakData: any) => void;
 }
 
 const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
@@ -40,7 +42,8 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
   onUpdateEntry,
   promptDay,
   promptTime,
-  onPromptSettingsChange
+  onPromptSettingsChange,
+  onStreakUpdate
 }) => {
   const [activeTab, setActiveTab] = useState('today');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -56,6 +59,7 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     currentPrompt,
     isLoading: promptLoading,
     error: promptError,
+    lastRewards,
     fetchTodaysPrompt,
     getNewPrompt,
     submitPromptResponse
@@ -82,14 +86,14 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     return Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
   };
 
-  // Handle prompt response submission - exactly like index.html
+  // Handle prompt response submission - FIXED to properly handle streak rewards
   const handlePromptSubmit = async (response: string): Promise<boolean> => {
     if (!response.trim()) return false;
 
     try {
       const success = await submitPromptResponse(response);
       if (success) {
-        // Add entry to local state to match the previous behavior
+        // Add entry to local state for immediate UI feedback
         onAddEntry({
           title: currentPrompt?.typeLabel || 'Daily Reflection',
           content: response,
@@ -100,6 +104,19 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
         
         // Refresh history to get the latest entries
         fetchHistory();
+        
+        // Notify parent component about streak update if we have reward data
+        if (lastRewards && onStreakUpdate) {
+          onStreakUpdate({
+            currentStreak: lastRewards.newStreak,
+            totalPoints: lastRewards.totalPoints,
+            pointsAwarded: lastRewards.pointsAwarded,
+            milestoneReached: lastRewards.milestoneReached,
+            streakBroken: lastRewards.streakBroken,
+            isNewRecord: lastRewards.isNewRecord,
+            isMultipleEntry: lastRewards.isMultipleEntry
+          });
+        }
         
         return true;
       }
@@ -156,12 +173,47 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     setEditContent('');
   };
 
-  // Get streak information
-  const streakInfo = getStreakInfo();
+  // Get streak information (updated with latest data if available)
+  const getUpdatedStreakInfo = () => {
+    const baseStreakInfo = getStreakInfo();
+    
+    // If we have recent reward data, use the updated values
+    if (lastRewards) {
+      return {
+        ...baseStreakInfo,
+        currentStreak: lastRewards.newStreak,
+        totalEntries: baseStreakInfo.totalEntries + 1
+      };
+    }
+    
+    return baseStreakInfo;
+  };
+
+  const streakInfo = getUpdatedStreakInfo();
+
+  // Show streak rewards notification when new rewards are received
+  useEffect(() => {
+    if (lastRewards) {
+      // You could show a toast notification here
+      console.log('🎉 Streak rewards received:', lastRewards);
+      
+      if (lastRewards.milestoneReached) {
+        console.log(`🏆 Milestone achieved: ${lastRewards.milestoneReached} weeks!`);
+      }
+      
+      if (lastRewards.streakBroken) {
+        console.log('😔 Streak was broken, but starting fresh!');
+      }
+      
+      if (lastRewards.isNewRecord) {
+        console.log(`🎉 New personal record: ${lastRewards.newStreak} weeks!`);
+      }
+    }
+  }, [lastRewards]);
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Header with Weekly Stats - enhanced version */}
+      {/* Header with Weekly Stats - enhanced version with live streak updates */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white mb-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
@@ -178,40 +230,66 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">{streakInfo.longestStreak}</div>
-                <div className="text-sm text-purple-100">Best Streak</div>
+                <div className="text-sm text-purple-100">Longest Streak</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">{streakInfo.totalEntries}</div>
                 <div className="text-sm text-purple-100">Total Entries</div>
               </div>
+              {lastRewards && (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-300">+{lastRewards.pointsAwarded}</div>
+                  <div className="text-sm text-purple-100">Points Earned</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
+        
+        {/* Show streak rewards notification */}
+        {lastRewards && (
+          <div className="mt-4 p-3 bg-white bg-opacity-20 rounded-lg">
+            <div className="text-sm">
+              {lastRewards.isMultipleEntry ? (
+                <span>✨ Bonus reflection this week! +{lastRewards.pointsAwarded} points</span>
+              ) : (
+                <span>🔥 Weekly reflection complete! +{lastRewards.pointsAwarded} points</span>
+              )}
+              {lastRewards.milestoneReached && (
+                <span className="ml-2">🏆 {lastRewards.milestoneReached}-week milestone!</span>
+              )}
+              {lastRewards.isNewRecord && (
+                <span className="ml-2">🎉 New personal record!</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg rounded-xl p-1">
-          <TabsTrigger value="today" className="rounded-lg">
-            <BookOpen className="w-4 h-4 mr-2" />
-            Today
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="today" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Today's Prompt
           </TabsTrigger>
-          <TabsTrigger value="entries" className="rounded-lg">
-            <Calendar className="w-4 h-4 mr-2" />
+          <TabsTrigger value="entries" className="flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
             Entries
           </TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg">
-            <History className="w-4 h-4 mr-2" />
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
             History
           </TabsTrigger>
-          <TabsTrigger value="settings" className="rounded-lg">
-            <Settings className="w-4 h-4 mr-2" />
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
             Settings
           </TabsTrigger>
         </TabsList>
 
-        {/* Today's Reflection Tab - Using enhanced components */}
+        {/* Today's Prompt Tab */}
         <TabsContent value="today" className="space-y-6">
+          {/* Prompt Display */}
           <JournalPrompt
             prompt={currentPrompt}
             isLoading={promptLoading}
@@ -219,178 +297,139 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
             onNewPrompt={handleNewPrompt}
           />
           
-          <JournalResponse
-            onSubmit={handlePromptSubmit}
-            isLoading={promptLoading}
-            placeholder="Take a moment to reflect on today's prompt. There's no right or wrong answer - just share what feels true for you."
-          />
+          {/* Response Input - only show when we have a prompt */}
+          {currentPrompt && (
+            <JournalResponse
+              onSubmit={handlePromptSubmit}
+              isLoading={promptLoading}
+              placeholder="Take a moment to reflect on this prompt. Share your thoughts, feelings, or insights - there's no right or wrong answer."
+            />
+          )}
         </TabsContent>
 
-        {/* Weekly Entries Tab - Keep existing functionality */}
-        <TabsContent value="entries" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">This Week's Entries</h3>
-            <Button
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="bg-purple-500 hover:bg-purple-600"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Entry
-            </Button>
-          </div>
-
-          {/* Add Entry Form */}
-          {showAddForm && (
-            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
-              <h3 className="font-semibold text-gray-800 mb-3">Create New Journal Entry</h3>
-              <div className="space-y-3">
-                <Input
-                  type="text"
-                  placeholder="Entry title..."
-                  className="w-full"
-                  value={newEntry.title}
-                  onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                />
-                <Textarea
-                  placeholder="Write your thoughts here..."
-                  className="w-full min-h-[120px]"
-                  value={newEntry.content}
-                  onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
-                />
-                <div className="flex space-x-2">
-                  <Button onClick={handleAddEntry} className="flex-1">Add Entry</Button>
-                  <Button variant="outline" onClick={() => setShowAddForm(false)} className="flex-1">Cancel</Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Entries List */}
-          <div className="space-y-3">
-            {entries.map((entry) => (
-              <div 
-                key={entry.id}
-                className={`bg-white rounded-2xl p-4 shadow-lg border-2 transition-all duration-300 ${
-                  entry.completed 
-                    ? 'border-green-200 bg-green-50' 
-                    : 'border-gray-200 hover:border-purple-300'
-                }`}
+        {/* Entries Tab */}
+        <TabsContent value="entries" className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">Your Journal Entries</h3>
+              <Button 
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="flex items-center gap-2"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      onClick={() => onEntryComplete(entry.id)}
-                      variant="ghost"
-                      size="sm"
-                      className={`w-6 h-6 rounded-full p-0 ${
-                        entry.completed 
-                          ? 'bg-green-500 text-white hover:bg-green-600' 
-                          : 'border-2 border-gray-300 hover:border-purple-500'
-                      }`}
-                    >
-                      {entry.completed && <Check className="w-3 h-3" />}
-                    </Button>
-                    <div>
-                      <h4 className="font-medium text-gray-800">{entry.title}</h4>
-                      <p className="text-sm text-gray-500">{entry.date}</p>
-                    </div>
+                <Plus className="w-4 h-4" />
+                Add Entry
+              </Button>
+            </div>
+
+            {/* Add new entry form */}
+            {showAddForm && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="space-y-4">
+                  <Input
+                    value={newEntry.title}
+                    onChange={(e) => setNewEntry(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Entry title..."
+                    className="w-full"
+                  />
+                  <Textarea
+                    value={newEntry.content}
+                    onChange={(e) => setNewEntry(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Write your thoughts..."
+                    className="w-full min-h-[100px]"
+                  />
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddEntry}>Save Entry</Button>
+                    <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
                   </div>
-                  <Button
-                    onClick={() => handleEditEntry(entry.id)}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </Button>
                 </div>
-                
-                {editingId === entry.id ? (
-                  <div className="space-y-3">
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full min-h-[100px]"
-                    />
-                    <div className="flex space-x-2">
-                      <Button onClick={() => handleSaveEdit(entry.id)} size="sm">Save</Button>
-                      <Button onClick={handleCancelEdit} variant="outline" size="sm">Cancel</Button>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-gray-700 leading-relaxed">{entry.content}</p>
-                )}
-              </div>
-            ))}
-            
-            {entries.length === 0 && (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">📝</div>
-                <h3 className="font-semibold text-gray-800 mb-2">No entries this week</h3>
-                <p className="text-gray-600">Start your week with a reflection!</p>
               </div>
             )}
-          </div>
-        </TabsContent>
 
-        {/* History Tab - Shows API data */}
-        <TabsContent value="history" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Journal History</h3>
-            <Button
-              onClick={fetchHistory}
-              variant="outline"
-              disabled={historyLoading}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${historyLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-
-          <div>
-            {historyLoading ? (
-              <div className="text-center py-8">
-                <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto mb-3"></div>
-                <p className="text-gray-600">Loading your journal history...</p>
-              </div>
-            ) : historyEntries.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">📝</div>
-                <h3 className="font-semibold text-gray-800 mb-2">No journal entries yet</h3>
-                <p className="text-gray-600">Start reflecting to see your entries here!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {historyEntries.map((entry) => (
-                  <div key={entry.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="text-lg">📖</div>
-                        <div>
-                          <div className="font-medium text-gray-800">
-                            {entry.promptType || 'Journal Entry'}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {new Date(entry.date).toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </div>
-                        </div>
+            {/* Entry list */}
+            <div className="space-y-4">
+              {entries.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No entries yet. Start with today's prompt!</p>
+                </div>
+              ) : (
+                entries.map(entry => (
+                  <div key={entry.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">{entry.title}</h4>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditEntry(entry.id)}
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={entry.completed ? "default" : "outline"}
+                          onClick={() => onEntryComplete(entry.id)}
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="text-sm font-medium text-gray-700 mb-1">Prompt:</div>
-                        <p className="text-gray-800 text-sm leading-relaxed">{entry.prompt}</p>
+                    {editingId === entry.id ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="w-full"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleSaveEdit(entry.id)}>Save</Button>
+                          <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                        </div>
                       </div>
-                      <div className="bg-blue-50 rounded-lg p-3">
-                        <div className="text-sm font-medium text-blue-700 mb-1">Your Response:</div>
-                        <p className="text-blue-800 text-sm leading-relaxed">{entry.response}</p>
-                      </div>
+                    ) : (
+                      <p className="text-gray-600">{entry.content}</p>
+                    )}
+                    
+                    <div className="text-sm text-gray-400 mt-2">
+                      {entry.date} • Week {entry.week}
                     </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* History Tab */}
+        <TabsContent value="history" className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold mb-4">Entry History</h3>
+            
+            {historyLoading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-gray-600">Loading history...</p>
+              </div>
+            ) : historyEntries.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <History className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No history entries found.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {historyEntries.map((entry, index) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">{entry.promptType || 'Journal Entry'}</h4>
+                      <span className="text-sm text-gray-500">{entry.date}</span>
+                    </div>
+                    {entry.prompt && (
+                      <div className="bg-gray-50 rounded p-3 mb-2">
+                        <p className="text-sm text-gray-700"><strong>Prompt:</strong> {entry.prompt}</p>
+                      </div>
+                    )}
+                    <p className="text-gray-600">{entry.response}</p>
                   </div>
                 ))}
               </div>
@@ -399,12 +438,16 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
         </TabsContent>
 
         {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-4">
-          <JournalSettings
-            promptDay={promptDay}
-            promptTime={promptTime}
-            onSettingsChange={onPromptSettingsChange}
-          />
+        <TabsContent value="settings" className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold mb-4">Journal Settings</h3>
+            
+            <JournalSettings
+              promptDay={promptDay}
+              promptTime={promptTime}
+              onSettingsChange={onPromptSettingsChange}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
