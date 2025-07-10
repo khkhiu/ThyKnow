@@ -1,181 +1,235 @@
-// src/routes/miniAppRoutes.ts - Updated for React Frontend
-import { Router, Request, Response } from 'express';
-import path from 'path';
-import config from '../config';
+// src/routes/miniAppApiRoutes.ts
+// Simple fix: Conditionally apply Telegram validation middleware
+import { Router, Request, Response, NextFunction } from 'express';
+import { userService } from '../services/userService';
+import { promptService } from '../services/promptService';
 import { logger } from '../utils/logger';
+import { validateTelegramRequest } from '../middleware/telegramValidator';
+import { PromptType } from '../types';
+//import path from 'path';
+import config from '../config';
 
 const router = Router();
 
-// Helper function to serve the React app
-function serveReactApp(res: Response, route: string = '') {
-  const frontendPath = path.join(process.cwd(), 'dist', 'frontend');
-  const indexPath = path.join(frontendPath, 'index.html');
+/**
+ * Conditional validation middleware
+ * Only applies Telegram validation for actual Telegram WebApp requests
+ */
+function conditionalTelegramValidation(req: Request, res: Response, next: NextFunction): void {
+  // Check if this is a Telegram WebApp request
+  const hasTelegramHeaders = req.headers['x-telegram-init-data'];
+  const userAgent = req.headers['user-agent'] || '';
+  const referer = req.headers['referer'] || '';
   
-  logger.debug(`Serving React app for route: ${route} from ${indexPath}`);
+  // If it has Telegram headers, validate as Telegram WebApp
+  if (hasTelegramHeaders) {
+    logger.debug('Telegram WebApp request detected, applying validation');
+    return validateTelegramRequest(req, res, next);
+  }
   
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      logger.error(`Error serving React app for ${route}:`, err);
-      res.status(500).send(`Error loading application: ${err.message}`);
+  // Check if it's from React frontend (same origin)
+  const isReactFrontend = (
+    userAgent.includes('Mozilla') && 
+    (referer.includes('/miniapp') || referer.includes('/journal') ||
+     referer.includes(req.get('host') || ''))
+  );
+  
+  if (isReactFrontend && config.allowReactFrontend) {
+    logger.debug('React frontend request detected, skipping Telegram validation');
+    
+    // Extract user ID from URL params for React requests
+    const userId = req.params.userId;
+    if (userId) {
+      (req as any).telegramUserId = userId;
     }
-  });
+    
+    return next();
+  }
+  
+  // In development, allow all requests
+  if (config.nodeEnv === 'development') {
+    logger.debug('Development mode: allowing request without validation');
+    
+    // Extract user ID from URL params
+    const userId = req.params.userId;
+    if (userId) {
+      (req as any).telegramUserId = userId;
+    }
+    
+    return next();
+  }
+  
+  // Otherwise, require Telegram validation
+  logger.warn('Request without proper authentication headers');
+  res.status(403).json({ error: 'Authentication required' });
+}
+
+// Apply conditional validation to all API routes
+router.use(conditionalTelegramValidation);
+
+// Rest of your existing route handlers...
+// (Keep all the existing route handlers unchanged)
+
+/**
+ * Handler for GET /api/miniapp/prompts/today/:userId
+ */
+function getTodaysPrompt(req: Request, res: Response, next: NextFunction): void {
+  const { userId } = req.params;
+  
+  if (!userId) {
+    res.status(400).json({ error: 'User ID is required' });
+    return;
+  }
+  
+  userService.getUser(userId)
+    .then(user => {
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+      
+      // Get the last prompt for this user
+      const userWithPrompt = user as any;
+      
+      if (userWithPrompt.lastPrompt) {
+        const promptData = {
+          type: userWithPrompt.lastPrompt.type,
+          typeLabel: userWithPrompt.lastPrompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
+          text: userWithPrompt.lastPrompt.text,
+          hint: 'Reflect deeply on this prompt to gain new insights.'
+        };
+        
+        res.json(promptData);
+        logger.info(`Served today's prompt to user ${userId}`);
+      } else {
+        // No existing prompt - generate a new one
+        return generateNewPrompt(req, res, next);
+      }
+    })
+    .catch((error: Error) => {
+      logger.error(`Error getting today's prompt for user ${userId}:`, error);
+      res.status(500).json({ error: 'Failed to get prompt' });
+    });
 }
 
 /**
- * GET /miniapp
- * Serves the React app main entry point
+ * Handler for POST /api/miniapp/prompts/new/:userId
  */
-router.get('/', (req: Request, res: Response) => {
-  try {
-    logger.debug(`Serving React miniapp at ${req.originalUrl}`);
-    serveReactApp(res, req.originalUrl);
-  } catch (error) {
-    logger.error('Error serving React miniapp:', error);
-    res.status(500).send('Error loading mini-app');
+function generateNewPrompt(req: Request, res: Response, _next: NextFunction): void {
+  const { userId } = req.params;
+  
+  if (!userId) {
+    res.status(400).json({ error: 'User ID is required' });
+    return;
   }
-});
-
-/**
- * GET /miniapp/pet
- * Serves the React app (pet page will be handled by React Router)
- */
-router.get('/pet', (req: Request, res: Response) => {
-  try {
-    logger.debug(`Serving React app pet page at ${req.originalUrl}`);
-    serveReactApp(res, req.originalUrl);
-  } catch (error) {
-    logger.error('Error serving React pet page:', error);
-    res.status(500).send('Error loading pet page');
-  }
-});
-
-/**
- * GET /miniapp/streak
- * Serves the React app (streak page will be handled by React Router)
- */
-router.get('/streak', (req: Request, res: Response) => {
-  try {
-    logger.debug(`Serving React app streak page at ${req.originalUrl}`);
-    serveReactApp(res, req.originalUrl);
-  } catch (error) {
-    logger.error('Error serving React streak page:', error);
-    res.status(500).send('Error loading streak page');
-  }
-});
-
-/**
- * GET /miniapp/config
- * Provides configuration data for the mini-app
- */
-router.get('/config', (_req: Request, res: Response) => {
-  try {
-    // Provide necessary configuration to the React app
-    // Avoid exposing sensitive information
-    const miniAppConfig = {
-      appName: 'ThyKnow',
-      version: '2.0.0', // Updated version for React app
-      timezone: config.timezone,
-      features: {
-        selfAwareness: true,
-        connections: true,
-        history: true,
-        affirmations: true,
-        pet: true,
-        weeklyStreaks: true,
-        reactUI: true // New feature flag
-      },
-      apiEndpoints: {
-        base: '/api/miniapp',
-        prompts: '/api/miniapp/prompts',
-        responses: '/api/miniapp/responses',
-        history: '/api/miniapp/history',
-        streak: '/api/miniapp/streak',
-        pet: '/api/miniapp/pet'
+  
+  Promise.all([
+    userService.getUser(userId),
+    promptService.getNextPromptForUser(userId)
+  ])
+    .then(([user, prompt]) => {
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
       }
-    };
-    
-    res.json(miniAppConfig);
-  } catch (error) {
-    logger.error('Error serving mini-app config:', error);
-    res.status(500).json({ error: 'Failed to load configuration' });
-  }
-});
+      
+      // Save the new prompt to user's data
+      return userService.saveLastPrompt(userId, prompt.text, prompt.type)
+        .then(() => {
+          const promptData = {
+            type: prompt.type,
+            typeLabel: prompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
+            text: prompt.text,
+            hint: 'Reflect deeply on this prompt to gain new insights.'
+          };
+          
+          res.json(promptData);
+          logger.info(`Generated new prompt for user ${userId}`);
+        });
+    })
+    .catch((error: Error) => {
+      logger.error(`Error generating new prompt for user ${userId}:`, error);
+      res.status(500).json({ error: 'Failed to generate new prompt' });
+    });
+}
 
 /**
- * GET /miniapp/user/:userId
- * Provides user data for the mini-app
+ * Handler for POST /api/miniapp/responses
  */
-router.get('/user/:userId', (req: Request, res: Response) => {
-  try {
-    // In a real implementation, you would validate the request
-    // and fetch actual user data
-    const userData = {
-      userId: req.params.userId,
-      appVersion: '2.0.0',
-      // Don't include sensitive data here
-      preferences: {
-        // Public preferences only
-        theme: 'light',
-        notifications: true
+function saveResponse(req: Request, res: Response): void {
+  const { userId, response } = req.body;
+  
+  if (!userId || !response) {
+    res.status(400).json({ error: 'User ID and response are required' });
+    return;
+  }
+  
+  // Get the user's last prompt to create a proper journal entry
+  userService.getUser(userId)
+    .then(user => {
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
       }
-    };
-    
-    res.json(userData);
-  } catch (error) {
-    logger.error(`Error serving user data for ${req.params.userId}:`, error);
-    res.status(500).json({ error: 'Failed to load user data' });
-  }
-});
+      
+      const userWithPrompt = user as any;
+      if (!userWithPrompt.lastPrompt) {
+        res.status(400).json({ error: 'No active prompt found for user' });
+        return;
+      }
+      
+      // Create the entry object that saveResponse expects
+      const entry = {
+        prompt: userWithPrompt.lastPrompt.text,
+        promptType: userWithPrompt.lastPrompt.type as PromptType,
+        response: response,
+        timestamp: new Date()
+      };
+      
+      return userService.saveResponse(userId, entry);
+    })
+    .then(() => {
+      res.json({ success: true, message: 'Response saved successfully' });
+      logger.info(`Saved response for user ${userId}`);
+    })
+    .catch((error: Error) => {
+      logger.error(`Error saving response for user ${userId}:`, error);
+      res.status(500).json({ error: 'Failed to save response' });
+    });
+}
 
-// Handle specific additional routes that might be needed
-router.get('/journal', (req: Request, res: Response) => {
-  try {
-    logger.debug(`Serving React app journal page at ${req.originalUrl}`);
-    serveReactApp(res, req.originalUrl);
-  } catch (error) {
-    logger.error('Error serving React journal page:', error);
-    res.status(500).send('Error loading journal page');
+/**
+ * Handler for GET /api/miniapp/history/:userId
+ */
+function getHistory(req: Request, res: Response): void {
+  const { userId } = req.params;
+  const limit = parseInt(req.query.limit as string) || 10;
+  
+  if (!userId) {
+    res.status(400).json({ error: 'User ID is required' });
+    return;
   }
-});
+  
+  userService.getRecentEntries(userId, limit)
+    .then(entries => {
+      res.json(entries);
+      logger.info(`Served history for user ${userId} (${entries.length} entries)`);
+    })
+    .catch((error: Error) => {
+      logger.error(`Error getting history for user ${userId}:`, error);
+      res.status(500).json({ error: 'Failed to get history' });
+    });
+}
 
-router.get('/care', (req: Request, res: Response) => {
-  try {
-    logger.debug(`Serving React app care page at ${req.originalUrl}`);
-    serveReactApp(res, req.originalUrl);
-  } catch (error) {
-    logger.error('Error serving React care page:', error);
-    res.status(500).send('Error loading care page');
-  }
-});
+// Register all routes
+router.get('/prompts/today/:userId', getTodaysPrompt);
+router.post('/prompts/new/:userId', generateNewPrompt);
+router.get('/history/:userId', getHistory);
+router.post('/responses', saveResponse);
 
-router.get('/shop', (req: Request, res: Response) => {
-  try {
-    logger.debug(`Serving React app shop page at ${req.originalUrl}`);
-    serveReactApp(res, req.originalUrl);
-  } catch (error) {
-    logger.error('Error serving React shop page:', error);
-    res.status(500).send('Error loading shop page');
-  }
-});
-
-router.get('/achievements', (req: Request, res: Response) => {
-  try {
-    logger.debug(`Serving React app achievements page at ${req.originalUrl}`);
-    serveReactApp(res, req.originalUrl);
-  } catch (error) {
-    logger.error('Error serving React achievements page:', error);
-    res.status(500).send('Error loading achievements page');
-  }
-});
-
-router.get('/stats', (req: Request, res: Response) => {
-  try {
-    logger.debug(`Serving React app stats page at ${req.originalUrl}`);
-    serveReactApp(res, req.originalUrl);
-  } catch (error) {
-    logger.error('Error serving React stats page:', error);
-    res.status(500).send('Error loading stats page');
-  }
-});
+// Add any other existing routes...
+// router.get('/pet/random', getRandomAffirmation);
+// router.post('/pet/share', shareAffirmation);
+// etc.
 
 export default router;
