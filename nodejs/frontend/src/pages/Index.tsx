@@ -1,12 +1,11 @@
+// pages/Index.tsx
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Heart, ShoppingBag, Trophy, Home, Gift } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import WeeklyJournal from '@/components/WeeklyJournal';
 import PetDisplay from '@/components/PetDisplay';
 import { StatsTab } from '@/components/tabs/StatsTab';
-// Import the custom hooks
-import { useStreakData } from '../hooks/useStreakData';
-import { useTelegramIntegration } from '../hooks/useTelegramIntegration';
+import EnhancedWeeklyJournal from '@/components/EnhancedWeeklyJournal';
+import TelegramProvider, { useTelegram } from '@/components/TelegramProvider';
 
 interface JournalEntry {
   id: string;
@@ -17,10 +16,8 @@ interface JournalEntry {
   week: string;
 }
 
-const Index = () => {
-  const { user } = useTelegramIntegration();
-  const userId = user?.id?.toString() || 'demo-user'; // Fallback for development
-
+const IndexContent = () => {
+  const { user } = useTelegram();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [petHealth, setPetHealth] = useState(85);
   const [petHappiness, setPetHappiness] = useState(92);
@@ -32,6 +29,45 @@ const Index = () => {
   const [ownedAccessories, setOwnedAccessories] = useState<string[]>(['explorer-hat']);
   const [equippedAccessories, setEquippedAccessories] = useState<string[]>(['explorer-hat']);
 
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('habitPetApp');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        setEntries(data.entries || []);
+        setPetHealth(data.petHealth || 85);
+        setPetHappiness(data.petHappiness || 92);
+        setPetLevel(data.petLevel || 3);
+        setStreakPoints(data.streakPoints || 42);
+        setLongestStreak(data.longestStreak || 12);
+        setPromptDay(data.promptDay || 'daily');
+        setPromptTime(data.promptTime || '19:00');
+        setOwnedAccessories(data.ownedAccessories || ['explorer-hat']);
+        setEquippedAccessories(data.equippedAccessories || ['explorer-hat']);
+      } catch (error) {
+        console.error('Error loading saved data:', error);
+      }
+    }
+  }, []);
+
+  // Save data to localStorage whenever state changes
+  useEffect(() => {
+    const dataToSave = {
+      entries,
+      petHealth,
+      petHappiness,
+      petLevel,
+      streakPoints,
+      longestStreak,
+      promptDay,
+      promptTime,
+      ownedAccessories,
+      equippedAccessories
+    };
+    localStorage.setItem('habitPetApp', JSON.stringify(dataToSave));
+  }, [entries, petHealth, petHappiness, petLevel, streakPoints, longestStreak, promptDay, promptTime, ownedAccessories, equippedAccessories]);
+
   const handleEntryComplete = (id: string) => {
     setEntries(prev => 
       prev.map(entry => 
@@ -41,7 +77,9 @@ const Index = () => {
       )
     );
     
-    if (!entries.find(e => e.id === id)?.completed) {
+    // Update pet stats when entry is completed
+    const entry = entries.find(e => e.id === id);
+    if (entry && !entry.completed) {
       setPetHealth(prev => Math.min(100, prev + 2));
       setPetHappiness(prev => Math.min(100, prev + 3));
       setStreakPoints(prev => prev + 1);
@@ -54,31 +92,23 @@ const Index = () => {
       ...entry
     };
     setEntries(prev => [...prev, newEntry]);
+    
+    // Update pet stats for new entries
+    if (entry.completed) {
+      setPetHealth(prev => Math.min(100, prev + 2));
+      setPetHappiness(prev => Math.min(100, prev + 3));
+      setStreakPoints(prev => prev + 1);
+    }
   };
 
   const handleUpdateEntry = (id: string, content: string) => {
     setEntries(prev =>
       prev.map(entry =>
         entry.id === id 
-          ? { ...entry, content } : entry
+          ? { ...entry, content }
+          : entry
       )
     );
-  };
-
-  const handleFeedPet = () => {
-    setPetHealth(prev => Math.min(100, prev + 10));
-    setStreakPoints(prev => prev - 1);
-  };
-
-  const handlePlayWithPet = () => {
-    setPetHappiness(prev => Math.min(100, prev + 15));
-    setStreakPoints(prev => prev - 1);
-  };
-
-  const handleCleanPet = () => {
-    setPetHealth(prev => Math.min(100, prev + 5));
-    setPetHappiness(prev => Math.min(100, prev + 5));
-    setStreakPoints(prev => prev - 1);
   };
 
   const handlePromptSettingsChange = (day: string, time: string) => {
@@ -86,57 +116,22 @@ const Index = () => {
     setPromptTime(time);
   };
 
-  const handleBuyAccessory = (accessoryId: string, cost: number) => {
-    if (streakPoints >= cost && !ownedAccessories.includes(accessoryId)) {
-      setStreakPoints(prev => prev - cost);
-      setOwnedAccessories(prev => [...prev, accessoryId]);
-    }
-  };
+  const completedEntriesToday = entries.filter(entry => {
+    const today = new Date().toISOString().split('T')[0];
+    return entry.date === today && entry.completed;
+  }).length;
 
-  const handleEquipAccessory = (accessoryId: string, type: string) => {
-    if (ownedAccessories.includes(accessoryId)) {
-      setEquippedAccessories(prev => {
-        const filtered = prev.filter(id => {
-          const accessories: Record<string, string> = {
-            'explorer-hat': 'hat', 'safari-hat': 'hat',
-            'leaf-necklace': 'necklace', 'flower-crown': 'necklace',
-            'prehistoric-glasses': 'glasses', 'bone-glasses': 'glasses'
-          };
-          return accessories[id] !== type;
-        });
-        return [...filtered, accessoryId];
-      });
-    }
-  };
-
-  const handleUnequipAccessory = (type: string) => {
-    setEquippedAccessories(prev => {
-      const accessories: Record<string, string> = {
-        'explorer-hat': 'hat', 'safari-hat': 'hat',
-        'leaf-necklace': 'necklace', 'flower-crown': 'necklace',
-        'prehistoric-glasses': 'glasses', 'bone-glasses': 'glasses'
-      };
-      return prev.filter(id => accessories[id] !== type);
-    });
-  };
-
-  const completedEntriesToday = entries.filter(e => 
-    e.completed && e.date === new Date().toISOString().split('T')[0]
-  ).length;
-
-  const totalEntriesCompleted = entries.filter(e => e.completed).length;
+  const userId = user?.id?.toString() || 'demo-user';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-amber-50 to-orange-50">
-      <div className="container mx-auto px-4 py-6 max-w-md">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-amber-600 bg-clip-text text-transparent mb-2">
-            Dino Journal
-          </h1>
-          <p className="text-gray-600">Write reflections, raise your dino! 🦕📝</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-b-3xl shadow-lg">
+        <h1 className="text-3xl font-bold text-center">ThyKnow</h1>
+        <p className="text-center text-purple-100 mt-2">🦕📝 Discover you, Connect us 🦕📝</p>
+      </div>
 
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Pet Display */}
         <div className="mb-6">
           <PetDisplay 
@@ -174,7 +169,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="journal" className="space-y-4">
-            <WeeklyJournal 
+            <EnhancedWeeklyJournal 
               entries={entries}
               onEntryComplete={handleEntryComplete}
               onAddEntry={handleAddEntry}
@@ -186,48 +181,89 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="care" className="space-y-4">
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-              <div className="mb-4">
-                <Heart className="w-16 h-16 mx-auto text-gray-300" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Pet Care</h3>
-              <p className="text-gray-600 text-lg">Coming Soon</p>
-              <p className="text-gray-500 text-sm mt-2">
-                Feed, play with, and care for your dino companion!
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Pet Care</h3>
+              <p className="text-gray-600">
+                Take care of your pet by completing journal entries and maintaining healthy habits.
               </p>
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Health</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full">
+                      <div 
+                        className="h-2 bg-green-500 rounded-full transition-all duration-300"
+                        style={{ width: `${petHealth}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-600">{petHealth}%</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Happiness</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full">
+                      <div 
+                        className="h-2 bg-yellow-500 rounded-full transition-all duration-300"
+                        style={{ width: `${petHappiness}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-600">{petHappiness}%</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="shop" className="space-y-4">
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-              <div className="mb-4">
-                <ShoppingBag className="w-16 h-16 mx-auto text-gray-300" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Dino Boutique</h3>
-              <p className="text-gray-600 text-lg">Coming Soon</p>
-              <p className="text-gray-500 text-sm mt-2">
-                Dress up your dino with awesome accessories!
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Pet Boutique</h3>
+              <p className="text-gray-600">
+                Shop for accessories and items for your pet using streak points.
               </p>
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-700">Streak Points</span>
+                  <span className="text-2xl font-bold text-purple-600">{streakPoints}</span>
+                </div>
+                <div className="text-center text-gray-500">
+                  <Gift className="w-12 h-12 mx-auto mb-2" />
+                  <p>More items coming soon!</p>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="achievements" className="space-y-4">
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-              <div className="mb-4">
-                <Trophy className="w-16 h-16 mx-auto text-gray-300" />
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Achievements</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">🏆</div>
+                    <div>
+                      <h4 className="font-semibold text-yellow-800">Longest Streak</h4>
+                      <p className="text-yellow-600">{longestStreak} days</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">📈</div>
+                    <div>
+                      <h4 className="font-semibold text-blue-800">Current Streak</h4>
+                      <p className="text-blue-600">{streakPoints} days</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Achievements</h3>
-              <p className="text-gray-600 text-lg">Coming Soon</p>
-              <p className="text-gray-500 text-sm mt-2">
-                Unlock badges and rewards for your progress!
-              </p>
             </div>
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-4">
             <StatsTab 
               userId={userId}
-              totalEntriesCompleted={totalEntriesCompleted}
+              totalEntriesCompleted={entries.filter(e => e.completed).length}
               longestStreak={longestStreak}
               petLevel={petLevel}
               streakPoints={streakPoints}
@@ -238,6 +274,22 @@ const Index = () => {
         </Tabs>
       </div>
     </div>
+  );
+};
+
+const Index = () => {
+  // Fallback user for development/testing
+  const fallbackUser = {
+    id: 123456789,
+    first_name: 'Demo',
+    last_name: 'User',
+    username: 'demouser'
+  };
+
+  return (
+    <TelegramProvider fallbackUser={fallbackUser}>
+      <IndexContent />
+    </TelegramProvider>
   );
 };
 
