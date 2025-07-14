@@ -202,7 +202,6 @@ const IndexContent = () => {
           <DinoFriend 
             petHealth={petHealth}
             petHappiness={petHappiness}
-            petLevel={petLevel}
             completedHabitsToday={completedEntriesToday}
             equippedAccessories={equippedAccessories}
           />

@@ -305,7 +305,7 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
           <div>
             <h2 className="text-2xl font-bold mb-2">Weekly Journal</h2>
             <p className="text-purple-100">
-              Week {getWeekNumber()} • {getCurrentWeek()}
+              Week {getWeekNumber()} • <br />{getCurrentWeek()}
             </p>
           </div>
           <div className="text-right">
@@ -334,24 +334,30 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
                   <div className="text-2xl font-bold">{streakInfo.longestStreak}</div>
                   <div className="text-sm text-purple-100">Longest Streak</div>
                 </div>
+                {/**
                 <div className="text-center">
                   <div className="text-2xl font-bold">{streakInfo.totalEntries}</div>
                   <div className="text-sm text-purple-100">Total Entries</div>
                 </div>
+                */}
                 {/* Show total points if available from real data */}
+                {/**
                 {realStreakData && (
                   <div className="text-center">
                     <div className="text-2xl font-bold">{realStreakData.totalPoints.toLocaleString()}</div>
                     <div className="text-sm text-purple-100">Total Points</div>
                   </div>
                 )}
+                */}
                 {/* Show recently earned points */}
+                {/**
                 {lastRewards && (
                   <div className="text-center">
                     <div className="text-2xl font-bold text-yellow-300">+{lastRewards.pointsAwarded}</div>
                     <div className="text-sm text-purple-100">Points Earned</div>
                   </div>
                 )}
+                */}
               </div>
             )}
           </div>
@@ -381,13 +387,13 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
           <div className="mt-4 p-3 bg-white bg-opacity-10 rounded-lg">
             <div className="text-sm">
               {realStreakData.hasEntryThisWeek ? (
-                <span>✅ This week: Reflection complete! You can add more for bonus points.</span>
+                <span>✅ This week: Reflection complete! <br /><br />You can add more for bonus points.</span>
               ) : (
-                <span>📅 This week: Ready for your weekly reflection</span>
+                <span><br /><br />📅 This week: Ready for your weekly reflection</span>
               )}
               {realStreakData.weeksUntilNextMilestone > 0 && (
                 <span className="ml-4">
-                  🎯 Next milestone: {realStreakData.weeksUntilNextMilestone} week{realStreakData.weeksUntilNextMilestone === 1 ? '' : 's'} 
+                  <br /><br />🎯 Next milestone: {realStreakData.weeksUntilNextMilestone} week{realStreakData.weeksUntilNextMilestone === 1 ? '' : 's'} 
                   (+{realStreakData.nextMilestoneReward} bonus points)
                 </span>
               )}
@@ -398,21 +404,20 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
 
       {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="today" className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
             Today's Prompt
           </TabsTrigger>
+          {/** 
           <TabsTrigger value="entries" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Entries
           </TabsTrigger>
+          */}
           <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="w-4 h-4" />
             History
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="w-4 h-4" />
             Settings
           </TabsTrigger>
         </TabsList>

@@ -81,7 +81,9 @@ const JournalPrompt: React.FC<JournalPromptProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <div className="text-lg">
+            {/**
             {prompt.type === 'self_awareness' ? '🧠' : '🤝'}
+            */}
           </div>
           <div>
             <h3 className="font-semibold text-gray-800">
