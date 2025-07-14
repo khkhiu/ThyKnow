@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import DinoContainer from './DinoContainer';
 import LoadingSpinner from './LoadingSpinner';
-import MiniAppNav from '../Navigation/MiniAppNav';
 import { useTelegramApp } from '../../hooks/useTelegramApp';
 
 interface DinoFriendProps {
@@ -85,8 +84,7 @@ const DinoFriend: React.FC<DinoFriendProps> = ({
           />
         </div>
 
-        {/* Navigation */}
-        <MiniAppNav currentPage="pet" />
+        {/* Navigation removed - tabs now serve this purpose */}
       </div>
     </div>
   );
