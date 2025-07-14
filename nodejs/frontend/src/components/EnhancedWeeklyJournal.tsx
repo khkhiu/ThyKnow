@@ -95,10 +95,25 @@ const EnhancedWeeklyJournal: React.FC<EnhancedWeeklyJournalProps> = ({
     setStreakError(null);
     
     try {
-      const response = await fetch(`/api/miniapp/streak/${userId}`);
+      // Get auth headers the same way your streakApi service does
+      const getAuthHeaders = () => {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        
+        if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData) {
+          headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
+        }
+        
+        return headers;
+      };
+
+      const response = await fetch(`/api/miniapp/streak/${userId}`, {
+        headers: getAuthHeaders()
+      });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch streak data: ${response.status}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();

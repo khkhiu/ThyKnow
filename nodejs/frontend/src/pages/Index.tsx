@@ -278,16 +278,8 @@ const IndexContent = () => {
 };
 
 const Index = () => {
-  // Fallback user for development/testing
-  const fallbackUser = {
-    id: 123456789,
-    first_name: 'Demo',
-    last_name: 'User',
-    username: 'demouser'
-  };
-
   return (
-    <TelegramProvider fallbackUser={fallbackUser}>
+    <TelegramProvider>
       <IndexContent />
     </TelegramProvider>
   );
