@@ -186,6 +186,11 @@ const IndexContent = () => {
               <p className="text-gray-600">
                 Take care of your pet by completing journal entries and maintaining healthy habits.
               </p>
+                 <div className="text-center text-gray-500">
+                  <Gift className="w-12 h-12 mx-auto mb-2" />
+                  <p>Coming soon!</p>
+                </div>
+              {/**
               <div className="mt-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">Health</span>
@@ -212,6 +217,7 @@ const IndexContent = () => {
                   </div>
                 </div>
               </div>
+             */}
             </div>
           </TabsContent>
 
@@ -222,13 +228,15 @@ const IndexContent = () => {
                 Shop for accessories and items for your pet using streak points.
               </p>
               <div className="mt-4">
+                {/**
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-gray-700">Streak Points</span>
                   <span className="text-2xl font-bold text-purple-600">{streakPoints}</span>
                 </div>
+                 */}
                 <div className="text-center text-gray-500">
                   <Gift className="w-12 h-12 mx-auto mb-2" />
-                  <p>More items coming soon!</p>
+                  <p>Coming soon!</p>
                 </div>
               </div>
             </div>
@@ -237,7 +245,15 @@ const IndexContent = () => {
           <TabsContent value="achievements" className="space-y-4">
             <div className="bg-white rounded-2xl p-6 shadow-lg">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Achievements</h3>
+              <p className="text-gray-600">
+                Unlock unique items by completing certain actions.
+              </p>
+                <div className="text-center text-gray-500">
+                  <Gift className="w-12 h-12 mx-auto mb-2" />
+                  <p>Coming soon!</p>
+                </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/** 
                 <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-4">
                   <div className="flex items-center space-x-3">
                     <div className="text-2xl">🏆</div>
@@ -256,6 +272,7 @@ const IndexContent = () => {
                     </div>
                   </div>
                 </div>
+                  */}
               </div>
             </div>
           </TabsContent>
