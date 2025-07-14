@@ -1,23 +1,29 @@
-# Use Node.js v20 LTS for better stability
+# Use Node.js v25 as the base image (Railway compatible)
 FROM node:25-slim
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files for better layer caching
+# Copy package files first for efficient layer caching
 COPY package*.json ./
+COPY frontend/package*.json ./frontend/
 
-# Install production dependencies only
-RUN npm ci --only=production
+# Install backend dependencies
+RUN npm ci
 
-# Copy source code
+# Install frontend dependencies
+WORKDIR /app/frontend
+RUN npm ci
+
+# Copy the entire codebase
+WORKDIR /app
 COPY . .
 
 # Build the application
-RUN npm run build:backend
+RUN npm run build
 
-# Create a simple check script
-RUN ls -la dist/src/server.js || (echo "Build failed - server.js not found" && exit 1)
+# Remove frontend source and node_modules to reduce image size
+RUN rm -rf frontend/src frontend/node_modules
 
 # Expose port
 EXPOSE $PORT

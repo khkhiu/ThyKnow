@@ -34,21 +34,15 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
     triggerSpeechBubble 
   } = useSpeechBubble();
 
-  // Get dino image path based on blinking state - using fallback for now
-  const getDinoImagePath = () => {
-    // For now, fallback to emoji until we fix the image loading
-    return null; // This will make the component use emoji fallback
-  };
-
-  // Get dino emoji as fallback
-  const getDinoEmoji = () => {
+  // Get dino image based on level and state
+  const getDinoImage = () => {
     if (petLevel >= 10) return '🦕'; // Brontosaurus
     if (petLevel >= 7) return '🦖'; // T-Rex
     if (petLevel >= 4) return '🐉'; // Dragon (dinosaur-like)
     return '🥚'; // Dinosaur egg
   };
 
-  // Get dino size based on level - using text size for emoji
+  // Get dino size based on level
   const getDinoSize = () => {
     if (petLevel >= 10) return 'text-[200px]';
     if (petLevel >= 7) return 'text-[180px]';
@@ -101,7 +95,13 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
       <div className="relative flex items-center justify-center">
         {/* Main Dino */}
         <div
-          className="relative cursor-pointer transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 select-none"
+          className={`
+            relative cursor-pointer transition-all duration-200 ease-in-out
+            hover:scale-105 active:scale-95 select-none
+            ${getDinoSize()}
+            ${isBlinking ? 'animate-pulse' : ''}
+            filter drop-shadow-lg
+          `}
           onClick={handleDinoClick}
           role="button"
           tabIndex={0}
@@ -113,16 +113,7 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
           }}
           aria-label="Interactive dinosaur. Tap to make it blink and show messages"
         >
-          {/* Use emoji as fallback for now */}
-          <div className={`
-            ${getDinoSize()}
-            text-center flex items-center justify-center
-            transition-all duration-200 ease-in-out
-            filter drop-shadow-lg
-            ${isBlinking ? 'animate-pulse' : ''}
-          `}>
-            {getDinoEmoji()}
-          </div>
+          {getDinoImage()}
           
           {/* Equipped Accessories */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -162,41 +153,52 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
             <div className="flex items-center space-x-2">
               <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-2 bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-300"
+                  className="h-2 bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
                   style={{ width: `${petHealth}%` }}
                 />
               </div>
-              <span className="text-xs font-medium text-gray-600">{petHealth}%</span>
+              <span className="text-sm font-bold text-gray-700 min-w-[35px]">
+                {petHealth}%
+              </span>
             </div>
           </div>
-
+          
           {/* Happiness Bar */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="text-yellow-500 text-lg">😊</span>
+              <span className="text-yellow-500 text-lg">✨</span>
               <span className="text-sm font-medium text-gray-700">Happiness</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-2 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full transition-all duration-300"
+                  className="h-2 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full transition-all duration-500"
                   style={{ width: `${petHappiness}%` }}
                 />
               </div>
-              <span className="text-xs font-medium text-gray-600">{petHappiness}%</span>
+              <span className="text-sm font-bold text-gray-700 min-w-[35px]">
+                {petHappiness}%
+              </span>
             </div>
           </div>
-
-          {/* Today's Habits */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-green-500 text-lg">✅</span>
-              <span className="text-sm font-medium text-gray-700">Today's Habits</span>
-            </div>
-            <span className="text-sm font-bold text-green-600">{completedHabitsToday}</span>
+          
+          {/* Habits Today */}
+          <div className="flex items-center justify-center pt-2 border-t border-gray-200">
+            <span className="text-sm text-gray-600">
+              <span className="font-medium">{completedHabitsToday}</span> habits completed today
+            </span>
           </div>
         </div>
       </div>
+
+      {/* Happiness Animation Effects */}
+      {petHappiness >= 80 && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-4 left-4 text-3xl animate-ping">🌿</div>
+          <div className="absolute top-6 right-6 text-3xl animate-ping animation-delay-300">🦴</div>
+          <div className="absolute bottom-8 left-8 text-3xl animate-ping animation-delay-600">⭐</div>
+        </div>
+      )}
     </div>
   );
 };
