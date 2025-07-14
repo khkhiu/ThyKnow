@@ -7,7 +7,7 @@ import MiniAppNav from '../Navigation/MiniAppNav';
 import { Home, MessageCircle, BarChart3, Heart } from 'lucide-react';
 
 interface MiniAppMainProps {
-  currentPage?: 'home' | 'pet' | 'history' | 'streak' | 'settings';
+  currentPage?: 'home' | 'pet' | 'settings' | 'achievements';
 }
 
 const MiniAppMain: React.FC<MiniAppMainProps> = ({ currentPage = 'home' }) => {
@@ -26,8 +26,8 @@ const MiniAppMain: React.FC<MiniAppMainProps> = ({ currentPage = 'home' }) => {
         const pageMap: Record<string, typeof activePage> = {
           '/miniapp': 'home',
           '/miniapp/pet': 'pet',
-          '/miniapp/history': 'history',
-          '/miniapp/streak': 'streak'
+          '/miniapp/achievements': 'achievements',
+          '/miniapp/settings': 'settings'
         };
         setActivePage(pageMap[page] || 'home');
       },
@@ -119,8 +119,8 @@ const MiniAppMain: React.FC<MiniAppMainProps> = ({ currentPage = 'home' }) => {
         <main className="p-4">
           {activePage === 'home' && <HomePage deepLink={deepLink} />}
           {activePage === 'pet' && <PetPage />}
-          {activePage === 'history' && <HistoryPage />}
-          {activePage === 'streak' && <StreakPage />}
+          {activePage === 'achievements' && <AchievementsPage />}
+          {activePage === 'settings' && <SettingsPage />}
         </main>
       </div>
 
@@ -290,19 +290,107 @@ const PetPage: React.FC = () => (
   </div>
 );
 
-const HistoryPage: React.FC = () => (
-  <div className="text-center py-12">
-    <span className="text-6xl mb-4 block">📚</span>
-    <h2 className="text-xl font-bold mb-2">Reflection History</h2>
-    <p className="text-gray-600">Your journal entries will appear here...</p>
+const AchievementsPage: React.FC = () => (
+  <div className="space-y-6">
+    <div className="text-center py-8">
+      <span className="text-6xl mb-4 block">🏆</span>
+      <h2 className="text-xl font-bold mb-2">Your Achievements</h2>
+      <p className="text-gray-600 mb-6">Track your reflection journey milestones</p>
+    </div>
+
+    {/* Achievement cards */}
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl p-4 flex items-center space-x-4">
+        <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+          <span className="text-xl">🥇</span>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold">First Reflection</h3>
+          <p className="text-sm text-gray-600">Completed your first daily reflection</p>
+        </div>
+        <div className="text-green-500 font-semibold">✓</div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4 flex items-center space-x-4">
+        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+          <span className="text-xl">🔥</span>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold">7-Day Streak</h3>
+          <p className="text-sm text-gray-600">Maintain a week-long reflection habit</p>
+        </div>
+        <div className="text-green-500 font-semibold">✓</div>
+      </div>
+
+      <div className="bg-white rounded-xl p-4 flex items-center space-x-4 opacity-60">
+        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+          <span className="text-xl">📚</span>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold">30 Reflections</h3>
+          <p className="text-sm text-gray-600">Complete 30 total reflections</p>
+        </div>
+        <div className="text-gray-400">7/30</div>
+      </div>
+    </div>
   </div>
 );
 
-const StreakPage: React.FC = () => (
-  <div className="text-center py-12">
-    <span className="text-6xl mb-4 block">🔥</span>
-    <h2 className="text-xl font-bold mb-2">Your Streaks</h2>
-    <p className="text-gray-600">Track your progress here...</p>
+const SettingsPage: React.FC = () => (
+  <div className="space-y-6">
+    <div className="text-center py-8">
+      <span className="text-6xl mb-4 block">⚙️</span>
+      <h2 className="text-xl font-bold mb-2">Settings</h2>
+      <p className="text-gray-600">Customize your ThyKnow experience</p>
+    </div>
+
+    {/* Settings sections */}
+    <div className="space-y-4">
+      {/* Notification settings */}
+      <div className="bg-white rounded-xl p-4">
+        <h3 className="font-semibold mb-3">📱 Notifications</h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Daily reminder</span>
+            <button className="w-12 h-6 bg-green-500 rounded-full relative">
+              <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5"></div>
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Achievement alerts</span>
+            <button className="w-12 h-6 bg-gray-300 rounded-full relative">
+              <div className="w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Privacy settings */}
+      <div className="bg-white rounded-xl p-4">
+        <h3 className="font-semibold mb-3">🔒 Privacy</h3>
+        <div className="space-y-3">
+          <button className="w-full text-left text-sm py-2 border-b border-gray-100">
+            Export my data
+          </button>
+          <button className="w-full text-left text-sm py-2 border-b border-gray-100">
+            Delete all reflections
+          </button>
+          <button className="w-full text-left text-sm py-2 text-red-600">
+            Delete account
+          </button>
+        </div>
+      </div>
+
+      {/* App info */}
+      <div className="bg-white rounded-xl p-4">
+        <h3 className="font-semibold mb-3">ℹ️ About</h3>
+        <div className="space-y-2 text-sm text-gray-600">
+          <p>ThyKnow v1.0.0</p>
+          <p>Your personal reflection companion</p>
+          <button className="text-green-600 hover:underline">Privacy Policy</button>
+        </div>
+      </div>
+    </div>
   </div>
 );
 

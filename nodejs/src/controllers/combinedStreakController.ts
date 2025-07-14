@@ -51,103 +51,104 @@ export async function handleCombinedStreakCommand(ctx: Context): Promise<void> {
     // Generate frontend-first response
     const response = commandResponseService.generateStreakResponse(commandContext);
 
+    // Create keyboard from response
+    const keyboard = {
+      inline_keyboard: [
+        [{ 
+          text: response.miniappButton.text, 
+          web_app: { url: response.miniappButton.url } 
+        }]
+      ]
+    };
+
     // For new/casual users, show a basic streak preview
     if (userAppUsage.miniappUsageCount < 3) {
       try {
-        // Get basic streak info
-        const weeklyProgress = await userService.getUserWeeklyProgress(userId);
+        // Get basic streak info using the existing getStreakStats method
+        const streakStats = await userService.getStreakStats(userId);
         
         const streakPreview = `
 
 📊 *Quick Streak Overview:*
 
-🔥 Current streak: ${weeklyProgress.currentStreak} week${weeklyProgress.currentStreak !== 1 ? 's' : ''}
-📅 This week: ${weeklyProgress.currentWeekCompleted ? '✅ Complete' : '⏳ In progress'}
-🦕 Dino mood: ${getDinoMoodFromStreak(weeklyProgress.currentStreak)}
+🔥 Current streak: ${streakStats.currentStreak} week${streakStats.currentStreak !== 1 ? 's' : ''}
+📅 This week: ${streakStats.hasEntryThisWeek ? '✅ Complete' : '⏳ In progress'}
+🦕 Dino mood: ${getDinoMoodFromStreak(streakStats.currentStreak)}
 
 *See detailed charts, milestones, and dino evolution in the app!*`;
 
+        // Send message with preview + frontend redirect
         await ctx.reply(
-          response.messageText + streakPreview + '\n\n' + response.promotionMessage,
+          response.messageText + streakPreview,
           {
-            parse_mode: response.parseMode,
-            reply_markup: {
-              inline_keyboard: [
-                [{ 
-                  text: response.miniappButton.text, 
-                  web_app: { url: response.miniappButton.url } 
-                }]
-              ]
-            }
+            parse_mode: response.parseMode || 'Markdown',
+            reply_markup: keyboard
           }
         );
-      } catch (streakError) {
-        // Fallback if streak data fails
-        await ctx.reply(
-          response.messageText + '\n\n' + response.promotionMessage,
-          {
-            parse_mode: response.parseMode,
-            reply_markup: {
-              inline_keyboard: [
-                [{ 
-                  text: response.miniappButton.text, 
-                  web_app: { url: response.miniappButton.url } 
-                }]
-              ]
-            }
-          }
-        );
+      } catch (error) {
+        logger.error('Error getting streak stats for preview:', error);
+        // Fallback to just the frontend redirect
+        await ctx.reply(response.messageText, {
+          parse_mode: response.parseMode || 'Markdown',
+          reply_markup: keyboard
+        });
       }
     } else {
-      // For experienced users, direct to app
-      await ctx.reply(
-        response.messageText + '\n\n' + response.promotionMessage,
-        {
-          parse_mode: response.parseMode,
-          reply_markup: {
-            inline_keyboard: [
-              [{ 
-                text: response.miniappButton.text, 
-                web_app: { url: response.miniappButton.url } 
-              }]
-            ]
-          }
-        }
-      );
+      // Experienced users get direct redirect
+      await ctx.reply(response.messageText, {
+        parse_mode: response.parseMode || 'Markdown',
+        reply_markup: keyboard
+      });
     }
 
-    logger.info(`Streak command handled for user ${userId} - directed to frontend`);
+    logger.info(`Streak command handled for user ${userId} - frontend-first approach`);
   } catch (error) {
     logger.error('Error in handleCombinedStreakCommand:', error);
-    await ctx.reply('Sorry, something went wrong checking your streak. Please try again or use /help for assistance.');
+    await ctx.reply(
+      '🦕 Oops! Something went wrong with your streak info.\n\n' +
+      'Try again with /streak or visit the app directly!',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: "🚀 Open App", 
+              web_app: { url: process.env.BASE_URL || 'http://localhost:3000' }
+            }]
+          ]
+        }
+      }
+    );
   }
 }
 
 /**
- * Get dino mood based on streak length
+ * Get dino mood based on current streak
  */
 function getDinoMoodFromStreak(streak: number): string {
   if (streak === 0) return '😴 Sleepy';
-  if (streak === 1) return '😊 Happy';
-  if (streak <= 3) return '🤗 Excited';
-  if (streak <= 6) return '🎉 Thriving';
-  if (streak <= 10) return '🌟 Amazing';
-  return '🏆 Legendary';
+  if (streak <= 2) return '🌱 Growing';
+  if (streak <= 4) return '😊 Happy';
+  if (streak <= 8) return '💪 Strong';
+  if (streak <= 12) return '🔥 On Fire';
+  if (streak <= 26) return '⭐ Stellar';
+  if (streak <= 52) return '🚀 Legendary';
+  return '👑 Mythical';
 }
 
 /**
- * Handle new prompt callback from streak page
+ * Handle callback for getting a new prompt from streak view
  */
 export async function handleNewPromptCallback(ctx: Context): Promise<void> {
   try {
     const userId = ctx.from?.id.toString();
     
     if (!userId) {
-      await ctx.answerCbQuery('Error processing request');
+      await ctx.answerCbQuery('Sorry, I could not identify you.');
       return;
     }
 
-    await ctx.answerCbQuery('Opening prompt in app!');
+    // Acknowledge the callback
+    await ctx.answerCbQuery('🎯 Getting your new prompt...');
     
     // Redirect to app for new prompt
     const deepLink = `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=prompt&action=new&ref=streak_new_prompt`;

@@ -3,7 +3,6 @@
 
 import { config as dotenvConfig } from 'dotenv';
 import { createAppUsageTrackingMigration, migrationInfo } from '../src/database/migrations/addAppUsageTracking';
-import { logger } from '../src/utils/logger';
 
 // Load environment variables
 dotenvConfig();

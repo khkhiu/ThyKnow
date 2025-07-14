@@ -2,7 +2,7 @@
 import { Context, NarrowedContext } from 'telegraf';
 import { Update, CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { userService } from '../services/userService';
-import { FEEDBACK } from '../constants';
+import { FEEDBACK } from '../constants/feedback';  // Fixed import path
 import { logger } from '../utils/logger';
 import { PromptType } from '../types';
 import { handleSendPrompt } from './promptController';

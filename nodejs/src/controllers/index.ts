@@ -14,7 +14,7 @@ import {
 import { handleResponseCallback } from './responseController';
 import { handleChooseCommand, handleChooseCallback } from './chooseController';
 import { handleMiniAppCommand } from './miniAppController';
-import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText } from './feedbackController';
+import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText, userStates } from './feedbackController';
 import { 
   handleCombinedStreakCommand, 
   handleNewPromptCallback 
@@ -72,27 +72,9 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
         reply_markup: {
           inline_keyboard: [
             [{ 
-              text: "📖 Open Journal", 
+              text: "🌟 Open ThyKnow App", 
               web_app: { 
-                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=history&ref=legacy_journal`
-              } 
-            }]
-          ]
-        }
-      }
-    );
-  });
-
-  bot.command('dino', (ctx) => {
-    ctx.reply(
-      '🦕 Your dino friend is waiting in the app!\n\nInteract, feed, and watch your dino evolve!',
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [{ 
-              text: "🦕 Visit Dino", 
-              web_app: { 
-                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=pet&ref=legacy_dino`
+                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?ref=journal_legacy`
               } 
             }]
           ]
@@ -102,87 +84,49 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   });
 
   // ============================================
-  // CALLBACK QUERY HANDLERS
+  // CALLBACK HANDLERS
   // ============================================
   
-  bot.on('callback_query', (ctx) => {
+  // Handle all callback queries
+  bot.on('callback_query', async (ctx) => {
     const callbackData = (ctx.callbackQuery as CallbackQuery.DataQuery).data;
     
-    if (!callbackData) {
-      ctx.answerCbQuery('Invalid action');
-      return;
-    }
-    
-    logger.debug(`Processing callback: ${callbackData}`);
-    
-    // Schedule-related callbacks
-    if (callbackData.startsWith('set_day:') || callbackData.startsWith('set_time:')) {
+    if (callbackData.startsWith('choose_')) {
+      return handleChooseCallback(ctx);
+    } else if (callbackData.startsWith('schedule_')) {
       return handleScheduleCallback(ctx);
-    }
-    
-    // Response-related callbacks (legacy - redirect to app)
-    if (callbackData.startsWith('save_response:')) {
-      ctx.answerCbQuery('Response saving moved to app!');
-      ctx.editMessageText(
-        '✨ *Response saving is now in the app!*\n\nGet a better writing experience with auto-save, formatting, and more!',
+    } else if (callbackData === 'save_response') {
+      return handleResponseCallback(ctx);
+    } else if (callbackData === 'new_prompt') {
+      return handleNewPromptCallback(ctx);
+    } else {
+      // Unknown callback - redirect to app
+      await ctx.answerCbQuery('This feature moved to the app!');
+      ctx.reply(
+        '🚀 *This feature moved to the app for a better experience!*',
         {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
               [{ 
-                text: "📝 Continue in App", 
+                text: "🌟 Open ThyKnow App", 
                 web_app: { 
-                  url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=prompt&action=respond&ref=callback_response`
+                  url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?ref=unknown_callback`
                 } 
               }]
             ]
           }
         }
       );
-      return;
     }
-    
-    // New prompt callback (redirect to app)
-    if (callbackData === 'new_prompt') {
-      return handleNewPromptCallback(ctx);
-    }
-    
-    // Choose prompt type callbacks (redirect to app)
-    if (callbackData.startsWith('choose_')) {
-      return handleChooseCallback(ctx);
-    }
-    
-    // Start command callback
-    if (callbackData === 'start') {
-      return handleStart(ctx);
-    }
-    
-    // Unknown callback
-    ctx.answerCbQuery('This feature is now in the app!');
-    ctx.reply(
-      '🚀 *This feature moved to the app for a better experience!*',
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [
-            [{ 
-              text: "🌟 Open ThyKnow App", 
-              web_app: { 
-                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?ref=unknown_callback`
-              } 
-            }]
-          ]
-        }
-      }
-    );
   });
 
   // ============================================
   // TEXT MESSAGE HANDLING
   // ============================================
   
-  // Handle text messages (responses, feedback, etc.)
-  bot.on('text', async (ctx) => {
+  // Handle text messages (responses, feedback, etc.) - FIXED VERSION
+  bot.on('text', async (ctx, next) => {  // Added 'next' parameter
     const userId = ctx.from?.id.toString();
     const messageText = ctx.message.text;
     
@@ -191,10 +135,10 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     // Skip if it's a command
     if (messageText.startsWith('/')) return;
     
-    // Check if user is in feedback mode
-    const user = await require('../services/userService').userService.getUser(userId);
-    if (user?.feedbackMode) {
-      return handleFeedbackText(ctx);
+    // Check if user is in feedback mode using consistent userStates Map
+    const userState = userStates.get(userId);
+    if (userState && userState.inFeedbackMode) {
+      return handleFeedbackText(ctx, next);  // Pass both arguments
     }
     
     // Handle as prompt response (but encourage app use)

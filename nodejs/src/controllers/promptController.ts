@@ -108,7 +108,13 @@ export async function handleTextMessage(ctx: Context): Promise<void> {
     }
 
     // Handle the response (existing logic)
-    await userService.savePromptResponse(userId, messageText);
+    const entry = {
+      prompt: user.lastPrompt.text,
+      response: messageText,
+      promptType: user.lastPrompt.type,
+      timestamp: new Date()
+    };
+    await userService.saveResponse(userId, entry);
     
     // Encourage user to continue in the app
     await ctx.reply(

@@ -1,5 +1,6 @@
 // src/constants/index.ts (Updated - Frontend-First Messages)
 
+// Export messages
 export const MESSAGES = {
   // Enhanced welcome messages
   WELCOME_NEW_USER: `🦕 *Welcome to ThyKnow!* 🦖
@@ -95,145 +96,39 @@ The bot is great for quick access, but the app has all the advanced features!`,
 /journal → Use /history instead
 /dino → Visit your pet in the app
 
-📱 *Pro tip:* The app has everything - your dino friend, visual charts, achievements, and much more!
+📱 *Pro tip:* The app has everything - your dino friend, visual charts, achievements, and much more!`,
 
-↗️ = Redirects to app for better experience`,
-
-  // Bot command descriptions (updated)
-  COMMANDS: {
-    START: "🏠 Get started with ThyKnow",
-    PROMPT: "🧠 Get a reflection prompt (opens in app)",
-    HISTORY: "📚 View your journal history (opens in app)", 
-    CHOOSE: "🎯 Choose prompt type (opens in app)",
-    STREAK: "🔥 Check your progress (opens in app)",
-    MINIAPP: "📱 Open the full ThyKnow experience",
-    SCHEDULE: "⏰ Manage notification schedule",
-    FEEDBACK: "💬 Share feedback with us",
-    HELP: "❓ Show available commands",
-    CANCEL: "❌ Cancel current operation"
-  },
-
-  // Transition messages for different user types
-  USER_SEGMENTS: {
-    NEW_USER: {
-      CTA: "🌟 Start Your Journey",
-      MESSAGE: "Discover the power of reflection with your personal dino companion!"
-    },
-    CASUAL_USER: {
-      CTA: "🎯 Continue Journey", 
-      MESSAGE: "Your dino friend is excited to see your progress!"
-    },
-    ACTIVE_USER: {
-      CTA: "🏠 Enter ThyKnow",
-      MESSAGE: "Your reflection space is ready with new insights!"
-    },
-    POWER_USER: {
-      CTA: "⚡ Quick Access",
-      MESSAGE: "Jump straight into your advanced features!"
-    }
-  },
-
-  // Success and celebration messages
-  SUCCESS: {
-    RESPONSE_SAVED: "✅ *Response saved!* 🌟 Great reflection!",
-    STREAK_UPDATED: "🔥 *Streak updated!* You're on fire!",
-    GOAL_REACHED: "🎉 *Goal reached!* Celebrate in the app!",
-    NEW_FEATURE: "✨ *New feature unlocked!* Check it out in the app!"
-  },
-
-  // Deep link specific messages
-  DEEP_LINK: {
-    FROM_BOT_PROMPT: "🎯 *Fresh prompt generated!* Ready to reflect?",
-    FROM_BOT_HISTORY: "📖 *Your complete journey awaits!* Explore your growth!",
-    FROM_BOT_STREAK: "📊 *Progress dashboard loaded!* See how far you've come!",
-    FROM_BOT_CHOOSE: "🎨 *Prompt styles ready!* Find your perfect match!"
-  },
-
-  // Analytics and tracking
-  ANALYTICS: {
-    BOT_COMMAND_USED: "Bot command executed",
-    FRONTEND_REDIRECTED: "User redirected to frontend", 
-    DEEP_LINK_ACCESSED: "Deep link accessed",
-    MINIAPP_OPENED: "Miniapp opened from bot"
+  // Feedback messages from the messages.ts file
+  FEEDBACK: {
+    INTRO:
+      "🦕 We'd love to hear your thoughts on ThyKnow!\n\n" +
+      "Please share your feedback, suggestions, bug reports, or anything else that would help us improve ThyKnow and make it more valuable for you.\n\n" +
+      "Just type your message below, or use /cancel to exit feedback mode.",
+    
+    THANK_YOU:
+      "🦖 Thank you for your feedback!\n\n" +
+      "We really appreciate you taking the time to share your thoughts with us. " +
+      "Your input helps us evolve ThyKnow into an even better tool for self-awareness and building connections.",
+    
+    CANCELED:
+      "Feedback submission canceled. You can always use /feedback again when you're ready to share your thoughts with us.",
+    
+    ERROR:
+      "Sorry, there was an error saving your feedback. Please try again later, or contact our support team."
   }
 };
 
-// App configuration constants
-export const APP_CONFIG = {
-  FRONTEND_FIRST: true,
-  BOT_ROLE: 'gateway', // 'gateway', 'companion', 'notifications'
+// Export feedback messages for response handling
+export const FEEDBACK = {
+  SELF_AWARENESS:
+    "🦖 T-Rex-ceptional reflection! Your response has been safely fossilized in your journal.\n\n" +
+    "Self-awareness is a journey that takes time, like how dinosaurs evolved over millions of years.\n\n" +
+    "Want more self-reflection? Use /choose to specifically request a self-awareness prompt.\n\n" +
+    "Or use /prompt for an alternating experience.\n\nPress /help for other commands.",
   
-  PROMOTION_LEVELS: {
-    SOFT: 'soft',
-    MEDIUM: 'medium', 
-    STRONG: 'strong',
-    APP_ONLY: 'app_only'
-  },
-  
-  USER_SEGMENTS: {
-    NEW: 'new',           // 0-3 app uses
-    CASUAL: 'casual',     // 4-10 app uses  
-    ACTIVE: 'active',     // 11-25 app uses
-    POWER: 'power'        // 25+ app uses
-  },
-  
-  DEEP_LINK_PAGES: [
-    'home', 'prompt', 'history', 'streak', 'choose', 'pet', 'settings'
-  ],
-  
-  DEEP_LINK_ACTIONS: [
-    'new', 'choose', 'view', 'respond', 'edit'
-  ]
-};
-
-// Button text configurations
-export const BUTTONS = {
-  WEB_APP: {
-    START_JOURNEY: "🌟 Start Your Journey",
-    CONTINUE_JOURNEY: "🎯 Continue Journey", 
-    ENTER_THYKNOW: "🏠 Enter ThyKnow",
-    GET_PROMPT: "✨ Get My Prompt",
-    VIEW_HISTORY: "📖 View My History",
-    CHECK_PROGRESS: "📊 Check Progress",
-    CHOOSE_STYLE: "🎭 Choose Prompt Style",
-    VISIT_DINO: "🦕 Visit Dino Friend",
-    OPEN_APP: "🚀 Open ThyKnow App"
-  },
-  
-  INLINE: {
-    NEW_PROMPT: "🔄 New Prompt",
-    SAVE_RESPONSE: "💾 Save Response",
-    TRY_APP: "📱 Try in App",
-    LEARN_MORE: "ℹ️ Learn More"
-  }
-};
-
-// URL configurations
-export const URLS = {
-  MINIAPP_BASE: "/miniapp",
-  DEEP_LINKS: {
-    HOME: "/miniapp?page=home",
-    PROMPT: "/miniapp?page=prompt&action=new",
-    HISTORY: "/miniapp?page=history", 
-    STREAK: "/miniapp?page=streak",
-    CHOOSE: "/miniapp?page=choose&action=choose",
-    PET: "/miniapp?page=pet"
-  }
-};
-
-// Timing configurations
-export const TIMING = {
-  PROMOTION_DELAY_DAYS: 3,    // Days before promoting app strongly
-  APP_ONLY_AFTER_DAYS: 14,    // Days before going app-only
-  STREAK_CELEBRATION_DELAY: 2000, // ms
-  RESPONSE_TIMEOUT: 30000,    // ms
-  DEEP_LINK_CACHE_TIME: 300   // seconds
-};
-
-export default {
-  MESSAGES,
-  APP_CONFIG,
-  BUTTONS,
-  URLS,
-  TIMING
+  CONNECTIONS:
+    "🦕 Dino-mite! Your response has been safely tucked away in your journal.\n\n" +
+    "Just like a pack of raptors, strong connections start with understanding ourselves!\n\n" +
+    "Want more connection prompts? Use /choose to specifically request a connections prompt.\n\n" +
+    "Or use /prompt for an alternating experience.\n\nPress /help for other commands."
 };

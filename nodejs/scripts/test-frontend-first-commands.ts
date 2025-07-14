@@ -74,9 +74,9 @@ async function testCommand(bot: Telegraf, command: string): Promise<TestResult> 
   try {
     const mockCtx = createMockContext(command);
     
-    // Get command handler
+    // Get command handler with proper typing
     const handlers = (bot as any).handlers;
-    let commandHandler = null;
+    let commandHandler: ((ctx: any) => Promise<void>) | null = null;
     
     // Find the command handler
     for (const handler of handlers) {

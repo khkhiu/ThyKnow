@@ -6,8 +6,8 @@ import { feedbackService } from '../services/feedbackService';
 import { MESSAGES } from '../constants';
 import { logger } from '../utils/logger';
 
-// User states map to track who is in feedback mode
-const userStates = new Map<string, { inFeedbackMode: boolean }>();
+// User states map to track who is in feedback mode - EXPORTED for consistency
+export const userStates = new Map<string, { inFeedbackMode: boolean }>();
 
 /**
  * Start feedback command handler
@@ -101,7 +101,7 @@ export async function handleFeedbackText(ctx: Context, next: () => Promise<void>
       
       if (!feedbackText) {
         await ctx.reply('Please provide your feedback as text.');
-        return;
+        return; // Explicit return here
       }
       
       // Save feedback to database
@@ -114,6 +114,7 @@ export async function handleFeedbackText(ctx: Context, next: () => Promise<void>
       await ctx.reply(MESSAGES.FEEDBACK.THANK_YOU);
       
       logger.info(`User ${userId} submitted feedback`);
+      return; // Explicit return here
     } else {
       // Not in feedback mode, continue to next middleware
       return next();
@@ -126,5 +127,6 @@ export async function handleFeedbackText(ctx: Context, next: () => Promise<void>
     if (ctx.from?.id) {
       userStates.set(ctx.from.id.toString(), { inFeedbackMode: false });
     }
+    return; // Explicit return here for the catch block
   }
 }
