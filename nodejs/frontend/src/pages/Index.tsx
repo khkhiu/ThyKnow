@@ -210,26 +210,26 @@ const IndexContent = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="journal" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6 bg-white shadow-lg rounded-2xl p-1">
-            <TabsTrigger value="journal" className="rounded-xl">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Journal</span>
+          <TabsList className="grid w-full grid-cols-5 mb-6 bg-white shadow-lg rounded-2xl p-1 h-16">
+            <TabsTrigger value="journal" className="rounded-xl flex-col sm:flex-row data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:h-full data-[state=active]:scale-105 transition-all duration-200">
+              <BookOpen className="w-4 h-4 sm:mr-1" />
+              <span className="text-xs sm:text-sm font-medium">Journal</span>
             </TabsTrigger>
-            <TabsTrigger value="care" className="rounded-xl">
-              <Heart className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Care</span>
+            <TabsTrigger value="care" className="rounded-xl flex-col sm:flex-row data-[state=active]:bg-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:h-full data-[state=active]:scale-105 transition-all duration-200">
+              <Heart className="w-4 h-4 sm:mr-1" />
+              <span className="text-xs sm:text-sm font-medium">Care</span>
             </TabsTrigger>
-            <TabsTrigger value="shop" className="rounded-xl">
-              <ShoppingBag className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Boutique</span>
+            <TabsTrigger value="shop" className="rounded-xl flex-col sm:flex-row data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:h-full data-[state=active]:scale-105 transition-all duration-200">
+              <ShoppingBag className="w-4 h-4 sm:mr-1" />
+              <span className="text-xs sm:text-sm font-medium">Boutique</span>
             </TabsTrigger>
-            <TabsTrigger value="achievements" className="rounded-xl">
-              <Trophy className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Awards</span>
+            <TabsTrigger value="achievements" className="rounded-xl flex-col sm:flex-row data-[state=active]:bg-yellow-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:h-full data-[state=active]:scale-105 transition-all duration-200">
+              <Trophy className="w-4 h-4 sm:mr-1" />
+              <span className="text-xs sm:text-sm font-medium">Awards</span>
             </TabsTrigger>
-            <TabsTrigger value="stats" className="rounded-xl">
-              <Home className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Stats</span>
+            <TabsTrigger value="stats" className="rounded-xl flex-col sm:flex-row data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:h-full data-[state=active]:scale-105 transition-all duration-200">
+              <Home className="w-4 h-4 sm:mr-1" />
+              <span className="text-xs sm:text-sm font-medium">Stats</span>
             </TabsTrigger>
           </TabsList>
 
