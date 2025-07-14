@@ -8,7 +8,6 @@ import { TelegramWebApp } from '@/types/telegram';
 interface DinoContainerProps {
   petHealth: number;
   petHappiness: number;
-  petLevel: number;
   completedHabitsToday: number;
   equippedAccessories: string[];
   tg: TelegramWebApp | null;
@@ -17,7 +16,6 @@ interface DinoContainerProps {
 const DinoContainer: React.FC<DinoContainerProps> = ({
   petHealth,
   petHappiness,
-  petLevel,
   completedHabitsToday,
   equippedAccessories,
   tg
@@ -34,20 +32,20 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
     triggerSpeechBubble 
   } = useSpeechBubble();
 
-  // Get dino image based on level and state
-  const getDinoImage = () => {
-    if (petLevel >= 10) return '🦕'; // Brontosaurus
-    if (petLevel >= 7) return '🦖'; // T-Rex
-    if (petLevel >= 4) return '🐉'; // Dragon (dinosaur-like)
-    return '🥚'; // Dinosaur egg
+  // Get dino image source based on blinking state
+  const getDinoImageSrc = () => {
+    return isBlinking ? '/images/ThyKnow_dino-eyes-close.png' : '/images/ThyKnow_dino-eyes-open.png';
   };
 
-  // Get dino size based on level
-  const getDinoSize = () => {
-    if (petLevel >= 10) return 'text-[200px]';
-    if (petLevel >= 7) return 'text-[180px]';
-    if (petLevel >= 4) return 'text-[160px]';
-    return 'text-[140px]';
+  // Get container classes with fixed size
+  const getContainerClasses = () => {
+    const baseClasses = `
+      relative cursor-pointer transition-all duration-200 ease-in-out
+      hover:scale-105 active:scale-95 select-none
+      w-72 h-72
+      ${isBlinking ? 'animate-pulse' : ''}
+    `;
+    return baseClasses;
   };
 
   // Get accessory emoji
@@ -95,101 +93,33 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
       <div className="relative flex items-center justify-center">
         {/* Main Dino */}
         <div
-          className={`
-            relative cursor-pointer transition-all duration-200 ease-in-out
-            hover:scale-105 active:scale-95 select-none
-            ${getDinoSize()}
-            ${isBlinking ? 'animate-pulse' : ''}
-            filter drop-shadow-lg
-          `}
+          className={getContainerClasses()}
           onClick={handleDinoClick}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleDinoClick();
-            }
-          }}
-          aria-label="Interactive dinosaur. Tap to make it blink and show messages"
         >
-          {getDinoImage()}
+          {/* Dino Image */}
+          <img
+            src={getDinoImageSrc()}
+            className="w-full h-full object-contain drop-shadow-lg"
+            style={{ imageRendering: 'pixelated' }}
+          />
           
-          {/* Equipped Accessories */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            {equippedAccessories.map((accessoryId, index) => (
-              <span 
-                key={accessoryId}
-                className="absolute text-6xl pointer-events-none"
-                style={{
-                  top: accessoryId.includes('hat') ? '-30px' : 
-                       accessoryId.includes('glasses') ? '20px' : '40px',
-                  left: accessoryId.includes('necklace') || accessoryId.includes('crown') ? '0px' : 
-                        accessoryId.includes('glasses') ? '10px' : '20px',
-                  transform: accessoryId.includes('necklace') ? 'rotate(-15deg)' : 'none',
-                  zIndex: accessoryId.includes('necklace') ? -1 : 1
-                }}
-              >
-                {getAccessoryEmoji(accessoryId)}
-              </span>
-            ))}
-          </div>
+          {/* Accessories */}
+          {equippedAccessories.map((accessoryId, index) => (
+            <div
+              key={accessoryId}
+              className="absolute top-0 right-0 text-2xl transform translate-x-2 -translate-y-2"
+              style={{
+                transform: `translate(${index * 10}px, ${index * 10}px)`,
+                zIndex: 10
+              }}
+            >
+              {getAccessoryEmoji(accessoryId)}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Pet Stats Display */}
-      <div className="mt-6 bg-white/80 backdrop-blur-sm rounded-2xl p-4 w-full max-w-sm shadow-lg">
-        <h3 className="text-lg font-bold text-gray-800 text-center mb-3">
-          Your Dino Pal (Level {petLevel})
-        </h3>
-        
-        <div className="space-y-3">
-          {/* Health Bar */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-red-500 text-lg">❤️</span>
-              <span className="text-sm font-medium text-gray-700">Health</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-2 bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
-                  style={{ width: `${petHealth}%` }}
-                />
-              </div>
-              <span className="text-sm font-bold text-gray-700 min-w-[35px]">
-                {petHealth}%
-              </span>
-            </div>
-          </div>
-          
-          {/* Happiness Bar */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-yellow-500 text-lg">✨</span>
-              <span className="text-sm font-medium text-gray-700">Happiness</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-2 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full transition-all duration-500"
-                  style={{ width: `${petHappiness}%` }}
-                />
-              </div>
-              <span className="text-sm font-bold text-gray-700 min-w-[35px]">
-                {petHappiness}%
-              </span>
-            </div>
-          </div>
-          
-          {/* Habits Today */}
-          <div className="flex items-center justify-center pt-2 border-t border-gray-200">
-            <span className="text-sm text-gray-600">
-              <span className="font-medium">{completedHabitsToday}</span> habits completed today
-            </span>
-          </div>
-        </div>
-      </div>
+
 
       {/* Happiness Animation Effects */}
       {petHappiness >= 80 && (

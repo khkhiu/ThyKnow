@@ -7,7 +7,6 @@ import { useTelegramApp } from '../../hooks/useTelegramApp';
 interface DinoFriendProps {
   petHealth: number;
   petHappiness: number;
-  petLevel: number;
   completedHabitsToday: number;
   equippedAccessories: string[];
 }
@@ -15,7 +14,6 @@ interface DinoFriendProps {
 const DinoFriend: React.FC<DinoFriendProps> = ({
   petHealth,
   petHappiness,
-  petLevel,
   completedHabitsToday,
   equippedAccessories
 }) => {
@@ -55,16 +53,16 @@ const DinoFriend: React.FC<DinoFriendProps> = ({
       </div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header Section */}
-        <div className="text-center px-6 pt-8 pb-4 animate-fade-in">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        {/* Header Section - Made shorter */}
+        <div className="text-center px-6 pt-4 pb-2 animate-fade-in">
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">
             Meet Your Dino Friend
           </h1>
-          <p className="text-lg text-gray-600 mb-2">
+          <p className="text-sm text-gray-600 mb-1">
             Tap on your dino friend to make it blink!
           </p>
-          <p className="text-sm text-green-600 flex items-center justify-center gap-1 animate-pulse">
-            <span className="text-lg">👆</span>
+          <p className="text-xs text-green-600 flex items-center justify-center gap-1 animate-pulse">
+            <span className="text-sm">👆</span>
             Tap to see different messages too!
           </p>
         </div>
@@ -77,7 +75,6 @@ const DinoFriend: React.FC<DinoFriendProps> = ({
           <DinoContainer
             petHealth={petHealth}
             petHappiness={petHappiness}
-            petLevel={petLevel}
             completedHabitsToday={completedHabitsToday}
             equippedAccessories={equippedAccessories}
             tg={tg}
