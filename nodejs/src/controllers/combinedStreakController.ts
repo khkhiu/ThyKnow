@@ -1,153 +1,176 @@
-// src/controllers/combinedStreakController.ts
-// Combined streak handler that shows text info AND provides miniapp access
-
+// src/controllers/combinedStreakController.ts (Updated - Frontend-First)
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger';
-import config from '../config';
-import { UserService } from '../services/userService';
-
-// Initialize services  
-const weeklyUserService = new UserService();
-
-// Define types for better type safety
-interface IStreakStats {
-  currentStreak: number;
-  longestStreak: number;
-  totalPoints: number;
-  hasEntryThisWeek: boolean;
-  currentWeekId: string;
-  weeksUntilNextMilestone: number;
-  nextMilestoneReward: number;
-  pointsHistory: Array<{
-    pointsEarned: number;
-    reason: string;
-    streakWeek?: number;
-    weekIdentifier?: string;
-    timestamp: Date;
-  }>;
-}
+import { userService } from '../services/userService';
+import { commandResponseService } from '../services/commandResponseService';
+import { userAppUsageService } from '../services/userAppUsageService';
+import { CommandContext } from '../types/botCommand';
 
 /**
- * Combined /streak handler - Shows text summary + miniapp access
- * This gives users immediate information AND visual interface option
+ * Handle /streak command - Now redirects to frontend with optional preview
  */
 export async function handleCombinedStreakCommand(ctx: Context): Promise<void> {
   try {
     const userId = ctx.from?.id.toString();
+    const userName = ctx.from?.first_name || 'there';
     
     if (!userId) {
-      logger.error('No user ID found in combined streak command');
+      await ctx.reply('Sorry, I could not identify you. Please try again.');
       return;
     }
-    
-    // Ensure user exists
-    let user = await weeklyUserService.getUser(userId);
-    if (!user) {
-      await weeklyUserService.createOrUpdateUser(userId);
-      user = await weeklyUserService.getUser(userId);
-      if (!user) {
-        throw new Error('Failed to create user');
-      }
-    }
-    
-    // Get streak statistics
-    const streakStats: IStreakStats = await weeklyUserService.getStreakStats(userId);
-    const currentWeek: string = weeklyUserService.getCurrentWeekId();
-    
-    // Create concise text summary (shorter than full text version)
-    let message = `📊 *Weekly Reflection Summary*\n\n`;
-    
-    // Key stats in concise format
-    message += `🔥 *Current Streak:* ${streakStats.currentStreak} week${streakStats.currentStreak === 1 ? '' : 's'}\n`;
-    message += `🏆 *Personal Best:* ${streakStats.longestStreak} week${streakStats.longestStreak === 1 ? '' : 's'}\n`;
-    message += `💎 *Total Points:* ${streakStats.totalPoints.toLocaleString()}\n\n`;
-    
-    // This week status
-    if (streakStats.hasEntryThisWeek) {
-      message += `✅ *Week ${currentWeek}:* Reflection complete!\n`;
-      message += `_You can add more reflections for bonus points._\n\n`;
-    } else {
-      message += `📅 *Week ${currentWeek}:* Awaiting your reflection\n`;
-      if (streakStats.currentStreak > 0) {
-        message += `_Keep your ${streakStats.currentStreak}-week streak alive!_\n\n`;
-      } else {
-        message += `_Ready to start your reflection journey?_\n\n`;
-      }
-    }
-    
-    // Next milestone (if applicable)
-    if (streakStats.weeksUntilNextMilestone > 0) {
-      message += `🎯 *Next Milestone:* ${streakStats.weeksUntilNextMilestone} week${streakStats.weeksUntilNextMilestone === 1 ? '' : 's'} away\n`;
-      message += `_Reward: +${streakStats.nextMilestoneReward} bonus points_\n\n`;
-    } else {
-      message += `🏆 *All milestones achieved!* You're a reflection master!\n\n`;
-    }
-    
-    // Points system explanation
-    message += `💡 How Points Work:\n`;
-    message += `• Base: 50 points per weekly reflection\n`;
-    message += `• Streak bonus: +10 points per streak week\n`;
-    message += `• Extra entries: +20 bonus points same week\n`;
-    message += `• Milestones: Big bonuses at 4, 12, 26, 52+ weeks\n\n`;
-    
-    // Week reset explanation
-    message += `📅 Weekly Schedule:\n`;
-    message += `• Weeks run Monday to Sunday (ISO standard)\n`;
-    message += `• Reset at midnight ${config.timezone} time\n`;
-    message += `• Miss a week = streak resets to 1\n`;
-    message += `• Multiple entries same week = bonus points only\n\n`;
 
-    // Add call-to-action
-    message += `📱 *Tap below for detailed visual progress, milestones, and activity history!*`;
+    // Record command usage for analytics
+    await userAppUsageService.recordBotCommandUsage(userId, 'streak');
+
+    // Check if user exists
+    const user = await userService.getUser(userId);
+    if (!user) {
+      await ctx.reply(
+        '🦕 Welcome! Start your reflection journey to build streaks!',
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🌟 Start Journey", callback_data: "start" }]
+            ]
+          }
+        }
+      );
+      return;
+    }
+
+    // Get user app usage for progressive disclosure
+    const userAppUsage = await userAppUsageService.getUserAppUsage(userId);
     
-    // Add timestamp for fresh miniapp loading
-    const timeStamp = new Date().getTime();
-    const streakUrl = `${config.baseUrl}/miniapp/streak?t=${timeStamp}`;
-    
-    // Send message with both text info AND miniapp button
-    await ctx.reply(message, {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ 
-            text: "📊 View Detailed Progress", 
-            web_app: { url: streakUrl } 
-          }],
-          [{ 
-            text: "🦕 Get New Prompt", 
-            callback_data: "new_prompt" 
-          }]
-        ]
+    const commandContext: CommandContext = {
+      userId,
+      userName,
+      userAppUsage,
+      commandName: 'streak'
+    };
+
+    // Generate frontend-first response
+    const response = commandResponseService.generateStreakResponse(commandContext);
+
+    // For new/casual users, show a basic streak preview
+    if (userAppUsage.miniappUsageCount < 3) {
+      try {
+        // Get basic streak info
+        const weeklyProgress = await userService.getUserWeeklyProgress(userId);
+        
+        const streakPreview = `
+
+📊 *Quick Streak Overview:*
+
+🔥 Current streak: ${weeklyProgress.currentStreak} week${weeklyProgress.currentStreak !== 1 ? 's' : ''}
+📅 This week: ${weeklyProgress.currentWeekCompleted ? '✅ Complete' : '⏳ In progress'}
+🦕 Dino mood: ${getDinoMoodFromStreak(weeklyProgress.currentStreak)}
+
+*See detailed charts, milestones, and dino evolution in the app!*`;
+
+        await ctx.reply(
+          response.messageText + streakPreview + '\n\n' + response.promotionMessage,
+          {
+            parse_mode: response.parseMode,
+            reply_markup: {
+              inline_keyboard: [
+                [{ 
+                  text: response.miniappButton.text, 
+                  web_app: { url: response.miniappButton.url } 
+                }]
+              ]
+            }
+          }
+        );
+      } catch (streakError) {
+        // Fallback if streak data fails
+        await ctx.reply(
+          response.messageText + '\n\n' + response.promotionMessage,
+          {
+            parse_mode: response.parseMode,
+            reply_markup: {
+              inline_keyboard: [
+                [{ 
+                  text: response.miniappButton.text, 
+                  web_app: { url: response.miniappButton.url } 
+                }]
+              ]
+            }
+          }
+        );
       }
-    });
-    
-    logger.info(`Combined streak info sent to user ${userId} (streak: ${streakStats.currentStreak}, points: ${streakStats.totalPoints})`);
-    
+    } else {
+      // For experienced users, direct to app
+      await ctx.reply(
+        response.messageText + '\n\n' + response.promotionMessage,
+        {
+          parse_mode: response.parseMode,
+          reply_markup: {
+            inline_keyboard: [
+              [{ 
+                text: response.miniappButton.text, 
+                web_app: { url: response.miniappButton.url } 
+              }]
+            ]
+          }
+        }
+      );
+    }
+
+    logger.info(`Streak command handled for user ${userId} - directed to frontend`);
   } catch (error) {
-    logger.error('Error in combined streak command:', error);
-    await ctx.reply(
-      'Sorry, there was an error fetching your streak information. Please try again later.\n\n' +
-      'Use /prompt to continue your reflection journey!'
-    );
+    logger.error('Error in handleCombinedStreakCommand:', error);
+    await ctx.reply('Sorry, something went wrong checking your streak. Please try again or use /help for assistance.');
   }
 }
 
 /**
- * Handle "Get New Prompt" callback from streak command
+ * Get dino mood based on streak length
+ */
+function getDinoMoodFromStreak(streak: number): string {
+  if (streak === 0) return '😴 Sleepy';
+  if (streak === 1) return '😊 Happy';
+  if (streak <= 3) return '🤗 Excited';
+  if (streak <= 6) return '🎉 Thriving';
+  if (streak <= 10) return '🌟 Amazing';
+  return '🏆 Legendary';
+}
+
+/**
+ * Handle new prompt callback from streak page
  */
 export async function handleNewPromptCallback(ctx: Context): Promise<void> {
   try {
-    // Import dynamically to avoid circular dependencies
-    const { handleSendPrompt } = await import('./promptController');
+    const userId = ctx.from?.id.toString();
     
-    // Answer the callback query first
-    await ctx.answerCbQuery('Getting a new prompt for you...');
+    if (!userId) {
+      await ctx.answerCbQuery('Error processing request');
+      return;
+    }
+
+    await ctx.answerCbQuery('Opening prompt in app!');
     
-    // Send a new prompt
-    await handleSendPrompt(ctx);
+    // Redirect to app for new prompt
+    const deepLink = `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=prompt&action=new&ref=streak_new_prompt`;
     
+    await ctx.editMessageText(
+      '🎯 *Get your new prompt in the app!*\n\n' +
+      'Experience better prompts, track your progress, and interact with your dino friend!',
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: "🚀 Get New Prompt", 
+              web_app: { url: deepLink } 
+            }]
+          ]
+        }
+      }
+    );
+
+    logger.info(`New prompt callback handled for user ${userId} - redirected to frontend`);
   } catch (error) {
-    logger.error('Error handling new prompt callback:', error);
-    await ctx.answerCbQuery('Error getting prompt. Please use /prompt command.');
+    logger.error('Error in handleNewPromptCallback:', error);
+    await ctx.answerCbQuery('Sorry, something went wrong. Please try /prompt for a new reflection.');
   }
 }

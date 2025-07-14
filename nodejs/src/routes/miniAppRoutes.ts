@@ -1,235 +1,202 @@
-// src/routes/miniAppApiRoutes.ts
-// Simple fix: Conditionally apply Telegram validation middleware
-import { Router, Request, Response, NextFunction } from 'express';
-import { userService } from '../services/userService';
-import { promptService } from '../services/promptService';
+// src/routes/miniAppRoutes.ts (Updated with Deep Link Support)
+import express, { Request, Response } from 'express';
+import path from 'path';
+import fs from 'fs';
 import { logger } from '../utils/logger';
-import { validateTelegramRequest } from '../middleware/telegramValidator';
-import { PromptType } from '../types';
-//import path from 'path';
-import config from '../config';
+import { 
+  trackMiniappAccess, 
+  handleDeepLink, 
+  getMiniappUsageStats 
+} from '../controllers/miniAppController';
 
-const router = Router();
-
-/**
- * Conditional validation middleware
- * Only applies Telegram validation for actual Telegram WebApp requests
- */
-function conditionalTelegramValidation(req: Request, res: Response, next: NextFunction): void {
-  // Check if this is a Telegram WebApp request
-  const hasTelegramHeaders = req.headers['x-telegram-init-data'];
-  const userAgent = req.headers['user-agent'] || '';
-  const referer = req.headers['referer'] || '';
-  
-  // If it has Telegram headers, validate as Telegram WebApp
-  if (hasTelegramHeaders) {
-    logger.debug('Telegram WebApp request detected, applying validation');
-    return validateTelegramRequest(req, res, next);
-  }
-  
-  // Check if it's from React frontend (same origin)
-  const isReactFrontend = (
-    userAgent.includes('Mozilla') && 
-    (referer.includes('/miniapp') || referer.includes('/journal') ||
-     referer.includes(req.get('host') || ''))
-  );
-  
-  if (isReactFrontend && config.allowReactFrontend) {
-    logger.debug('React frontend request detected, skipping Telegram validation');
-    
-    // Extract user ID from URL params for React requests
-    const userId = req.params.userId;
-    if (userId) {
-      (req as any).telegramUserId = userId;
-    }
-    
-    return next();
-  }
-  
-  // In development, allow all requests
-  if (config.nodeEnv === 'development') {
-    logger.debug('Development mode: allowing request without validation');
-    
-    // Extract user ID from URL params
-    const userId = req.params.userId;
-    if (userId) {
-      (req as any).telegramUserId = userId;
-    }
-    
-    return next();
-  }
-  
-  // Otherwise, require Telegram validation
-  logger.warn('Request without proper authentication headers');
-  res.status(403).json({ error: 'Authentication required' });
-}
-
-// Apply conditional validation to all API routes
-router.use(conditionalTelegramValidation);
-
-// Rest of your existing route handlers...
-// (Keep all the existing route handlers unchanged)
+const router = express.Router();
 
 /**
- * Handler for GET /api/miniapp/prompts/today/:userId
+ * Serve the React app with deep link and tracking support
  */
-function getTodaysPrompt(req: Request, res: Response, next: NextFunction): void {
-  const { userId } = req.params;
-  
-  if (!userId) {
-    res.status(400).json({ error: 'User ID is required' });
-    return;
-  }
-  
-  userService.getUser(userId)
-    .then(user => {
-      if (!user) {
-        res.status(404).json({ error: 'User not found' });
-        return;
-      }
-      
-      // Get the last prompt for this user
-      const userWithPrompt = user as any;
-      
-      if (userWithPrompt.lastPrompt) {
-        const promptData = {
-          type: userWithPrompt.lastPrompt.type,
-          typeLabel: userWithPrompt.lastPrompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
-          text: userWithPrompt.lastPrompt.text,
-          hint: 'Reflect deeply on this prompt to gain new insights.'
-        };
+function serveReactAppWithTracking(req: Request, res: Response): void {
+  try {
+    const indexPath = path.join(__dirname, '../../frontend/dist/index.html');
+    
+    if (!fs.existsSync(indexPath)) {
+      logger.error(`React app index.html not found at ${indexPath}`);
+      res.status(404).json({ 
+        error: 'Mini app not found',
+        message: 'The React application files are not available'
+      });
+      return;
+    }
+
+    // Read the HTML file
+    let htmlContent = fs.readFileSync(indexPath, 'utf8');
+    
+    // Inject deep link parameters if available
+    if (res.locals.deepLinkParams) {
+      const deepLinkScript = `
+        <script>
+          window.__DEEP_LINK_PARAMS__ = ${JSON.stringify(res.locals.deepLinkParams)};
+        </script>
+      `;
+      htmlContent = htmlContent.replace('</head>', `${deepLinkScript}</head>`);
+    }
+
+    // Inject analytics and tracking
+    const trackingScript = `
+      <script>
+        // Track page view
+        if (window.gtag) {
+          gtag('event', 'page_view', {
+            page_title: 'ThyKnow MiniApp',
+            page_location: window.location.href
+          });
+        }
         
-        res.json(promptData);
-        logger.info(`Served today's prompt to user ${userId}`);
-      } else {
-        // No existing prompt - generate a new one
-        return generateNewPrompt(req, res, next);
-      }
-    })
-    .catch((error: Error) => {
-      logger.error(`Error getting today's prompt for user ${userId}:`, error);
-      res.status(500).json({ error: 'Failed to get prompt' });
-    });
+        // Track source if from bot
+        if (window.location.search.includes('ref=bot_')) {
+          if (window.gtag) {
+            gtag('event', 'bot_referral', {
+              source: 'telegram_bot'
+            });
+          }
+        }
+      </script>
+    `;
+    htmlContent = htmlContent.replace('</body>', `${trackingScript}</body>`);
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlContent);
+    
+    logger.debug(`Served React app for ${req.originalUrl} with tracking`);
+  } catch (err: any) {
+    logger.error(`Error serving React app for ${req.originalUrl}:`, err);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Failed to load application',
+        message: err.message
+      });
+    }
+  }
 }
 
 /**
- * Handler for POST /api/miniapp/prompts/new/:userId
+ * Apply middleware chain for all miniapp routes
  */
-function generateNewPrompt(req: Request, res: Response, _next: NextFunction): void {
-  const { userId } = req.params;
-  
-  if (!userId) {
-    res.status(400).json({ error: 'User ID is required' });
-    return;
-  }
-  
-  Promise.all([
-    userService.getUser(userId),
-    promptService.getNextPromptForUser(userId)
-  ])
-    .then(([user, prompt]) => {
-      if (!user) {
-        res.status(404).json({ error: 'User not found' });
-        return;
-      }
-      
-      // Save the new prompt to user's data
-      return userService.saveLastPrompt(userId, prompt.text, prompt.type)
-        .then(() => {
-          const promptData = {
-            type: prompt.type,
-            typeLabel: prompt.type === 'self_awareness' ? '🧠 Self-Awareness' : '🤝 Connections',
-            text: prompt.text,
-            hint: 'Reflect deeply on this prompt to gain new insights.'
-          };
-          
-          res.json(promptData);
-          logger.info(`Generated new prompt for user ${userId}`);
-        });
-    })
-    .catch((error: Error) => {
-      logger.error(`Error generating new prompt for user ${userId}:`, error);
-      res.status(500).json({ error: 'Failed to generate new prompt' });
-    });
-}
+router.use('/', trackMiniappAccess, handleDeepLink);
 
 /**
- * Handler for POST /api/miniapp/responses
+ * Main miniapp route with deep link support
  */
-function saveResponse(req: Request, res: Response): void {
-  const { userId, response } = req.body;
-  
-  if (!userId || !response) {
-    res.status(400).json({ error: 'User ID and response are required' });
-    return;
-  }
-  
-  // Get the user's last prompt to create a proper journal entry
-  userService.getUser(userId)
-    .then(user => {
-      if (!user) {
-        res.status(404).json({ error: 'User not found' });
-        return;
-      }
-      
-      const userWithPrompt = user as any;
-      if (!userWithPrompt.lastPrompt) {
-        res.status(400).json({ error: 'No active prompt found for user' });
-        return;
-      }
-      
-      // Create the entry object that saveResponse expects
-      const entry = {
-        prompt: userWithPrompt.lastPrompt.text,
-        promptType: userWithPrompt.lastPrompt.type as PromptType,
-        response: response,
-        timestamp: new Date()
-      };
-      
-      return userService.saveResponse(userId, entry);
-    })
-    .then(() => {
-      res.json({ success: true, message: 'Response saved successfully' });
-      logger.info(`Saved response for user ${userId}`);
-    })
-    .catch((error: Error) => {
-      logger.error(`Error saving response for user ${userId}:`, error);
-      res.status(500).json({ error: 'Failed to save response' });
-    });
-}
+router.get('/', serveReactAppWithTracking);
 
 /**
- * Handler for GET /api/miniapp/history/:userId
+ * Specific page routes (all serve the same React app with different deep link params)
  */
-function getHistory(req: Request, res: Response): void {
-  const { userId } = req.params;
-  const limit = parseInt(req.query.limit as string) || 10;
-  
-  if (!userId) {
-    res.status(400).json({ error: 'User ID is required' });
-    return;
+router.get('/pet', (_req: Request, res: Response, next) => {
+  res.locals.deepLinkParams = { page: 'pet', ref: 'direct_url' };
+  next();
+}, serveReactAppWithTracking);
+
+router.get('/history', (_req: Request, res: Response, next) => {
+  res.locals.deepLinkParams = { page: 'history', ref: 'direct_url' };
+  next();
+}, serveReactAppWithTracking);
+
+router.get('/streak', (_req: Request, res: Response, next) => {
+  res.locals.deepLinkParams = { page: 'streak', ref: 'direct_url' };
+  next();
+}, serveReactAppWithTracking);
+
+router.get('/choose', (_req: Request, res: Response, next) => {
+  res.locals.deepLinkParams = { page: 'choose', action: 'choose', ref: 'direct_url' };
+  next();
+}, serveReactAppWithTracking);
+
+/**
+ * Configuration endpoint for the miniapp
+ */
+router.get('/config', (_req: Request, res: Response) => {
+  try {
+    const configData = {
+      appName: 'ThyKnow',
+      version: '2.0.0',
+      timezone: 'UTC',
+      features: {
+        selfAwareness: true,
+        connections: true,
+        history: true,
+        affirmations: true,
+        pet: true,
+        streaks: true,
+        deepLinks: true
+      },
+      endpoints: {
+        prompts: '/api/miniapp/prompts',
+        responses: '/api/miniapp/responses', 
+        history: '/api/miniapp/history',
+        streak: '/api/miniapp/streak',
+        pet: '/api/miniapp/pet',
+        affirmations: '/api/miniapp/affirmations'
+      },
+      deepLinkSupport: {
+        pages: ['home', 'prompt', 'history', 'streak', 'choose', 'pet'],
+        actions: ['new', 'choose', 'view'],
+        referenceTracking: true
+      }
+    };
+    
+    res.json(configData);
+    logger.debug('Mini-app configuration served with deep link support');
+  } catch (error) {
+    logger.error('Error serving mini-app configuration:', error);
+    res.status(500).json({ error: 'Failed to load configuration' });
   }
-  
-  userService.getRecentEntries(userId, limit)
-    .then(entries => {
-      res.json(entries);
-      logger.info(`Served history for user ${userId} (${entries.length} entries)`);
-    })
-    .catch((error: Error) => {
-      logger.error(`Error getting history for user ${userId}:`, error);
-      res.status(500).json({ error: 'Failed to get history' });
-    });
-}
+});
 
-// Register all routes
-router.get('/prompts/today/:userId', getTodaysPrompt);
-router.post('/prompts/new/:userId', generateNewPrompt);
-router.get('/history/:userId', getHistory);
-router.post('/responses', saveResponse);
+/**
+ * User tracking endpoint
+ */
+router.post('/track', express.json(), (req: Request, res: Response) => {
+  try {
+    const { event, data } = req.body;
+    const telegramInitData = req.headers['x-telegram-init-data'] as string;
+    
+    logger.info('Miniapp tracking event:', { event, data, hasTelegramData: !!telegramInitData });
+    
+    // Here you would typically save to analytics database
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error tracking miniapp event:', error);
+    res.status(500).json({ error: 'Failed to track event' });
+  }
+});
 
-// Add any other existing routes...
-// router.get('/pet/random', getRandomAffirmation);
-// router.post('/pet/share', shareAffirmation);
-// etc.
+/**
+ * Analytics endpoint for admin dashboard
+ */
+router.get('/analytics', async (_req: Request, res: Response) => {
+  try {
+    const stats = await getMiniappUsageStats();
+    res.json(stats);
+  } catch (error) {
+    logger.error('Error getting miniapp analytics:', error);
+    res.status(500).json({ error: 'Failed to get analytics' });
+  }
+});
+
+/**
+ * Health check endpoint
+ */
+router.get('/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    features: {
+      deepLinks: true,
+      tracking: true,
+      reactApp: true
+    }
+  });
+});
 
 export default router;

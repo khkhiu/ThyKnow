@@ -1,130 +1,138 @@
-// src/controllers/promptController.ts
+// src/controllers/promptController.ts (Updated - Frontend-First)
 import { Context } from 'telegraf';
-import { userService } from '../services/userService';
-import { promptService } from '../services/promptService';
-import { FEEDBACK, MESSAGES } from '../constants';
 import { logger } from '../utils/logger';
-import { PromptType } from '../types';
+import { userService } from '../services/userService';
+import { commandResponseService } from '../services/commandResponseService';
+import { userAppUsageService } from '../services/userAppUsageService';
+import { CommandContext } from '../types/botCommand';
 
 /**
- * Send prompt command handler
+ * Handle /prompt command - Now redirects to frontend
  */
 export async function handleSendPrompt(ctx: Context): Promise<void> {
   try {
     const userId = ctx.from?.id.toString();
+    const userName = ctx.from?.first_name || 'there';
     
     if (!userId) {
-      logger.error('No user ID found in context');
+      await ctx.reply('Sorry, I could not identify you. Please try again.');
       return;
     }
-    
-    const user = await userService.getUser(userId);
-    
+
+    // Record command usage for analytics
+    await userAppUsageService.recordBotCommandUsage(userId, 'prompt');
+
+    // Check if user exists, create if not
+    let user = await userService.getUser(userId);
     if (!user) {
-      await ctx.reply("Please start the bot with /start first!");
-      return;
+      await userService.createOrUpdateUser(userId);
+      user = await userService.getUser(userId);
+      if (!user) {
+        await ctx.reply('Sorry, there was an error setting up your account. Please try /start first.');
+        return;
+      }
     }
+
+    // Get user app usage for progressive disclosure
+    const userAppUsage = await userAppUsageService.getUserAppUsage(userId);
     
-    // Check if a specific prompt type was chosen via the /choose command
-    const chosenPromptType = (ctx as any).chosenPromptType as PromptType | undefined;
-    
-    // Get next prompt for this user, passing the chosen type if available
-    const prompt = await promptService.getNextPromptForUser(userId, chosenPromptType);
-    
-    // Save current prompt to user's data
-    await userService.saveLastPrompt(userId, prompt.text, prompt.type);
-    
-    // Determine category emoji and name
-    const categoryEmoji = prompt.type === 'self_awareness' ? '🧠' : '🤝';
-    const categoryName = prompt.type === 'self_awareness' ? 'Self-Awareness' : 'Connections';
-    
+    const commandContext: CommandContext = {
+      userId,
+      userName,
+      userAppUsage,
+      commandName: 'prompt'
+    };
+
+    // Generate frontend-first response
+    const response = commandResponseService.generatePromptResponse(commandContext);
+
+    // Send response with miniapp button
     await ctx.reply(
-      `${categoryEmoji} ${categoryName} Reflection:\n\n${prompt.text}\n\n` +
-      "Take your time to reflect and respond when you're ready. " +
-      "Your response will be saved in your journal.\n\n" +
-      "💡 Tip: Use /choose to select a specific type of prompt next time."
+      response.messageText + 
+      (response.fallbackContent ? '\n\n' + response.fallbackContent : '') +
+      '\n\n' + response.promotionMessage,
+      {
+        parse_mode: response.parseMode,
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: response.miniappButton.text, 
+              web_app: { url: response.miniappButton.url } 
+            }]
+          ]
+        }
+      }
     );
-    
-    // Clear the chosen prompt type to ensure it's not reused
-    delete (ctx as any).chosenPromptType;
-    
-    logger.info(`Sent prompt to user ${userId}`);
+
+    logger.info(`Prompt command handled for user ${userId} - directed to frontend`);
   } catch (error) {
-    logger.error('Error in prompt command:', error);
-    await ctx.reply('Sorry, there was an error getting your prompt. Please try again.');
+    logger.error('Error in handleSendPrompt:', error);
+    await ctx.reply('Sorry, something went wrong. Please try again or use /help for assistance.');
   }
 }
 
 /**
- * Handle text messages (responses to prompts)
+ * Handle text messages (when user is in conversation mode)
+ * This maintains existing functionality for text-based interactions
  */
 export async function handleTextMessage(ctx: Context): Promise<void> {
   try {
-    // Get message and check if it's a text message
-    const message = ctx.message;
-    if (!message || !('text' in message)) {
-      return;
-    }
-    
-    // Ignore command messages
-    if (message.text.startsWith('/')) {
-      return;
-    }
-    
     const userId = ctx.from?.id.toString();
-    const messageText = message.text;
+    const messageText = (ctx.message as any)?.text;
     
     if (!userId || !messageText) {
-      logger.error('Missing user ID or message text');
       return;
     }
-    
-    // Get user data
+
+    // Check if user has a pending prompt response
     const user = await userService.getUser(userId);
-    
-    if (!user) {
-      logger.info(`User ${userId} not found, suggesting to start the bot`);
-      await ctx.reply("Please start the bot with /start first!");
+    if (!user || !user.lastPrompt) {
+      // No pending prompt - suggest using the app
+      await ctx.reply(
+        '🤔 It looks like you\'re trying to start a reflection!\n\n' +
+        'Use /prompt to get started, or open the full app for the best experience! 🦕',
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [{ 
+                text: "🚀 Open ThyKnow App", 
+                web_app: { 
+                  url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=prompt&action=new&ref=text_message`
+                } 
+              }]
+            ]
+          }
+        }
+      );
       return;
     }
+
+    // Handle the response (existing logic)
+    await userService.savePromptResponse(userId, messageText);
     
-    // Check if user has an active prompt to respond to
-    // Note: lastPrompt might not exist since we're using findOneWithLastPrompt
-    const userWithPrompt = user as any;
-    if (!userWithPrompt.lastPrompt) {
-      logger.info(`User ${userId} has no active prompt`);
-      await ctx.reply("I don't have a prompt for you to respond to. Use /prompt to get one or /choose to select a specific type.");
-      return;
-    }
-    
-    // Create journal entry
-    const entry = {
-      prompt: userWithPrompt.lastPrompt.text,
-      promptType: userWithPrompt.lastPrompt.type as PromptType,
-      response: messageText,
-      timestamp: new Date()
-    };
-    
-    // Save response
-    try {
-      await userService.saveResponse(userId, entry);
-      logger.info(`Successfully saved journal entry for user ${userId}`);
-      
-      // Determine feedback based on prompt type
-      const feedbackMessage = userWithPrompt.lastPrompt.type === 'self_awareness' 
-        ? FEEDBACK.SELF_AWARENESS 
-        : FEEDBACK.CONNECTIONS;
-      
-      // Send feedback to user
-      await ctx.reply(feedbackMessage);
-      
-    } catch (error) {
-      logger.error(`Failed to save response for user ${userId}:`, error);
-      await ctx.reply(MESSAGES.SAVE_ERROR);
-    }
-    
+    // Encourage user to continue in the app
+    await ctx.reply(
+      '✅ Response saved!\n\n' +
+      '🌟 *Great reflection!* Want to see your progress, get insights, and interact with your dino friend?',
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: "📊 View in App", 
+              web_app: { 
+                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=history&ref=response_saved`
+              } 
+            }],
+            [{ text: "🔄 New Prompt", callback_data: "new_prompt" }]
+          ]
+        }
+      }
+    );
+
+    logger.info(`Text response saved for user ${userId}`);
   } catch (error) {
-    logger.error('Error handling text message:', error);
-    await ctx.reply(MESSAGES.ERROR);
+    logger.error('Error in handleTextMessage:', error);
+    await ctx.reply('Sorry, there was an error saving your response. Please try again.');
   }
 }

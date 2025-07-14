@@ -1,4 +1,4 @@
-// src/controllers/index.ts (Updated with Combined Streak Handler)
+// src/controllers/index.ts (Updated - Frontend-First Bot Commands)
 import { Telegraf, Context } from 'telegraf';
 import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { handleStart, handleShowHelp } from './userController';
@@ -15,94 +15,240 @@ import { handleResponseCallback } from './responseController';
 import { handleChooseCommand, handleChooseCallback } from './chooseController';
 import { handleMiniAppCommand } from './miniAppController';
 import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText } from './feedbackController';
-// Import streak handlers
-import { 
-  handleWeeklyStreakCommand, 
-  handleWeeklyJournalSubmission 
-} from './weeklyStreakController';
-import { handleStreakMiniAppCommand } from './streakMiniAppController';
-// Import new combined streak handler
 import { 
   handleCombinedStreakCommand, 
   handleNewPromptCallback 
 } from './combinedStreakController';
 import { logger } from '../utils/logger';
-import { MESSAGES } from '../constants';
 
 /**
- * Set up all bot commands and handlers
+ * Set up all bot commands and handlers (Updated for Frontend-First approach)
  */
 export function setupBotCommands(bot: Telegraf<Context>): void {
-  // Register command handlers
+  logger.info('🤖 Setting up frontend-first bot commands...');
+
+  // ============================================
+  // MAIN COMMANDS (Frontend-First)
+  // ============================================
+  
+  // Enhanced start command with app promotion
   bot.start(handleStart);
-  bot.command('prompt', handleSendPrompt);
-  bot.command('history', handleShowHistory);
+  
+  // Frontend-first commands (redirect to miniapp)
+  bot.command('prompt', handleSendPrompt);        // → Miniapp with new prompt
+  bot.command('history', handleShowHistory);      // → Miniapp history page
+  bot.command('choose', handleChooseCommand);     // → Miniapp prompt chooser
+  bot.command('streak', handleCombinedStreakCommand); // → Miniapp streak page
+  
+  // Direct miniapp launcher
+  bot.command('miniapp', handleMiniAppCommand);
+  
+  // ============================================
+  // UTILITY COMMANDS (Keep in Bot)
+  // ============================================
+  
+  // Help with app promotion
   bot.command('help', handleShowHelp);
+  
+  // Quick settings (but promote app)
   bot.command('schedule', handleScheduleCommand);
   bot.command('schedule_day', handleScheduleDayCommand);
   bot.command('schedule_time', handleScheduleTimeCommand);
   bot.command('schedule_toggle', handleScheduleToggleCommand);
-  bot.command('choose', handleChooseCommand);
-  bot.command('miniapp', handleMiniAppCommand);
+  
+  // Feedback system (keep simple in bot)
   bot.command('feedback', handleFeedbackCommand);
   bot.command('cancel', handleCancelCommand);
+
+  // ============================================
+  // LEGACY SUPPORT COMMANDS
+  // ============================================
   
-  // MAIN STREAK COMMAND: Combined text + miniapp approach
-  bot.command('streak', handleCombinedStreakCommand);
+  // Legacy aliases that redirect to app
+  bot.command('journal', (ctx) => {
+    ctx.reply(
+      '📚 Journal moved to the app!\n\nGet a better experience with search, charts, and more!',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: "📖 Open Journal", 
+              web_app: { 
+                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=history&ref=legacy_journal`
+              } 
+            }]
+          ]
+        }
+      }
+    );
+  });
+
+  bot.command('dino', (ctx) => {
+    ctx.reply(
+      '🦕 Your dino friend is waiting in the app!\n\nInteract, feed, and watch your dino evolve!',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: "🦕 Visit Dino", 
+              web_app: { 
+                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=pet&ref=legacy_dino`
+              } 
+            }]
+          ]
+        }
+      }
+    );
+  });
+
+  // ============================================
+  // CALLBACK QUERY HANDLERS
+  // ============================================
   
-  // Alternative commands for specific use cases
-  bot.command('streakinfo', handleWeeklyStreakCommand);        // Text-only version
-  bot.command('streakapp', handleStreakMiniAppCommand);        // Miniapp-only version
-  
-  // Register callback query handlers
   bot.on('callback_query', (ctx) => {
     const callbackData = (ctx.callbackQuery as CallbackQuery.DataQuery).data;
     
-    if (!callbackData) return; // Return explicitly
+    if (!callbackData) {
+      ctx.answerCbQuery('Invalid action');
+      return;
+    }
+    
+    logger.debug(`Processing callback: ${callbackData}`);
     
     // Schedule-related callbacks
     if (callbackData.startsWith('set_day:') || callbackData.startsWith('set_time:')) {
       return handleScheduleCallback(ctx);
     }
     
-    // Response-related callbacks
-    if (callbackData.startsWith('save_response:') || callbackData === 'new_prompt') {
-      return handleResponseCallback(ctx);
+    // Response-related callbacks (legacy - redirect to app)
+    if (callbackData.startsWith('save_response:')) {
+      ctx.answerCbQuery('Response saving moved to app!');
+      ctx.editMessageText(
+        '✨ *Response saving is now in the app!*\n\nGet a better writing experience with auto-save, formatting, and more!',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ 
+                text: "📝 Continue in App", 
+                web_app: { 
+                  url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=prompt&action=respond&ref=callback_response`
+                } 
+              }]
+            ]
+          }
+        }
+      );
+      return;
     }
     
-    // Choose prompt type callbacks
-    if (callbackData.startsWith('choose:')) {
-      return handleChooseCallback(ctx);
-    }
-    
-    // NEW: Handle new prompt callback from streak command
+    // New prompt callback (redirect to app)
     if (callbackData === 'new_prompt') {
       return handleNewPromptCallback(ctx);
     }
     
-    // Add a default return
-    return; // Ensures all code paths return a value
+    // Choose prompt type callbacks (redirect to app)
+    if (callbackData.startsWith('choose_')) {
+      return handleChooseCallback(ctx);
+    }
+    
+    // Start command callback
+    if (callbackData === 'start') {
+      return handleStart(ctx);
+    }
+    
+    // Unknown callback
+    ctx.answerCbQuery('This feature is now in the app!');
+    ctx.reply(
+      '🚀 *This feature moved to the app for a better experience!*',
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: "🌟 Open ThyKnow App", 
+              web_app: { 
+                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?ref=unknown_callback`
+              } 
+            }]
+          ]
+        }
+      }
+    );
   });
+
+  // ============================================
+  // TEXT MESSAGE HANDLING
+  // ============================================
   
-  // Middleware for handling text - try feedback first, then streak submission, then fall back to regular text handling
-  bot.on('text', handleFeedbackText, handleWeeklyJournalSubmission, handleTextMessage);
-  
-  // Register error handler
-  bot.catch((err, ctx) => {
-    logger.error('Bot error:', err);
-    ctx.reply(MESSAGES.ERROR);
+  // Handle text messages (responses, feedback, etc.)
+  bot.on('text', async (ctx) => {
+    const userId = ctx.from?.id.toString();
+    const messageText = ctx.message.text;
+    
+    if (!userId || !messageText) return;
+    
+    // Skip if it's a command
+    if (messageText.startsWith('/')) return;
+    
+    // Check if user is in feedback mode
+    const user = await require('../services/userService').userService.getUser(userId);
+    if (user?.feedbackMode) {
+      return handleFeedbackText(ctx);
+    }
+    
+    // Handle as prompt response (but encourage app use)
+    return handleTextMessage(ctx);
   });
+
+  // ============================================
+  // ERROR HANDLING
+  // ============================================
   
-  // Set up bot commands menu - UPDATED WITH COMBINED APPROACH
-  bot.telegram.setMyCommands([
-    { command: 'start', description: 'Initialize the bot and get started' },
-    { command: 'prompt', description: 'Get a new reflection prompt' },
-    { command: 'choose', description: 'Choose a specific type of prompt' },
-    { command: 'history', description: 'View your recent journal entries' },
-    { command: 'miniapp', description: 'Open the ThyKnow mini app (all pages)' },
-    { command: 'streak', description: 'View streak summary + detailed progress' },
-    { command: 'feedback', description: 'Share your thoughts with us' },
-    { command: 'schedule', description: 'Manage your prompt schedule' },
-    { command: 'help', description: 'Show available commands and usage' }
-  ]);
+  bot.catch((err: any, ctx: Context) => {
+    logger.error('Bot error occurred:', err);
+    
+    ctx.reply(
+      'Sorry, something went wrong! 😅\n\n' +
+      'Try using the app for a more stable experience:',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: "🚀 Open ThyKnow App", 
+              web_app: { 
+                url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?ref=error_recovery`
+              } 
+            }]
+          ]
+        }
+      }
+    );
+  });
+
+  // ============================================
+  // BOT SETUP COMPLETE
+  // ============================================
+  
+  logger.info('✅ Frontend-first bot commands setup complete!');
+  logger.info('📱 All main features now redirect to the React miniapp');
+  logger.info('🤖 Bot serves as gateway and quick utility access');
+}
+
+/**
+ * Get bot command statistics for monitoring
+ */
+export async function getBotCommandStats(): Promise<any> {
+  try {
+    // This would query your analytics database
+    return {
+      totalCommands: 0,
+      frontendRedirects: 0,
+      conversionRate: 0,
+      popularCommands: []
+    };
+  } catch (error) {
+    logger.error('Error getting bot command stats:', error);
+    return null;
+  }
 }

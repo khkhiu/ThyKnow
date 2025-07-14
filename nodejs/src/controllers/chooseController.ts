@@ -1,104 +1,146 @@
-// src/controllers/chooseController.ts
-import { Context, NarrowedContext } from 'telegraf';
-import { Update, CallbackQuery } from 'telegraf/typings/core/types/typegram';
+// src/controllers/chooseController.ts (Updated - Frontend-First)
+import { Context } from 'telegraf';
+import { CallbackQuery } from 'telegraf/typings/core/types/typegram';
 import { logger } from '../utils/logger';
-import { handleSendPrompt } from './promptController';
-import { PromptType } from '../types';
-
-// Define a type for callback query context
-type CallbackContext = NarrowedContext<Context, Update.CallbackQueryUpdate>;
+import { userService } from '../services/userService';
+import { commandResponseService } from '../services/commandResponseService';
+import { userAppUsageService } from '../services/userAppUsageService';
+import { CommandContext } from '../types/botCommand';
 
 /**
- * Handle the /choose command
- * Allows users to choose between self-awareness and connections prompts
+ * Handle /choose command - Now redirects to frontend
  */
 export async function handleChooseCommand(ctx: Context): Promise<void> {
   try {
     const userId = ctx.from?.id.toString();
+    const userName = ctx.from?.first_name || 'there';
     
     if (!userId) {
-      logger.error('No user ID found in context');
+      await ctx.reply('Sorry, I could not identify you. Please try again.');
       return;
     }
-    
-    // Create keyboard with prompt type options
-    const keyboard = [
-      [
+
+    // Record command usage for analytics
+    await userAppUsageService.recordBotCommandUsage(userId, 'choose');
+
+    // Check if user exists
+    const user = await userService.getUser(userId);
+    if (!user) {
+      await ctx.reply(
+        '🦕 Welcome! Please start your journey first.',
         {
-          text: "🧠 Self-Awareness",
-          callback_data: "choose:self_awareness"
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🌟 Get Started", callback_data: "start" }]
+            ]
+          }
         }
-      ],
-      [
+      );
+      return;
+    }
+
+    // Get user app usage for progressive disclosure
+    const userAppUsage = await userAppUsageService.getUserAppUsage(userId);
+    
+    const commandContext: CommandContext = {
+      userId,
+      userName,
+      userAppUsage,
+      commandName: 'choose'
+    };
+
+    // Generate frontend-first response
+    const response = commandResponseService.generateChooseResponse(commandContext);
+
+    // For first-time users, show a quick preview of prompt types
+    if (userAppUsage.miniappUsageCount < 2) {
+      const promptTypesPreview = `
+
+🎯 *Available Prompt Types:*
+
+🧠 **Self-Awareness** - Understand yourself better
+💝 **Connections** - Explore relationships  
+🌱 **Growth** - Personal development
+🎨 **Creativity** - Express your thoughts
+🙏 **Gratitude** - Appreciate life's gifts
+
+*Choose and preview prompts in the app with rich descriptions!*`;
+
+      await ctx.reply(
+        response.messageText + promptTypesPreview + '\n\n' + response.promotionMessage,
         {
-          text: "🤝 Connections",
-          callback_data: "choose:connections" 
+          parse_mode: response.parseMode,
+          reply_markup: {
+            inline_keyboard: [
+              [{ 
+                text: response.miniappButton.text, 
+                web_app: { url: response.miniappButton.url } 
+              }]
+            ]
+          }
         }
-      ]
-    ];
-    
-    await ctx.reply(
-      "Which type of prompt would you like to receive?\n\n" +
-      "🧠 Self-Awareness: Reflect on your thoughts, feelings, and personal growth.\n\n" +
-      "🤝 Connections: Focus on building and strengthening relationships with others.",
-      {
-        reply_markup: {
-          inline_keyboard: keyboard
+      );
+    } else {
+      // For experienced users, direct to app
+      await ctx.reply(
+        response.messageText + '\n\n' + response.promotionMessage,
+        {
+          parse_mode: response.parseMode,
+          reply_markup: {
+            inline_keyboard: [
+              [{ 
+                text: response.miniappButton.text, 
+                web_app: { url: response.miniappButton.url } 
+              }]
+            ]
+          }
         }
-      }
-    );
-    
+      );
+    }
+
+    logger.info(`Choose command handled for user ${userId} - directed to frontend`);
   } catch (error) {
-    logger.error('Error in choose command:', error);
-    await ctx.reply('Sorry, there was an error. Please try again later.');
+    logger.error('Error in handleChooseCommand:', error);
+    await ctx.reply('Sorry, something went wrong. Please try again or use /help for assistance.');
   }
 }
 
 /**
- * Handle callback queries for choose command
+ * Handle choose prompt type callbacks (fallback for legacy users)
  */
-export async function handleChooseCallback(ctx: CallbackContext): Promise<void> {
+export async function handleChooseCallback(ctx: Context): Promise<void> {
   try {
-    // Safety check for ctx.from
-    if (!ctx.from) {
-      logger.error('User data missing from callback query');
-      await ctx.answerCbQuery('Error: User data missing');
+    const userId = ctx.from?.id.toString();
+    const callbackData = (ctx.callbackQuery as CallbackQuery.DataQuery).data;
+    
+    if (!userId || !callbackData) {
+      await ctx.answerCbQuery('Error processing request');
       return;
     }
+
+    // Instead of processing inline, redirect to app
+    const deepLink = `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?page=choose&action=choose&type=${callbackData}&ref=callback_legacy`;
     
-    // Cast to DataQuery type to access the data property
-    const callbackQuery = ctx.callbackQuery as CallbackQuery.DataQuery;
-    
-    if (!callbackQuery.data || !callbackQuery.data.includes(':')) {
-      await ctx.answerCbQuery('Invalid callback data');
-      return;
-    }
-    
-    const [action, value] = callbackQuery.data.split(':');
-    
-    if (action === 'choose') {
-      // Verify it's a valid prompt type
-      const promptType = value as PromptType;
-      if (promptType !== 'self_awareness' && promptType !== 'connections') {
-        await ctx.answerCbQuery('Invalid prompt type');
-        return;
+    await ctx.answerCbQuery('Opening in app for better experience!');
+    await ctx.editMessageText(
+      '🎯 *Prompt selection moved to the app!*\n\n' +
+      'Get a better experience with prompt previews, descriptions, and your dino friend!',
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ 
+              text: "🔍 Choose Prompt Type", 
+              web_app: { url: deepLink } 
+            }]
+          ]
+        }
       }
-      
-      // Answer the callback query
-      await ctx.answerCbQuery(`Getting a ${promptType.replace('_', '-')} prompt...`);
-      
-      // Delete the choose message
-      await ctx.deleteMessage();
-      
-      // Store the chosen prompt type in context for the prompt controller to use
-      (ctx as any).chosenPromptType = promptType;
-      
-      // Send the prompt
-      await handleSendPrompt(ctx);
-    }
-    
+    );
+
+    logger.info(`Choose callback handled for user ${userId} - redirected to frontend`);
   } catch (error) {
-    logger.error('Error handling choose callback:', error);
-    await ctx.answerCbQuery('Sorry, an error occurred');
+    logger.error('Error in handleChooseCallback:', error);
+    await ctx.answerCbQuery('Sorry, something went wrong. Please try /choose again.');
   }
 }
