@@ -5,15 +5,17 @@
   "main": "dist/src/server.js",
   "scripts": {
     "start": "node dist/src/server.js",
+    "start:production": "node dist/src/server.js",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "nodemon --exec ts-node src/server.ts",
     "dev:frontend": "cd frontend && npm run dev",
-    "build": "npm run build:backend && npm run build:frontend",
+    "build": "npm run clean && npm run build:backend && npm run build:frontend",
     "build:backend": "tsc -p tsconfig.json",
     "build:frontend": "cd frontend && npm install && npm run build",
     "install:frontend": "cd frontend && npm install",
     "clean": "rm -rf dist",
-    "clean:all": "npm run clean && rm -rf node_modules frontend/node_modules && npm install && npm run install:frontend"
+    "clean:all": "npm run clean && rm -rf node_modules frontend/node_modules && npm install && npm run install:frontend",
+    "postbuild": "echo 'Build completed. Checking dist directory...' && ls -la dist/ && ls -la dist/src/ || echo 'dist/src not found'"
   },
   "keywords": [
     "telegram",
@@ -76,13 +78,5 @@
     "nyc": "^17.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
-  },
-  "railway": {
-    "build": {
-      "command": "npm run build"
-    },
-    "deploy": {
-      "startCommand": "npm run start:production"
-    }
   }
 }
