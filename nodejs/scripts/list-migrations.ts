@@ -2,7 +2,7 @@
 // Script to list all available migrations and their status
 
 import { config as dotenvConfig } from 'dotenv';
-import { createMigrationManager, availableMigrations } from '../src/database/migrations';
+import { createMigrationManager } from '../src/database/migrations';
 
 // Load environment variables
 dotenvConfig();

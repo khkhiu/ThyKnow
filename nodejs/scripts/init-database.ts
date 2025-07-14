@@ -2,7 +2,6 @@
 // Database initialization script for production deployment
 
 import { initDatabase, checkDatabaseConnection } from '../src/database';
-import { logger } from '../src/utils/logger';
 import config from '../src/config';
 
 /**

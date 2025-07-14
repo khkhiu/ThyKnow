@@ -3,7 +3,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { logger } from '../src/utils/logger';
 
 interface EnvironmentConfig {
   NODE_ENV: string;
