@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ThyKnow - Weekly Streak</title>
+    
+    <!-- Telegram Web App stylesheet and script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Prevent mobile double-tap zoom and ensure proper touch handling -->
+    <style>
+        * { touch-action: manipulation; }
+        body { overscroll-behavior: none; }
+    </style>
+    
+    <!-- App styles -->
+    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/streak.css">
+    
+    <!-- Main entry point (compiled from TypeScript) - FIXED TO USE MODULE TYPE -->
+    <script type="module" src="dist/streak.js"></script>
+</head>
+<body>
+    <!-- Loading spinner -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading your weekly progress...</p>
+    </div>
+
+    <div class="container" id="content" style="display: none;">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-chart-line"></i> Weekly Progress</h1>
+                <p class="tagline">Track your reflection journey and celebrate growth</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- User's Personal Streak Section -->
+            <section class="streak-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-fire"></i> Your Weekly Streak</h2>
+                    <p>Building consistency, one week at a time</p>
+                </div>
+                <div id="user-streak-container" class="streak-container">
+                    <!-- Streak display will be populated here -->
+                </div>
+            </section>
+
+            <!-- Weekly Progress Section -->
+            <section class="progress-section">
+                <div class="progress-grid">
+                    <div class="progress-card">
+                        <h3><i class="fas fa-calendar-week"></i> This Week</h3>
+                        <div id="weekly-status" class="weekly-status">
+                            <!-- Weekly status will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="progress-card">
+                        <h3><i class="fas fa-trophy"></i> Next Milestone</h3>
+                        <div id="milestone-info" class="milestone-info">
+                            <!-- Milestone information will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Points History Section -->
+            <section class="history-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> Recent Activity</h2>
+                    <p>Your journey through reflection and growth</p>
+                </div>
+                <div id="points-history" class="points-history">
+                    <!-- Points history will be populated here -->
+                </div>
+            </section>
+
+            <!-- Milestones Section -->
+            <section class="milestones-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-star"></i> Achievement Milestones</h2>
+                    <p>Celebrating your dedication to weekly reflection</p>
+                </div>
+                <div id="milestones-grid" class="milestones-grid">
+                    <!-- Milestones will be populated here -->
+                </div>
+            </section>
+
+            <!-- Weekly Schedule & Reset Section -->
+            <section class="weekly-schedule-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-week"></i> Weekly Schedule & Reset</h2>
+                    <p>Understanding how weeks work and when streaks reset</p>
+                </div>
+                <div class="schedule-explanation-content">
+                    <div class="schedule-breakdown">
+                        <div class="schedule-item">
+                            <div class="schedule-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="schedule-details">
+                                <h4>Week Definition</h4>
+                                <p>Weeks run <strong>Monday to Sunday</strong> following the international ISO standard<br>
+                                <span class="example">Each week gets a unique identifier like "2025-W03"</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item">
+                            <div class="schedule-icon">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                            <div class="schedule-details">
+                                <h4>Reset Timing</h4>
+                                <p>New weeks begin at <strong>midnight Monday</strong> in your system timezone<br>
+                                <span class="example">Sunday 11:59 PM → Monday 12:00 AM = new week starts</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item">
+                            <div class="schedule-icon">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="schedule-details">
+                                <h4>Streak Continuation</h4>
+                                <p>Make at least <strong>one entry per week</strong> to keep your streak alive<br>
+                                <span class="example">Miss any full week = streak resets to 1</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item">
+                            <div class="schedule-icon">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div class="schedule-details">
+                                <h4>Same-Week Entries</h4>
+                                <p>Multiple reflections in one week earn <strong>bonus points</strong> but don't change your streak count<br>
+                                <span class="example">3 entries in Week 5 = still Week 5 streak + bonus points</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="current-week-info">
+                        <h4><i class="fas fa-calendar-day"></i> This Week's Status</h4>
+                        <div class="week-status-display">
+                            <div class="week-detail">
+                                <span class="week-label">Current Week:</span>
+                                <span class="week-value" id="current-week-display">Loading...</span>
+                            </div>
+                            <div class="week-detail">
+                                <span class="week-label">Week Ends:</span>
+                                <span class="week-value" id="week-ends-display">Loading...</span>
+                            </div>
+                            <div class="week-detail">
+                                <span class="week-label">Your Status:</span>
+                                <span class="week-value" id="week-completion-status">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Points System Explanation Section -->
+            <section class="points-explanation-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-lightbulb"></i> How Points Work</h2>
+                    <p>Understanding your weekly reflection rewards</p>
+                </div>
+                <div class="points-explanation-content">
+                    <div class="points-breakdown">
+                        <div class="breakdown-item">
+                            <div class="breakdown-icon">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="breakdown-details">
+                                <h4>Base Points</h4>
+                                <p>Earn <strong>50 points</strong> for each weekly reflection entry</p>
+                            </div>
+                        </div>
+                        
+                        <div class="breakdown-item">
+                            <div class="breakdown-icon">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="breakdown-details">
+                                <h4>Streak Bonus</h4>
+                                <p>Get <strong>+10 points per week</strong> of your current streak<br>
+                                <span class="example">Week 5 streak = +50 bonus points!</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="breakdown-item">
+                            <div class="breakdown-icon">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div class="breakdown-details">
+                                <h4>Multiple Entry Bonus</h4>
+                                <p>Additional reflections in the same week earn <strong>+20 bonus points</strong></p>
+                            </div>
+                        </div>
+                        
+                        <div class="breakdown-item">
+                            <div class="breakdown-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="breakdown-details">
+                                <h4>Milestone Rewards</h4>
+                                <p>Special bonuses for major achievements:<br>
+                                <span class="milestones-list">
+                                    4 weeks: +200 pts • 12 weeks: +500 pts • 26 weeks: +1,000 pts
+                                </span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="points-summary-card">
+                        <h4><i class="fas fa-calculator"></i> Example: Week 5 Streak</h4>
+                        <div class="calculation-example">
+                            <div class="calc-line">
+                                <span>Base points:</span>
+                                <span>50 pts</span>
+                            </div>
+                            <div class="calc-line">
+                                <span>Streak bonus (5 × 10):</span>
+                                <span>+50 pts</span>
+                            </div>
+                            <div class="calc-line total">
+                                <span><strong>Total earned:</strong></span>
+                                <span><strong>100 pts</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Error state -->
+        <div id="error" class="error-container" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p class="error-message">Sorry, something went wrong loading your streak data.</p>
+            <button id="retry-button" class="btn secondary">Try Again</button>
+        </div>
+
+        <footer>
+            <div class="nav-bar">
+                <a href="/miniapp" class="nav-item">
+                    <i class="fas fa-home nav-icon"></i>
+                    <span class="nav-label">Home</span>
+                </a>
+                <a href="/miniapp/pet" class="nav-item">
+                    <i class="fas fa-dragon nav-icon"></i>
+                    <span class="nav-label">Dino Friend</span>
+                </a>
+                <a href="/miniapp/streak" class="nav-item active">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span class="nav-label">Streak</span>
+                </a>
+            </div>
+            <div class="footer-info">
+                <p>© 2025 ThyKnow - Celebrating your weekly reflection journey</p>
+                <div class="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                    <span class="toggle-label">Dark Mode</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Notification container for success/error messages -->
+    <div id="notification-container" class="notification-container"></div>
+</body>
+</html>

@@ -1,0 +1,1082 @@
+/* File: public/miniapp/src/css/weekly-streak-styles.css */
+/* Comprehensive styling for the weekly streak and points system */
+
+/* Main weekly streak container - designed for contemplative, sustainable growth */
+.weekly-streak-container {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 16px 0;
+  color: white;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Gentle animated background effect for sustained engagement */
+.weekly-streak-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: gentle-shimmer 5s infinite;
+}
+
+@keyframes gentle-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Header section with main weekly streak and points display */
+.streak-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.streak-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.streak-flame {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  animation: gentle-pulse 4s ease-in-out infinite;
+}
+
+/* Gentle pulse animation for sustainable feel */
+@keyframes gentle-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+.streak-number {
+  font-size: 3rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.streak-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
+/* This week completion badge */
+.this-week-badge {
+  position: absolute;
+  top: -8px;
+  right: -20px;
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Points display - feels important but not overwhelming */
+.points-display {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.points-number {
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.points-label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+/* Progress section - builds anticipation for meaningful milestones */
+.progress-section {
+  margin-bottom: 24px;
+}
+
+.progress-container {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.progress-bar {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  height: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  height: 100%;
+  border-radius: 12px;
+  transition: width 1.2s ease-out;
+  position: relative;
+}
+
+/* Subtle moving highlight for weekly progress */
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: progress-glow 3s infinite;
+}
+
+@keyframes progress-glow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.milestone-info {
+  text-align: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.milestone-reward {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.milestone-encouragement {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.milestone-completed {
+  text-align: center;
+  padding: 18px;
+  background: rgba(34, 197, 94, 0.25);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Stats row for comprehensive information */
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 16px;
+}
+
+.stat-item {
+  text-align: center;
+  flex: 1;
+  padding: 8px;
+}
+
+.stat-number {
+  font-size: 1.3rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+/* Compact weekly streak indicator for persistent display */
+.compact-weekly-streak {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.compact-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compact-status {
+  font-size: 1rem;
+  animation: status-breathe 3s ease-in-out infinite;
+}
+
+@keyframes status-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.compact-separator {
+  opacity: 0.6;
+  margin: 0 2px;
+}
+
+/* Weekly celebration overlay system - designed for meaningful achievement */
+.weekly-reward-celebration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.weekly-reward-celebration.celebration-visible {
+  opacity: 1;
+}
+
+.celebration-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Different celebration themes for weekly achievements */
+.celebration-weekly-normal {
+  background: linear-gradient(45deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9));
+}
+
+.celebration-weekly-milestone {
+  background: linear-gradient(45deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.9));
+}
+
+.celebration-weekly-record {
+  background: linear-gradient(45deg, rgba(99, 102, 241, 0.9), rgba(79, 70, 229, 0.9));
+}
+
+.celebration-weekly-restart {
+  background: linear-gradient(45deg, rgba(34, 197, 94, 0.9), rgba(21, 128, 61, 0.9));
+}
+
+.celebration-weekly-bonus {
+  background: linear-gradient(45deg, rgba(168, 85, 247, 0.9), rgba(147, 51, 234, 0.9));
+}
+
+.celebration-content {
+  background: white;
+  border-radius: 24px;
+  padding: 48px 36px;
+  text-align: center;
+  max-width: 420px;
+  margin: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  transform: scale(0.85);
+  animation: weekly-celebration-entrance 0.6s ease-out forwards;
+}
+
+@keyframes weekly-celebration-entrance {
+  0% {
+    transform: scale(0.85) translateY(20px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.02) translateY(-5px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.celebration-icon {
+  font-size: 4.5rem;
+  margin-bottom: 20px;
+  animation: weekly-celebration-float 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes weekly-celebration-float {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-8px); }
+}
+
+.celebration-title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.celebration-points {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 12px;
+}
+
+.celebration-streak {
+  font-size: 1.1rem;
+  color: #6b7280;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.celebration-message {
+  font-size: 1rem;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border-left: 4px solid #10b981;
+}
+
+.celebration-week-info {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+.celebration-close {
+  background: linear-gradient(45deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 36px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.celebration-close:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+/* Weekly number animation effects */
+.weekly-number-updating {
+  color: #22c55e !important;
+  transform: scale(1.08);
+  transition: all 0.4s ease;
+  text-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+}
+
+/* Weekly reflection summary component */
+.weekly-reflection-summary {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 16px 0;
+  color: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.summary-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.summary-week {
+  background: #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.summary-stat {
+  text-align: center;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.summary-stat-number {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #10b981;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.summary-stat-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.summary-insight {
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+  border-left: 4px solid #10b981;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #475569;
+  font-style: italic;
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 768px) {
+  .weekly-streak-container {
+    margin: 12px 0;
+    padding: 20px;
+  }
+  
+  .streak-header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .points-display {
+    align-items: center;
+  }
+  
+  .stats-row {
+    gap: 12px;
+  }
+  
+  .celebration-content {
+    margin: 15px;
+    padding: 36px 28px;
+  }
+  
+  .celebration-icon {
+    font-size: 3.5rem;
+  }
+  
+  .celebration-title {
+    font-size: 1.4rem;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Dark mode support for better accessibility */
+@media (prefers-color-scheme: dark) {
+  .celebration-content {
+    background: #1f2937;
+    color: white;
+  }
+  
+  .celebration-title {
+    color: white;
+  }
+  
+  .celebration-message {
+    background: #374151;
+    color: #d1d5db;
+  }
+  
+  .weekly-reflection-summary {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: #e5e7eb;
+  }
+  
+  .summary-header h3 {
+    color: #f9fafb;
+  }
+  
+  .summary-stat {
+    background: #374151;
+  }
+  
+  .summary-insight {
+    background: #374151;
+    color: #d1d5db;
+  }
+}
+
+/* Additional animations for sustained engagement */
+@keyframes weekly-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+}
+
+.weekly-streak-container:hover {
+  animation: weekly-glow 2s infinite;
+}
+
+/* Page layout for streak page */
+.streak-section,
+.progress-section,
+.history-section,
+.milestones-section {
+  margin-bottom: 32px;
+}
+
+.streak-section h2,
+.progress-section h2,
+.history-section h2,
+.milestones-section h2 {
+  color: var(--primary-color);
+  margin-bottom: 16px;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Progress cards */
+.progress-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.progress-card {
+  background: var(--card-color);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
+}
+
+.progress-card h3 {
+  margin: 0 0 16px 0;
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Weekly status styling */
+.weekly-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.status-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.status-text h4 {
+  margin: 0 0 4px 0;
+  color: var(--text-color);
+  font-size: 0.9rem;
+}
+
+.status-text p {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.week-id {
+  background: var(--primary-color);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Milestone info styling */
+.milestone-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.milestone-weeks {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  line-height: 1;
+}
+
+.milestone-label {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  text-align: center;
+}
+
+.milestone-reward {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.milestone-completed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--success-color);
+}
+
+.milestone-completed i {
+  font-size: 1.5rem;
+}
+
+/* Points history styling */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.history-header h3 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 1.1rem;
+}
+
+.total-points {
+  background: var(--primary-color);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(108, 99, 255, 0.05);
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--primary-color);
+}
+
+.history-icon {
+  color: var(--success-color);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.history-content {
+  flex: 1;
+}
+
+.history-points {
+  font-weight: 600;
+  color: var(--success-color);
+  margin-bottom: 2px;
+}
+
+.history-reason {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-bottom: 2px;
+}
+
+.history-date {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.history-week {
+  background: var(--primary-color);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.streak-info {
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 2px;
+}
+
+.points-info {
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.you-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--primary-color);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.best-streak {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.best-number {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  line-height: 1;
+}
+
+.best-label {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Milestones grid */
+.milestones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.milestone-card {
+  background: var(--card-color);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.milestone-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.milestone-card .milestone-weeks {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 8px;
+}
+
+.milestone-card .milestone-title {
+  font-size: 0.85rem;
+  color: var(--text-color);
+  line-height: 1.3;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.milestone-card .milestone-icon {
+  font-size: 1.5rem;
+  opacity: 0.8;
+}
+
+/* Empty states */
+.empty-history {
+  padding: 30px;
+  text-align: center;
+  background-color: var(--card-color);
+  border-radius: var(--border-radius);
+  color: var(--text-light);
+  font-style: italic;
+}
+
+.empty-history i {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .progress-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .milestones-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  
+  .history-item {
+    padding: 10px;
+  }
+}
+
+/* Dark theme adjustments */
+.dark-theme .progress-card {
+  background: var(--card-color);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .milestone-card {
+  background: var(--card-color);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .history-item {
+  background: rgba(108, 99, 255, 0.1);
+}
+
+/* Points Explanation Section Styles */
+.points-explanation-section {
+  margin-bottom: 32px;
+}
+
+.points-explanation-content {
+  background: var(--card-color);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
+}
+
+.points-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(108, 99, 255, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.breakdown-icon {
+  background: var(--primary-color);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.breakdown-icon i {
+  font-size: 1.1rem;
+}
+
+.breakdown-details {
+  flex: 1;
+}
+
+.breakdown-details h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.breakdown-details p {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.breakdown-details strong {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.example {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--success-color);
+  font-style: italic;
+}
+
+.milestones-list {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.points-summary-card {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.points-summary-card h4 {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calculation-example {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calc-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+
+.calc-line.total {
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  padding-top: 12px;
+  margin-top: 8px;
+  font-size: 1rem;
+}
+
+/* Responsive design for points explanation */
+@media (max-width: 768px) {
+  .points-explanation-content {
+    padding: 20px;
+  }
+  
+  .breakdown-item {
+    padding: 14px;
+    gap: 12px;
+  }
+  
+  .breakdown-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .breakdown-icon i {
+    font-size: 1rem;
+  }
+  
+  .breakdown-details h4 {
+    font-size: 0.95rem;
+  }
+  
+  .breakdown-details p {
+    font-size: 0.85rem;
+  }
+  
+  .points-summary-card {
+    padding: 16px;
+  }
+}
+
+/* Dark theme adjustments for points explanation */
+.dark-theme .points-explanation-content {
+  background: var(--card-color);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .breakdown-item {
+  background: rgba(108, 99, 255, 0.1);
+}
+
+.dark-theme .points-summary-card {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}

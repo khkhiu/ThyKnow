@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ThyKnow - Dino Friend</title>
+    
+    <!-- Telegram Web App stylesheet and script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Prevent mobile double-tap zoom and ensure proper touch handling -->
+    <style>
+        * { touch-action: manipulation; }
+        body { overscroll-behavior: none; }
+    </style>
+    
+    <!-- App styles -->
+    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/pet.css">
+    
+    <!-- Main entry point (compiled from TypeScript) -->
+    <script type="module" src="dist/pet.js"></script>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="background-container" id="background"></div>
+
+    <div class="affirmation-container">
+        <div class="header fade-in" style="animation-delay: 0.2s">
+            <!-- Theme toggle button added to header -->
+            <div class="header-top">
+                <h1>Meet Your Dino Friend</h1>
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark theme">
+                    <i class="fas fa-sun theme-icon light-icon" id="light-icon"></i>
+                    <i class="fas fa-moon theme-icon dark-icon" id="dark-icon"></i>
+                </button>
+            </div>
+            <p class="tagline">Tap on your dino friend to make it blink!</p>
+            <p class="hint-text"><i class="fas fa-hand-point-up"></i> Tap to see different messages too!</p>
+        </div>
+
+        <!-- Spacer to push dino closer to nav bar -->
+        <div style="flex-grow: 1;"></div>
+        
+        <!-- Dino container positioned just above nav bar -->
+        <div class="dino-container fade-in" style="animation-delay: 0.6s">
+            <div class="speech-bubble" id="speech-bubble">Rawr! That means "You've got this!" in dinosaur.</div>
+            <img src="#" alt="Friendly dinosaur" class="dino-image" id="dino-image" role="button" tabindex="0" aria-label="Interactive dinosaur. Tap to make it blink and show messages">
+        </div>
+
+        <div class="nav-bar fade-in" style="animation-delay: 1s">
+            <a href="/miniapp" class="nav-item">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-label">Home</span>
+            </a>
+            <a href="/miniapp/pet" class="nav-item active">
+                <i class="fas fa-dragon nav-icon"></i>
+                <span class="nav-label">Dino Friend</span>
+            </a>
+            <a href="/miniapp/streak" class="nav-item">
+                <i class="fas fa-chart-line nav-icon"></i>
+                <span class="nav-label">Streak</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Theme toggle functionality script -->
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('light-icon');
+            const darkIcon = document.getElementById('dark-icon');
+            
+            // Function to update theme toggle button appearance
+            function updateThemeToggle(isDark) {
+                if (isDark) {
+                    lightIcon.style.opacity = '0';
+                    darkIcon.style.opacity = '1';
+                    themeToggle.setAttribute('aria-label', 'Switch to light theme');
+                } else {
+                    lightIcon.style.opacity = '1';
+                    darkIcon.style.opacity = '0';
+                    themeToggle.setAttribute('aria-label', 'Switch to dark theme');
+                }
+            }
+            
+            // Initialize theme from localStorage or system preference
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+            
+            if (isDark) {
+                document.body.classList.add('dark-theme');
+            }
+            updateThemeToggle(isDark);
+            
+            // Theme toggle click handler
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    const currentlyDark = document.body.classList.contains('dark-theme');
+                    
+                    if (currentlyDark) {
+                        document.body.classList.remove('dark-theme');
+                        localStorage.setItem('theme', 'light');
+                        updateThemeToggle(false);
+                    } else {
+                        document.body.classList.add('dark-theme');
+                        localStorage.setItem('theme', 'dark');
+                        updateThemeToggle(true);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

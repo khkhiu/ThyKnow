@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ThyKnow - Reflection Journal</title>
+    
+    <!-- Telegram Web App stylesheet and script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Prevent mobile double-tap zoom and ensure proper touch handling -->
+    <style>
+        * { touch-action: manipulation; }
+        body { overscroll-behavior: none; }
+    </style>
+    
+    <!-- App styles -->
+    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/streak.css">
+    
+    <!-- Main entry point (compiled from TypeScript) -->
+    <script type="module" src="dist/main.js"></script>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container" id="content" style="display: none;">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-lightbulb"></i> ThyKnow</h1>
+                <p class="tagline">Discover yourself through thoughtful reflection</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Prompt section -->
+            <section class="prompt-section">
+                <div class="prompt-container card">
+                    <div class="prompt-header">
+                        <span id="prompt-type" class="prompt-type">🧠 Self-Awareness</span>
+                        <button id="new-prompt-button" class="btn icon-btn" title="Get new prompt">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+                    <div id="prompt-text" class="prompt-text">
+                        What moment today made you feel most alive?
+                    </div>
+                    <div id="prompt-hint" class="prompt-hint">
+                        Take a moment to reflect on this question deeply.
+                    </div>
+                </div>
+                
+                <!-- Response section -->
+                <div class="response-container card">
+                    <textarea 
+                        id="response" 
+                        class="response-field" 
+                        placeholder="Share your thoughts and reflections here..."
+                        rows="4"
+                    ></textarea>
+                    <div class="response-actions">
+                        <button id="submit-response" class="btn primary">
+                            <i class="fas fa-paper-plane"></i>
+                            Save Reflection
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History section -->
+            <section class="history-section">
+                <div class="history-header">
+                    <h2><i class="fas fa-history"></i> Your Reflections</h2>
+                    <div class="history-controls">
+                        <select id="date-filter" class="filter-select">
+                            <option value="all">All entries</option>
+                            <option value="today">Today</option>
+                            <option value="week">This week</option>
+                            <option value="month">This month</option>
+                            <option value="custom">Custom date</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="custom-date-container" class="custom-date-container" style="display: none;">
+                    <input type="date" id="custom-date" class="date-input">
+                    <button id="apply-date" class="btn secondary small">Apply</button>
+                </div>
+                    <div id="history-entries" class="history-container">
+                      <!-- History entries will be populated here -->
+                    </div>
+                    <div id="empty-history" class="empty-history" style="display: none;">
+                      <p>No journal entries found for the selected date range.</p>
+                    </div>
+                  </section>
+            </div>
+            
+            <!-- Error state -->
+            <div id="error" class="error-container" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p class="error-message">Sorry, something went wrong.</p>
+                <button id="retry-button" class="btn secondary">Try Again</button>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="nav-bar">
+                <a href="/miniapp" class="nav-item active">
+                    <i class="fas fa-home nav-icon"></i>
+                    <span class="nav-label">Home</span>
+                </a>
+                <a href="/miniapp/pet" class="nav-item">
+                    <i class="fas fa-dragon nav-icon"></i>
+                    <span class="nav-label">Dino Friend</span>
+                </a>
+                <a href="/miniapp/streak" class="nav-item">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span class="nav-label">Streak</span>
+                </a>
+            </div>
+            <div class="footer-info">
+                <p>© 2025 ThyKnow - Helping you evolve, one prompt at a time.</p>
+                <div class="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                    <span class="toggle-label">Dark Mode</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
