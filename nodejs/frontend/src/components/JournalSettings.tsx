@@ -1,7 +1,6 @@
 // components/JournalSettings.tsx
 import React from 'react';
-//import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Bot, Clock, Calendar, Settings2 } from 'lucide-react';
 
 interface JournalSettingsProps {
   promptDay: string;
@@ -14,97 +13,64 @@ const JournalSettings: React.FC<JournalSettingsProps> = ({
   promptTime,
   onSettingsChange
 }) => {
-  const handleDayChange = (newDay: string) => {
-    onSettingsChange(newDay, promptTime);
-  };
-
-  const handleTimeChange = (newTime: string) => {
-    onSettingsChange(promptDay, newTime);
-  };
-
   return (
     <div className="space-y-6">
-      <div>
-        <h4 className="font-medium mb-3">Prompt Schedule</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Preferred Day
-            </label>
-            <Select value={promptDay} onValueChange={handleDayChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="monday">Monday</SelectItem>
-                <SelectItem value="tuesday">Tuesday</SelectItem>
-                <SelectItem value="wednesday">Wednesday</SelectItem>
-                <SelectItem value="thursday">Thursday</SelectItem>
-                <SelectItem value="friday">Friday</SelectItem>
-                <SelectItem value="saturday">Saturday</SelectItem>
-                <SelectItem value="sunday">Sunday</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <Settings2 className="w-5 h-5 text-blue-600" />
           </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Preferred Time
-            </label>
-            <Select value={promptTime} onValueChange={handleTimeChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="06:00">6:00 AM</SelectItem>
-                <SelectItem value="07:00">7:00 AM</SelectItem>
-                <SelectItem value="08:00">8:00 AM</SelectItem>
-                <SelectItem value="09:00">9:00 AM</SelectItem>
-                <SelectItem value="10:00">10:00 AM</SelectItem>
-                <SelectItem value="12:00">12:00 PM</SelectItem>
-                <SelectItem value="18:00">6:00 PM</SelectItem>
-                <SelectItem value="19:00">7:00 PM</SelectItem>
-                <SelectItem value="20:00">8:00 PM</SelectItem>
-                <SelectItem value="21:00">9:00 PM</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <h4 className="font-semibold text-gray-800">Prompt Schedule Settings</h4>
         </div>
-      </div>
+        
+        <div className="bg-white/60 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-amber-600" />
+            <span className="font-medium text-amber-800">Work in Progress</span>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Web-based scheduling settings are currently under development. 
+            We're working to bring you a seamless experience right here in the app!
+          </p>
+        </div>
 
-      <div>
-        <h4 className="font-medium mb-3">Weekly Streak Information</h4>
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <strong>How it works:</strong>
-              <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600">
-                <li>Weeks run Monday to Sunday</li>
-                <li>One reflection per week maintains your streak</li>
-                <li>Multiple entries in one week = bonus points</li>
-                <li>Miss a week = streak resets</li>
-              </ul>
+        <div className="bg-white/60 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Bot className="w-4 h-4 text-blue-600" />
+            <span className="font-medium text-gray-800">Available Now in Telegram</span>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            You can configure your prompt schedule using these Telegram bot commands:
+          </p>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="w-3 h-3 text-green-600" />
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">/schedule_day</code>
+              <span className="text-gray-600">- Set the day of the week</span>
             </div>
-            <div>
-              <strong>Points System:</strong>
-              <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600">
-                <li>Base: 50 points per weekly reflection</li>
-                <li>Streak bonus: +10 points per streak week</li>
-                <li>Extra entries: +20 bonus points</li>
-                <li>Milestones: Big bonuses at 4, 12, 26, 52+ weeks</li>
-              </ul>
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="w-3 h-3 text-green-600" />
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">/schedule_time</code>
+              <span className="text-gray-600">- Set the hour of the day</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Settings2 className="w-3 h-3 text-green-600" />
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">/schedule_toggle</code>
+              <span className="text-gray-600">- Turn prompts on/off</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Bot className="w-3 h-3 text-green-600" />
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">/schedule</code>
+              <span className="text-gray-600">- View current settings</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div>
-        <h4 className="font-medium mb-3">Data & Privacy</h4>
-        <div className="text-sm text-gray-600 space-y-2">
-          <p>Your journal entries are stored securely and privately.</p>
-          <p>Only you can see your personal reflections and responses.</p>
-          <p>Streak and points data help track your progress over time.</p>
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-xs text-blue-700">
+            <strong>💡 Tip:</strong> Open your Telegram chat with ThyKnow Bot and use these commands to set up your personalized prompt schedule.
+          </p>
         </div>
       </div>
     </div>
