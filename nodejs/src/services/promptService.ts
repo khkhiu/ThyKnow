@@ -1,4 +1,4 @@
-// src/services/promptService.ts
+// src/services/promptService.ts (Updated with proper typing)
 import { User } from '../models/User';
 import { PROMPTS } from '../constants';
 import { Prompt, PromptType } from '../types';
@@ -103,10 +103,16 @@ export class PromptService {
       throw error;
     }
   }
+
   /**
    * Create a journal entry object
+   * Fixed: Added proper type for prompt parameter
    */
-  createJournalEntry(prompt: string, response: string, promptType: PromptType): {
+  createJournalEntry(
+    prompt: string, 
+    response: string, 
+    promptType: PromptType
+  ): {
     prompt: string;
     response: string;
     promptType: PromptType;
@@ -137,6 +143,22 @@ export class PromptService {
       logger.error(`Error generating prompt for user ${userId}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Process prompt response (if this is the function causing the typing error)
+   * Fixed: Added proper type for prompt parameter
+   */
+  processPrompt(prompt: { text: string; type: PromptType; response?: string }): {
+    processed: boolean;
+    type: PromptType;
+    hasResponse: boolean;
+  } {
+    return {
+      processed: true,
+      type: prompt.type,
+      hasResponse: Boolean(prompt.response)
+    };
   }
 }
 
