@@ -212,7 +212,7 @@ export class CommandResponseService {
   }
 
   /**
-   * Generate enhanced /start response
+   * Generate enhanced /start response - UPDATED with /schedule command
    */
   generateStartResponse(context: CommandContext): BotCommandResponse {
     const isReturningUser = !context.userAppUsage.isNewUser;
@@ -228,7 +228,7 @@ export class CommandResponseService {
           text: "🚀 Continue Journey",
           url: deepLink
         },
-        fallbackContent: `Quick Commands:\n• /prompt - New reflection\n• /history - Past entries\n• /streak - Progress stats\n• /help - All commands`,
+        fallbackContent: `Quick Commands:\n• /prompt - New reflection\n• /history - Past entries\n• /streak - Progress stats\n• /schedule - Manage reminders\n• /help - All commands`,
         promotionMessage: "🌟 *Your dino friend missed you!* Check your progress and get a new prompt in the app!",
         parseMode: 'Markdown'
       };
@@ -240,14 +240,14 @@ export class CommandResponseService {
         text: "🌟 Start Your Journey",
         url: deepLink
       },
-      fallbackContent: `Quick Commands (but the app is much better!):\n• /prompt - Get reflection prompt\n• /history - View past entries\n• /streak - Check progress\n• /help - All commands`,
+      fallbackContent: `Quick Commands (but the app is much better!):\n• /prompt - Get reflection prompt\n• /history - View past entries\n• /streak - Check progress\n• /schedule - Set up reminders\n• /help - All commands`,
       promotionMessage: "✨ *Pro tip:* The full experience with your dino friend is in the app!",
       parseMode: 'Markdown'
     };
   }
 
   /**
-   * Generate help response with app promotion
+   * Generate help response with app promotion - UPDATED with /schedule command
    */
   generateHelpResponse(_context: CommandContext): BotCommandResponse {
     const deepLink = this.generateDeepLink({ 
@@ -264,7 +264,7 @@ export class CommandResponseService {
 /choose - Choose prompt type
 /streak - Check your progress
 /miniapp - Open the full app
-/schedule - Manage reminders
+/schedule - Manage prompt reminders
 /feedback - Share your thoughts
 /help - Show this message
 

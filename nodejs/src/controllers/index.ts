@@ -20,6 +20,7 @@ import {
   handleNewPromptCallback 
 } from './combinedStreakController';
 import { logger } from '../utils/logger';
+import config from '../config';
 
 /**
  * Set up all bot commands and handlers (Updated for Frontend-First approach)
@@ -93,14 +94,18 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
     
     if (callbackData.startsWith('choose_')) {
       return handleChooseCallback(ctx);
+    } else if (callbackData.startsWith('set_day:') || callbackData.startsWith('set_time:')) {
+      // Handle schedule-related callbacks (set_day:X, set_time:X)
+      return handleScheduleCallback(ctx);
     } else if (callbackData.startsWith('schedule_')) {
+      // Handle other schedule callbacks if any
       return handleScheduleCallback(ctx);
     } else if (callbackData === 'save_response') {
       return handleResponseCallback(ctx);
     } else if (callbackData === 'new_prompt') {
       return handleNewPromptCallback(ctx);
     } else {
-      // Unknown callback - redirect to app
+      // Unknown callback - redirect to app using proper config
       await ctx.answerCbQuery('This feature moved to the app!');
       ctx.reply(
         '🚀 *This feature moved to the app for a better experience!*',
@@ -111,7 +116,7 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
               [{ 
                 text: "🌟 Open ThyKnow App", 
                 web_app: { 
-                  url: `${process.env.BASE_URL || 'http://localhost:3000'}/miniapp?ref=unknown_callback`
+                  url: `${config.baseUrl}/miniapp?ref=unknown_callback`
                 } 
               }]
             ]
