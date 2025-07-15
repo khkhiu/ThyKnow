@@ -40,15 +40,15 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
   // Get container classes with fixed size
   const getContainerClasses = () => {
     const baseClasses = `
-      relative cursor-pointer transition-all duration-200 ease-in-out
+      relative cursor-pointer transitionfblink-all duration-200 ease-in-out
       hover:scale-105 active:scale-95 select-none
-      w-72 h-72
-      ${isBlinking ? 'animate-pulse' : ''}
+      w-72 h-72}
     `;
     return baseClasses;
   };
 
   // Get accessory emoji
+  /*
   const getAccessoryEmoji = (accessoryId: string) => {
     const accessories: Record<string, string> = {
       'explorer-hat': '🎩',
@@ -60,6 +60,7 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
     };
     return accessories[accessoryId] || '';
   };
+  */
 
   // Handle dino interaction
   const handleDinoClick = () => {
@@ -113,7 +114,7 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
                 zIndex: 10
               }}
             >
-              {getAccessoryEmoji(accessoryId)}
+              {/*getAccessoryEmoji(accessoryId)*/}
             </div>
           ))}
         </div>
@@ -122,6 +123,7 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
 
 
       {/* Happiness Animation Effects */}
+      {/**
       {petHappiness >= 80 && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-4 left-4 text-3xl animate-ping">🌿</div>
@@ -129,6 +131,7 @@ const DinoContainer: React.FC<DinoContainerProps> = ({
           <div className="absolute bottom-8 left-8 text-3xl animate-ping animation-delay-600">⭐</div>
         </div>
       )}
+      */}
     </div>
   );
 };
