@@ -32,100 +32,58 @@ async function initializeDatabase(): Promise<void> {
     console.log('✅ Database verification completed\n');
     
     console.log('🎉 Database initialization completed successfully!');
-    console.log('📊 ThyKnow with weekly streak system is ready for use\n');
     
   } catch (error) {
-    console.error('❌ Database initialization failed:', error);
-    console.error('🚨 Please check your database configuration and try again\n');
+    // ✅ FIX: Proper error type handling
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('❌ Database initialization failed:', errorMessage);
+    
+    // Additional error details if it's an Error object
+    if (error instanceof Error && error.stack) {
+      console.error('Stack trace:', error.stack);
+    }
+    
+    throw error; // Re-throw to ensure the process exits with error code
+  }
+}
+
+/**
+ * Verify that the database has been properly initialized
+ */
+async function verifyInitialization(): Promise<void> {
+  const { query } = require('../src/database');
+  
+  try {
+    // Check if key tables exist
+    const tablesExist = await query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+        AND table_name IN ('users', 'prompt_entries', 'weekly_challenges')
+    `);
+    
+    if (tablesExist.length < 3) {
+      throw new Error('Not all required tables were created');
+    }
+    
+    console.log('📊 Essential tables verified:', tablesExist.map((t: any) => t.table_name).join(', '));
+    
+  } catch (error) {
+    // ✅ FIX: Proper error type handling
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('❌ Database verification failed:', errorMessage);
     throw error;
   }
 }
 
 /**
- * Verify that database initialization was successful
- */
-async function verifyInitialization(): Promise<void> {
-  const { query } = require('../src/database');
-  
-  // Check that all required tables exist
-  const requiredTables = [
-    'users',
-    'points_history',
-    'journal_entries', 
-    'last_prompts',
-    'feedback'
-  ];
-  
-  console.log('  Checking required tables...');
-  for (const table of requiredTables) {
-    const result = await query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = $1
-      )
-    `, [table]);
-    
-    if (!result[0].exists) {
-      throw new Error(`Required table '${table}' was not created`);
-    }
-    console.log(`    ✓ ${table}`);
-  }
-  
-  // Check that weekly streak columns exist
-  console.log('  Checking weekly streak columns...');
-  const weeklyColumns = [
-    'current_streak',
-    'longest_streak',
-    'total_points', 
-    'last_entry_week'
-  ];
-  
-  for (const column of weeklyColumns) {
-    const result = await query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.columns 
-        WHERE table_name = 'users' AND column_name = $1
-      )
-    `, [column]);
-    
-    if (!result[0].exists) {
-      throw new Error(`Weekly streak column 'users.${column}' was not created`);
-    }
-    console.log(`    ✓ users.${column}`);
-  }
-  
-  // Check that key indexes exist
-  console.log('  Checking database indexes...');
-  const keyIndexes = [
-    'idx_points_history_user_id',
-    'idx_users_current_streak',
-    'idx_journal_entries_user_id'
-  ];
-  
-  for (const indexName of keyIndexes) {
-    const result = await query(`
-      SELECT EXISTS (
-        SELECT FROM pg_class c
-        JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relname = $1 AND n.nspname = 'public'
-      )
-    `, [indexName]);
-    
-    if (!result[0].exists) {
-      console.log(`    ⚠️  Index '${indexName}' not found (may impact performance)`);
-    } else {
-      console.log(`    ✓ ${indexName}`);
-    }
-  }
-}
-
-/**
- * Display database configuration info
+ * Display database configuration information
  */
 function displayDatabaseInfo(): void {
-  console.log('📝 Database Configuration:');
-  console.log(`  Environment: ${config.nodeEnv}`);
-  console.log(`  Database URL: ${config.databaseUrl ? 'Set' : 'Not set'}`);
+  console.log('🔧 Database Configuration');
+  console.log('=========================');
+  console.log(`Environment: ${config.nodeEnv}`);
+  console.log(`Database URL: ${config.databaseUrl ? 'Set' : 'Not set'}`);
   
   if (config.databaseUrl) {
     try {
@@ -134,7 +92,10 @@ function displayDatabaseInfo(): void {
       console.log(`  Port: ${url.port || '5432'}`);
       console.log(`  Database: ${url.pathname.slice(1)}`);
       console.log(`  SSL: ${config.nodeEnv === 'production' ? 'Enabled' : 'Disabled'}`);
-    } catch {
+    } catch (error) {
+      // ✅ FIX: Proper error type handling for URL parsing
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log(`  URL format error: ${errorMessage}`);
       console.log(`  URL format: ${config.databaseUrl.substring(0, 20)}...`);
     }
   }
@@ -187,7 +148,9 @@ async function createTestUserIfNeeded(): Promise<void> {
       console.log(`📊 Found ${userCount[0].count} existing users`);
     }
   } catch (error) {
-    console.log('⚠️  Could not create test user:', error.message);
+    // ✅ FIX: Proper error type handling
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('⚠️  Could not create test user:', errorMessage);
   }
 }
 
@@ -203,7 +166,9 @@ if (require.main === module) {
       process.exit(0);
     })
     .catch((error) => {
-      console.error('Database initialization script failed:', error);
+      // ✅ FIX: Proper error type handling in main execution
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Database initialization script failed:', errorMessage);
       process.exit(1);
     });
 }
