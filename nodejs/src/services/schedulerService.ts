@@ -9,7 +9,7 @@ import moment from 'moment-timezone';
 
 /**
  * Send a weekly prompt to a specific user
- * If promptType is specified, send that type, otherwise alternate based on user's count
+ * Now triggers the app like other commands instead of just sending text
  */
 export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
   try {
@@ -26,20 +26,61 @@ export async function sendWeeklyPromptToUser(userId: string): Promise<void> {
     // Update user's last prompt
     await userService.saveLastPrompt(userId, prompt.text, prompt.type);
     
+    // Get user info to verify they exist
+    const user = await userService.getUser(userId);
+    if (!user) {
+      logger.error(`User ${userId} not found when sending scheduled prompt`);
+      return;
+    }
+    
     // Indicate the category to the user
     const categoryEmoji = prompt.type === 'self_awareness' ? '🧠' : '🤝';
     const categoryName = prompt.type === 'self_awareness' ? 'Self-Awareness' : 'Connections';
     
+    // Create deep link to app with the specific prompt
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const deepLink = `${baseUrl}/miniapp?page=prompt&action=scheduled&type=${prompt.type}&ref=weekly_scheduled_prompt&t=${Date.now()}`;
+    
+    // Create the message that promotes the app experience
     const message = 
-      `🌟 Weekly Reflection Time! ${categoryEmoji} ${categoryName}\n\n${prompt.text}\n\n` +
-      "Take a moment to pause and reflect on this question.\n\n" +
-      "💡 Tip: Use /choose if you'd prefer a specific type of prompt next time.";
-      
-    // Send message
-    await bot.telegram.sendMessage(userId, message);
-    logger.info(`Sent ${prompt.type} prompt to user ${userId}`);
+      `🌟 *Weekly Reflection Time!* ${categoryEmoji} ${categoryName}\n\n` +
+      `Your personalized ${categoryName.toLowerCase()} prompt is ready.\n\n` +
+      `📱 *Experience it in the app for:*\n` +
+      `• Rich, interactive prompts\n` +
+      `• Progress tracking & streaks\n` +
+      `• Your dino companion\n` +
+      `• Beautiful reflection space\n\n` +
+      `💡 *Tip:* All your reflections are saved and you can explore your growth over time!`;
+    
+    // Send message with web app button (like other commands)
+    await bot.telegram.sendMessage(userId, message, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ 
+            text: "🎯 Open My Reflection Space", 
+            web_app: { url: deepLink } 
+          }],
+          [{ 
+            text: "⚙️ Manage Schedule", 
+            callback_data: "manage_schedule"
+          }]
+        ]
+      }
+    });
+    
+    logger.info(`Sent ${prompt.type} prompt to user ${userId} - redirected to app`);
   } catch (error) {
     logger.error(`Error sending prompt to user ${userId}:`, error);
+    
+    // Fallback: send a simple message if the rich version fails
+    try {
+      await bot.telegram.sendMessage(userId, 
+        `🌟 Your weekly reflection prompt is ready! Use /prompt to get started.`
+      );
+    } catch (fallbackError) {
+      logger.error(`Fallback message also failed for user ${userId}:`, fallbackError);
+    }
   }
 }
 
@@ -120,4 +161,60 @@ export function setupScheduler(): void {
   }, {
     timezone: config.timezone // This sets the timezone for the cron job
   });
+}
+
+/**
+ * Handle the "Manage Schedule" callback from scheduled prompts
+ */
+export async function handleManageScheduleCallback(ctx: any): Promise<void> {
+  try {
+    const userId = ctx.from?.id.toString();
+    
+    if (!userId) {
+      await ctx.answerCbQuery('Sorry, I could not identify you.');
+      return;
+    }
+
+    // Acknowledge the callback
+    await ctx.answerCbQuery('Opening schedule settings...');
+    
+    // Get current schedule
+    const user = await userService.getUser(userId);
+    if (!user) {
+      await ctx.editMessageText('Please use /start to set up your account first.');
+      return;
+    }
+    
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const currentDay = dayNames[user.schedulePreference.day];
+    const currentHour = user.schedulePreference.hour;
+    const isEnabled = user.schedulePreference.enabled;
+    
+    const scheduleMessage = 
+      `⚙️ *Schedule Settings*\n\n` +
+      `📅 Current: ${currentDay} at ${currentHour}:00\n` +
+      `🔔 Status: ${isEnabled ? 'Enabled' : 'Disabled'}\n\n` +
+      `Use these commands to adjust:\n` +
+      `• /schedule_day - Change day\n` +
+      `• /schedule_time - Change time\n` +
+      `• /schedule_toggle - Enable/disable\n` +
+      `• /schedule - View full schedule info`;
+    
+    await ctx.editMessageText(scheduleMessage, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ 
+            text: "🚀 Back to App", 
+            web_app: { url: process.env.BASE_URL || 'http://localhost:3000' }
+          }]
+        ]
+      }
+    });
+    
+    logger.info(`Schedule management callback handled for user ${userId}`);
+  } catch (error) {
+    logger.error('Error in handleManageScheduleCallback:', error);
+    await ctx.answerCbQuery('Sorry, something went wrong. Please try /schedule for settings.');
+  }
 }
