@@ -41,7 +41,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
   const StatItem: React.FC<{ label: string; value: string | number; color?: string; icon?: string }> = ({ 
     label, 
     value, 
-    color = 'gray', 
+    color = 'green', 
     icon 
   }) => (
     <div className={`bg-gradient-to-r from-${color}-100 to-${color}-200 rounded-xl p-4 text-center`}>
@@ -89,7 +89,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                 ) : (
                   <>
                     <span className="flex items-center">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                      <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
                       Ready for Reflection
                     </span>
                   </>
@@ -100,7 +100,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
             {/* Main Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Current Streak - Most Prominent */}
-              <div className="col-span-2 lg:col-span-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white text-center">
+              <div className="col-span-2 lg:col-span-1 bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white text-center">
                 <div className="text-3xl mb-2">🔥</div>
                 <div className="text-3xl font-bold mb-1">{streakData.streak.current}</div>
                 <div className="text-sm opacity-90">{formatStatsLabel('current_streak')}</div>
@@ -113,7 +113,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
               <StatItem 
                 label="longest_streak" 
                 value={`${streakData.streak.longest}`} 
-                color="orange"
+                color="green"
                 icon="🏆"
               />
 
@@ -124,7 +124,6 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                 color="green"
                 icon="📝"
               />
-
             </div>
 
             {/* Weekly Status & Milestone Progress */}
@@ -138,7 +137,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">{formatStatsLabel('reflection_status')}</span>
-                    <span className={`text-sm font-medium ${streakData.streak.hasEntryThisWeek ? 'text-green-600' : 'text-blue-600'}`}>
+                    <span className={`text-sm font-medium ${streakData.streak.hasEntryThisWeek ? 'text-green-600' : 'text-green-500'}`}>
                       {streakData.streak.hasEntryThisWeek ? '✅ Complete' : '📝 Pending'}
                     </span>
                   </div>
@@ -162,13 +161,13 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                     <>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">{formatStatsLabel('weeks_remaining')}</span>
-                        <span className="text-sm font-bold text-blue-600">
+                        <span className="text-sm font-bold text-green-600">
                           {streakData.streak.weeksUntilNextMilestone}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">{formatStatsLabel('reward')}</span>
-                        <span className="text-sm font-bold text-green-600">
+                        <span className="text-sm font-bold text-green-700">
                           +{formatNumber(streakData.streak.nextMilestoneReward)} pts
                         </span>
                       </div>
@@ -176,7 +175,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                       <div className="mt-3">
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-gradient-to-r from-blue-400 to-blue-500 h-2 rounded-full transition-all duration-300"
+                            className="bg-gradient-to-r from-green-400 to-green-500 h-2 rounded-full transition-all duration-300"
                             style={{ 
                               width: `${Math.max(10, 100 - (streakData.streak.weeksUntilNextMilestone / (streakData.streak.current + streakData.streak.weeksUntilNextMilestone)) * 100)}%` 
                             }}
@@ -186,7 +185,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                     </>
                   ) : (
                     <div className="text-center py-2">
-                      <span className="text-sm text-yellow-600 font-medium">🏆 All milestones achieved!</span>
+                      <span className="text-sm text-green-600 font-medium">🏆 All milestones achieved!</span>
                     </div>
                   )}
                 </div>
@@ -194,7 +193,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
             </div>
 
             {/* Pet Status Bars */}
-            {/*
+            {/** 
             <div className="border-t pt-6">
               <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="mr-2">🦕</span>
@@ -210,7 +209,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-gradient-to-r from-red-400 to-red-500 h-3 rounded-full transition-all duration-300"
+                      className="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full transition-all duration-300"
                       style={{ width: `${petHealth}%` }}
                     ></div>
                   </div>
@@ -225,7 +224,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-3 rounded-full transition-all duration-300"
+                      className="bg-gradient-to-r from-green-300 to-green-400 h-3 rounded-full transition-all duration-300"
                       style={{ width: `${petHappiness}%` }}
                     ></div>
                   </div>
@@ -244,7 +243,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
           </div>
 
           {/* Milestones Grid */}
-          {/*
+          {/**
           <div className="bg-white rounded-2xl p-6 shadow-lg">
             <h3 className="text-xl font-bold text-gray-800 mb-4">
               {formatDisplayText('milestone_achievements')}
@@ -254,6 +253,20 @@ export const StatsTab: React.FC<StatsTabProps> = ({
               currentStreak={streakData.streak?.current || 0}
             />
           </div>
+          */}
+
+          {/* Debug Raw Data (Development Only) */}
+          {/** 
+          {process.env.NODE_ENV === 'development' && (
+            <div className="bg-gray-50 rounded-2xl p-6">
+              <h4 className="text-lg font-bold text-gray-700 mb-4">
+                {formatDisplayText('debug_raw_data')}
+              </h4>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(formatObjectForDisplay(streakData), null, 2)}
+              </pre>
+            </div>
+          )}
           */}
         </>
       ) : (
