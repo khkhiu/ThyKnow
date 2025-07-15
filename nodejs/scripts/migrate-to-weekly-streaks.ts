@@ -1,9 +1,21 @@
 // File: scripts/migrate-to-weekly-streaks.ts
 // Migration script to transition from daily to weekly streak system
-
-import { query, initDatabase } from '../src/database';
+import { query } from '../src/database';
 import { Points } from '../src/models/Points';
 import { logger } from '../src/utils/logger';
+
+interface VerificationStats {
+  total_users: number;
+  users_with_streaks: number;
+  users_with_points: number;
+  avg_current_streak: number;
+  max_longest_streak: number;
+  total_points_awarded: number;
+}
+
+interface TableExistsResult {
+  exists: boolean;
+}
 
 interface ExistingUser {
   id: string;
@@ -191,7 +203,7 @@ async function calculateUserWeeklyStreak(user: ExistingUser): Promise<void> {
   
   for (const week of weeks) {
     const weekNum = parseInt(week.split('-W')[1]);
-    const yearNum = parseInt(week.split('-W')[0]);
+    //const yearNum = parseInt(week.split('-W')[0]);
     
     // Simple consecutive check (this is approximate and could be improved)
     if (lastWeekNum === -1 || weekNum === lastWeekNum + 1) {
@@ -206,7 +218,7 @@ async function calculateUserWeeklyStreak(user: ExistingUser): Promise<void> {
   
   // Calculate total points retroactively
   // Give base points for each week with entries
-  for (const [weekId, weekEntries] of entriesByWeek) {
+  for (const [_weekId, weekEntries] of entriesByWeek) {
     const basePoints = 50; // Base points per week
     const multipleEntryBonus = (weekEntries.length - 1) * 20; // Bonus for multiple entries
     totalPoints += basePoints + multipleEntryBonus;
@@ -250,7 +262,7 @@ async function verifyMigration(): Promise<void> {
   logger.info('Verifying migration results...');
   
   // Check that new columns exist and have data
-  const verificationResults = await query(`
+  const verificationResults = await query<VerificationStats>(`
     SELECT 
       COUNT(*) as total_users,
       COUNT(CASE WHEN current_streak > 0 THEN 1 END) as users_with_streaks,
@@ -261,7 +273,8 @@ async function verifyMigration(): Promise<void> {
     FROM users
   `);
   
-  const stats = verificationResults[0];
+  // Properly type the stats object
+  const stats: VerificationStats = verificationResults[0];
   
   logger.info('Migration verification results:');
   logger.info(`📊 Total users: ${stats.total_users}`);
@@ -271,15 +284,18 @@ async function verifyMigration(): Promise<void> {
   logger.info(`🏆 Longest streak achieved: ${stats.max_longest_streak} weeks`);
   logger.info(`💎 Total points awarded: ${stats.total_points_awarded}`);
   
-  // Check points_history table exists
-  const tableExists = await query(`
+  // Check points_history table exists with proper typing
+  const tableExistsResult = await query<TableExistsResult>(`
     SELECT EXISTS (
       SELECT FROM information_schema.tables 
       WHERE table_name = 'points_history'
-    )
+    ) as exists
   `);
   
-  if (tableExists[0].exists) {
+  // Properly access the typed result
+  const tableExists: TableExistsResult = tableExistsResult[0];
+  
+  if (tableExists.exists) {
     logger.info('✅ Points history table created successfully');
   } else {
     throw new Error('Points history table was not created');
@@ -287,6 +303,7 @@ async function verifyMigration(): Promise<void> {
   
   logger.info('✅ Migration verification completed');
 }
+
 
 /**
  * Rollback function (use with caution!)
