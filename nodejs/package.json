@@ -4,10 +4,16 @@
   "description": "ThyKnow Telegram bot with integrated React frontend",
   "main": "dist/src/server.js",
   "scripts": {
-    "dev": "ts-node src/app.ts",
-    "start": "node dist/app.js",
-    "build": "tsc && npm run build:frontend",
-    "build:frontend": "cd frontend && npm run build && cp -r dist/* ../dist/frontend/",
+    "start": "node dist/src/server.js",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "nodemon --exec ts-node src/server.ts",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "tsc -p tsconfig.json",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "install:frontend": "cd frontend && npm install",
+    "clean": "rm -rf dist",
+    "clean:all": "npm run clean && rm -rf node_modules frontend/node_modules && npm install && npm run install:frontend",
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "mocha test/**/*.test.ts --require ts-node/register",
     "test:frontend": "cd frontend && npm run test",
@@ -34,7 +40,6 @@
     "setup:env": "ts-node scripts/setup-environment.ts",
     "setup:webhook": "ts-node scripts/setup-webhook.ts",
     "setup:complete": "npm run setup:env && npm run migrate && npm run setup:webhook",
-    "clean": "rm -rf dist && rm -rf frontend/dist",
     "clean:install": "npm run clean && rm -rf node_modules && npm install"
   },
   "keywords": [

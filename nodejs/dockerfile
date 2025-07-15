@@ -4,29 +4,40 @@ FROM node:25-slim
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for efficient layer caching
+# Copy package files for dependency installation
 COPY package*.json ./
 COPY frontend/package*.json ./frontend/
 
 # Install backend dependencies
-RUN npm ci
+RUN npm ci --only=production
 
 # Install frontend dependencies
 WORKDIR /app/frontend
 RUN npm ci
 
-# Copy the entire codebase
+# Switch back to app directory and copy source code
 WORKDIR /app
 COPY . .
 
-# Build the application
+# Build TypeScript backend
+RUN npx tsc
+
+# Build frontend from frontend directory
+WORKDIR /app/frontend
 RUN npm run build
 
-# Remove frontend source and node_modules to reduce image size
-RUN rm -rf frontend/src frontend/node_modules
+# Return to app directory
+WORKDIR /app
+
+# Create frontend dist directory and copy built files
+RUN mkdir -p dist/frontend
+RUN cp -r frontend/dist/* dist/frontend/
+
+# Clean up to reduce image size
+RUN rm -rf frontend/src frontend/node_modules frontend/dist
 
 # Expose port
 EXPOSE $PORT
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "dist/src/server.js"]
