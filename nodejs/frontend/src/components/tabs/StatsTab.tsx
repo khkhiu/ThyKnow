@@ -109,14 +109,6 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                 </div>
               </div>
 
-              {/* Total Points */}
-              <StatItem 
-                label="total_points" 
-                value={streakData.points.total} 
-                color="green"
-                icon="⭐"
-              />
-
               {/* Longest Streak */}
               <StatItem 
                 label="longest_streak" 
@@ -132,6 +124,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({
                 color="green"
                 icon="📝"
               />
+
             </div>
 
             {/* Weekly Status & Milestone Progress */}
