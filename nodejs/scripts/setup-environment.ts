@@ -4,6 +4,7 @@
 import fs from 'fs';
 import path from 'path';
 
+/*
 interface EnvironmentConfig {
   NODE_ENV: string;
   PORT: string;
@@ -14,6 +15,7 @@ interface EnvironmentConfig {
   ANALYTICS_ENABLED?: string;
   LOG_LEVEL?: string;
 }
+*/
 
 const REQUIRED_VARS = [
   'NODE_ENV',
@@ -22,12 +24,14 @@ const REQUIRED_VARS = [
   'BASE_URL'
 ];
 
+/*
 const DEFAULT_VALUES: Partial<EnvironmentConfig> = {
   NODE_ENV: 'development',
   PORT: '3000',
   LOG_LEVEL: 'info',
   ANALYTICS_ENABLED: 'true'
 };
+*/
 
 /**
  * Check if all required environment variables are set
