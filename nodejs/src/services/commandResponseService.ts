@@ -261,9 +261,7 @@ export class CommandResponseService {
 /start - Get started or return home
 /prompt - Get a new reflection prompt  
 /history - View your reflection history
-/choose - Choose prompt type
 /streak - Check your progress
-/miniapp - Open the full app
 /schedule - Manage prompt reminders
 /feedback - Share your thoughts
 /help - Show this message

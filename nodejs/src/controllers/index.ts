@@ -12,8 +12,7 @@ import {
   handleScheduleCallback 
 } from './scheduleController';
 import { handleResponseCallback } from './responseController';
-import { handleChooseCommand, handleChooseCallback } from './chooseController';
-import { handleMiniAppCommand } from './miniAppController';
+import { handleChooseCallback } from './chooseController';
 import { handleFeedbackCommand, handleCancelCommand, handleFeedbackText, userStates } from './feedbackController';
 import { 
   handleCombinedStreakCommand, 
@@ -39,11 +38,11 @@ export function setupBotCommands(bot: Telegraf<Context>): void {
   // Frontend-first commands (redirect to miniapp)
   bot.command('prompt', handleSendPrompt);        // → Miniapp with new prompt
   bot.command('history', handleShowHistory);      // → Miniapp history page
-  bot.command('choose', handleChooseCommand);     // → Miniapp prompt chooser
+  //bot.command('choose', handleChooseCommand);     // → Miniapp prompt chooser
   bot.command('streak', handleCombinedStreakCommand); // → Miniapp streak page
   
   // Direct miniapp launcher
-  bot.command('miniapp', handleMiniAppCommand);
+  //bot.command('miniapp', handleMiniAppCommand);
   
   // ============================================
   // UTILITY COMMANDS (Keep in Bot)

@@ -175,10 +175,8 @@ async function testAllCommands(): Promise<void> {
     const commands = [
       'start',
       'prompt', 
-      'choose',
       'history',
       'streak',
-      'miniapp',
       'schedule',
       'feedback',
       'help',

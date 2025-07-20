@@ -73,7 +73,6 @@ export async function handleCombinedStreakCommand(ctx: Context): Promise<void> {
 
 🔥 Current streak: ${streakStats.currentStreak} week${streakStats.currentStreak !== 1 ? 's' : ''}
 📅 This week: ${streakStats.hasEntryThisWeek ? '✅ Complete' : '⏳ In progress'}
-🦕 Dino mood: ${getDinoMoodFromStreak(streakStats.currentStreak)}
 
 *See detailed charts, milestones, and dino evolution in the app!*`;
 
@@ -124,6 +123,7 @@ export async function handleCombinedStreakCommand(ctx: Context): Promise<void> {
 /**
  * Get dino mood based on current streak
  */
+/*
 function getDinoMoodFromStreak(streak: number): string {
   if (streak === 0) return '😴 Sleepy';
   if (streak <= 2) return '🌱 Growing';
@@ -134,6 +134,7 @@ function getDinoMoodFromStreak(streak: number): string {
   if (streak <= 52) return '🚀 Legendary';
   return '👑 Mythical';
 }
+*/
 
 /**
  * Handle callback for getting a new prompt from streak view
