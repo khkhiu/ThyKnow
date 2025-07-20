@@ -1,14 +1,14 @@
-// src/components/BackgroundWrapper.tsx
-import React from 'react';
+// src/components/BackgroundWrapper.tsx - Improved version
+import React, { useState, useEffect } from 'react';
 
 export interface BackgroundOption {
   id: string;
   name: string;
   type: 'image' | 'gradient' | 'color';
-  value: string; // URL for image, CSS gradient for gradient, hex/rgb for color
-  preview?: string; // Optional smaller preview image
-  premium?: boolean; // For premium backgrounds
-  category?: string; // For organizing backgrounds
+  value: string;
+  preview?: string;
+  premium?: boolean;
+  category?: string;
 }
 
 interface BackgroundWrapperProps {
@@ -20,7 +20,7 @@ interface BackgroundWrapperProps {
   fallbackBackground?: string;
 }
 
-// Default background options - you can move this to a separate config file
+// Updated backgrounds with better fallbacks
 export const DEFAULT_BACKGROUNDS: BackgroundOption[] = [
   {
     id: 'thyknow-default',
@@ -47,6 +47,12 @@ export const DEFAULT_BACKGROUNDS: BackgroundOption[] = [
     value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
   },
   {
+    id: 'gradient-purple',
+    name: 'Purple Dream',
+    type: 'gradient',
+    value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  },
+  {
     id: 'solid-dark',
     name: 'Dark Theme',
     type: 'color',
@@ -57,6 +63,12 @@ export const DEFAULT_BACKGROUNDS: BackgroundOption[] = [
     name: 'Light Theme',
     type: 'color',
     value: '#ffffff'
+  },
+  {
+    id: 'solid-blue',
+    name: 'Calm Blue',
+    type: 'color',
+    value: '#3B82F6'
   }
 ];
 
@@ -66,21 +78,48 @@ const BackgroundWrapper: React.FC<BackgroundWrapperProps> = ({
   overlay = true, 
   overlayOpacity = 0.1,
   className = "",
-  fallbackBackground = '/images/ThyKnow_background.png'
+  fallbackBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
 }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
   // Find the selected background
   const selectedBackground = DEFAULT_BACKGROUNDS.find(bg => bg.id === backgroundId) || DEFAULT_BACKGROUNDS[0];
   
+  // Preload image if it's an image type
+  useEffect(() => {
+    if (selectedBackground.type === 'image') {
+      setImageLoaded(false);
+      setImageError(false);
+      
+      const img = new Image();
+      img.onload = () => {
+        console.log('✅ Background image loaded:', selectedBackground.value);
+        setImageLoaded(true);
+      };
+      img.onerror = () => {
+        console.error('❌ Background image failed to load:', selectedBackground.value);
+        setImageError(true);
+      };
+      img.src = selectedBackground.value;
+    }
+  }, [selectedBackground]);
+
   // Generate background style based on type
   const getBackgroundStyle = () => {
     switch (selectedBackground.type) {
       case 'image':
+        if (imageError) {
+          // Fallback to gradient if image fails
+          console.log('Using fallback background due to image error');
+          return { background: fallbackBackground };
+        }
         return {
           backgroundImage: `url('${selectedBackground.value}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed'
+          backgroundAttachment: 'scroll', // Changed from 'fixed' for better mobile support
         };
       case 'gradient':
         return {
@@ -92,12 +131,19 @@ const BackgroundWrapper: React.FC<BackgroundWrapperProps> = ({
         };
       default:
         return {
-          backgroundImage: `url('${fallbackBackground}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
+          background: fallbackBackground
         };
     }
+  };
+
+  // Get overlay color based on background type
+  const getOverlayColor = () => {
+    if (selectedBackground.type === 'color' && selectedBackground.value === '#1a1a1a') {
+      // For dark backgrounds, use light overlay
+      return `rgba(255, 255, 255, ${overlayOpacity * 0.5})`;
+    }
+    // For light backgrounds and images, use white overlay
+    return `rgba(255, 255, 255, ${overlayOpacity})`;
   };
 
   return (
@@ -105,12 +151,19 @@ const BackgroundWrapper: React.FC<BackgroundWrapperProps> = ({
       className={`min-h-screen relative transition-all duration-500 ease-in-out ${className}`}
       style={getBackgroundStyle()}
     >
+      {/* Loading indicator for images */}
+      {selectedBackground.type === 'image' && !imageLoaded && !imageError && (
+        <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      )}
+
       {/* Optional overlay for better text readability */}
-      {overlay && (
+      {overlay && (imageLoaded || selectedBackground.type !== 'image') && (
         <div 
           className="absolute inset-0 pointer-events-none transition-opacity duration-300"
           style={{
-            backgroundColor: `rgba(255, 255, 255, ${overlayOpacity})`
+            backgroundColor: getOverlayColor()
           }}
         />
       )}
@@ -119,6 +172,21 @@ const BackgroundWrapper: React.FC<BackgroundWrapperProps> = ({
       <div className="relative z-10">
         {children}
       </div>
+
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-20 left-4 bg-black text-white p-2 rounded text-xs z-50 max-w-xs">
+          <div>Background: {selectedBackground.name}</div>
+          <div>Type: {selectedBackground.type}</div>
+          {selectedBackground.type === 'image' && (
+            <>
+              <div>Loaded: {imageLoaded ? '✅' : '❌'}</div>
+              <div>Error: {imageError ? '❌' : '✅'}</div>
+              <div className="break-all">URL: {selectedBackground.value}</div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
