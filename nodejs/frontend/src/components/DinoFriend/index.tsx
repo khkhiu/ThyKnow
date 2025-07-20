@@ -44,27 +44,30 @@ const DinoFriend: React.FC<DinoFriendProps> = ({
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-green-50 to-amber-50 overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-10 left-10 text-6xl">🌿</div>
-        <div className="absolute top-20 right-16 text-4xl">🦴</div>
-        <div className="absolute bottom-32 left-8 text-5xl">🌱</div>
-        <div className="absolute bottom-20 right-12 text-3xl">⭐</div>
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <img 
+          src="/images/ThyKnow_background.png" 
+          alt="ThyKnow background" 
+          className="w-full h-full object-cover"
+        />
       </div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Header Section - Made shorter */}
         <div className="text-center px-6 pt-4 pb-2 animate-fade-in">
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">
-            Meet Your Dino Friend
-          </h1>
-          <p className="text-sm text-gray-600 mb-1">
-            Tap on your dino friend to make it blink!
-          </p>
-          <p className="text-xs text-green-600 flex items-center justify-center gap-1 animate-pulse">
-            <span className="text-sm">👆</span>
-            Tap to see different messages too!
-          </p>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-4 mx-4 shadow-lg">
+            <h1 className="text-2xl font-bold text-gray-800 mb-1">
+              Meet Your Dino Friend
+            </h1>
+            <p className="text-sm text-gray-600 mb-1">
+              Tap on your dino friend to make it blink!
+            </p>
+            <p className="text-xs text-green-600 flex items-center justify-center gap-1 animate-pulse">
+              <span className="text-sm">👆</span>
+              Tap to see different messages too!
+            </p>
+          </div>
         </div>
 
         {/* Spacer to push dino toward bottom */}
