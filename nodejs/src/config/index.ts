@@ -1,29 +1,32 @@
 // src/config/index.ts
-// Configuration optimized for Railway deployment
-
+// Updated configuration to handle Telegram validation settings and all missing properties
 import dotenv from 'dotenv';
+
 dotenv.config();
 
-// Define PostgreSQL config interface
-interface PostgreSQLConfig {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-  ssl: boolean | { rejectUnauthorized: boolean };
-  maxPoolSize: number;
-  idleTimeout: number;
-}
-
-// Define application config interface
-interface AppConfig {
+interface Config {
+  // Server configuration
   port: number;
   nodeEnv: string;
+  logLevel: string;
+  
+  // Database configuration
+  databaseUrl: string;
+  
+  // Telegram configuration
   telegramBotToken: string;
-  postgresql: PostgreSQLConfig;
+  telegramWebhookUrl?: string;
+  
+  // Validation settings
+  validateTelegramRequests: boolean;
+  allowReactFrontend: boolean;
+  
+  // Application settings
   timezone: string;
-  baseUrl: string;
+  baseUrl: string;  // ✅ Added missing baseUrl
+  maxHistory: number;  // ✅ Added missing maxHistory
+  
+  // Railway-specific settings
   railway: {
     service: string | null;
     environment: string | null;
@@ -32,42 +35,19 @@ interface AppConfig {
     privateDomain: string | null;
     staticUrl: string | null;
   };
+  
+  // Scheduler settings
   scheduler: {
     promptDay: number;
     promptHour: number;
   };
-  maxHistory: number;
-  logLevel: string;
-  validateTelegramRequests: boolean;
-}
-
-// Parse DATABASE_URL from Railway if available
-const parseDbUrl = (url: string | undefined): PostgreSQLConfig | null => {
-  if (!url) return null;
   
-  try {
-    const dbUrl = new URL(url);
-    // Replace localhost with 127.0.0.1 for container compatibility
-    const hostname = dbUrl.hostname === 'localhost' ? '127.0.0.1' : dbUrl.hostname;
-    
-    return {
-      host: hostname,
-      port: parseInt(dbUrl.port, 10) || 5432,
-      database: dbUrl.pathname.substring(1), // Remove leading slash
-      user: dbUrl.username,
-      password: dbUrl.password,
-      ssl: { rejectUnauthorized: false }, // Required for Railway PostgreSQL
-      maxPoolSize: parseInt(process.env.DB_POOL_SIZE || '10', 10),
-      idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10)
-    };
-  } catch (error) {
-    console.error('Failed to parse DATABASE_URL:', error);
-    return null;
-  }
-};
-
-// Parse Railway's DATABASE_URL if available
-const railwayDbConfig = parseDbUrl(process.env.DATABASE_URL);
+  // Security settings
+  corsOrigins: string[];
+  rateLimitEnabled: boolean;
+  rateLimitWindowMs: number;
+  rateLimitMaxRequests: number;
+}
 
 // Get base URL based on environment variables
 function getBaseUrl(): string {
@@ -88,26 +68,29 @@ function getBaseUrl(): string {
   return process.env.BASE_URL || 'http://localhost:3000';
 }
 
-const config = {
-  port: parseInt(process.env.PORT || '3000', 10),
+const config: Config = {
+  // Server settings
+  port: parseInt(process.env.PORT || '8080', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
+  logLevel: process.env.LOG_LEVEL || 'info',
+  
+  // Database
+  databaseUrl: process.env.DATABASE_URL || '',
+  
+  // Telegram
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
-  postgresql: railwayDbConfig || {
-    // Fallback to individual environment variables if DATABASE_URL is not provided
-    // Replace localhost with 127.0.0.1 for container compatibility
-    host: (process.env.DB_HOST === 'localhost' ? '127.0.0.1' : process.env.DB_HOST) || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    database: process.env.DB_NAME || 'thyknow',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-    ssl: process.env.DB_SSL === 'true' 
-      ? { rejectUnauthorized: false } 
-      : false,
-    maxPoolSize: parseInt(process.env.DB_POOL_SIZE || '10', 10),
-    idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10) 
-  } as PostgreSQLConfig,
+  telegramWebhookUrl: process.env.TELEGRAM_WEBHOOK_URL,
+  
+  // Validation settings - key additions for React frontend support
+  validateTelegramRequests: process.env.VALIDATE_TELEGRAM_REQUESTS !== 'false',
+  allowReactFrontend: process.env.ALLOW_REACT_FRONTEND !== 'false',
+  
+  // Application settings
   timezone: process.env.TIMEZONE || 'Asia/Singapore',
-  baseUrl: getBaseUrl(),
+  baseUrl: getBaseUrl(),  // ✅ Now included
+  maxHistory: parseInt(process.env.MAX_HISTORY || '10', 10),  // ✅ Now included
+  
+  // Railway-specific settings
   railway: {
     service: process.env.RAILWAY_SERVICE_NAME || null,
     environment: process.env.RAILWAY_ENVIRONMENT_NAME || null,
@@ -116,18 +99,27 @@ const config = {
     privateDomain: process.env.RAILWAY_PRIVATE_DOMAIN || null,
     staticUrl: process.env.RAILWAY_STATIC_URL || null,
   },
+  
+  // Scheduler settings
   scheduler: {
     promptDay: parseInt(process.env.PROMPT_DAY || '1', 10), // Monday
     promptHour: parseInt(process.env.PROMPT_HOUR || '9', 10), // 9 AM
   },
-  maxHistory: parseInt(process.env.MAX_HISTORY || '10', 10),
-  logLevel: process.env.LOG_LEVEL || 'info',
-  validateTelegramRequests: process.env.VALIDATE_TELEGRAM_REQUESTS !== 'false',
-} as AppConfig;
+  
+  // Security settings
+  corsOrigins: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['*'],
+  rateLimitEnabled: process.env.RATE_LIMIT_ENABLED !== 'false',
+  rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
+  rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10)
+};
 
-// Validate critical config
+// Validation
 if (!config.telegramBotToken) {
   throw new Error('TELEGRAM_BOT_TOKEN environment variable is required');
+}
+
+if (!config.databaseUrl) {
+  throw new Error('DATABASE_URL environment variable is required');
 }
 
 export default config;

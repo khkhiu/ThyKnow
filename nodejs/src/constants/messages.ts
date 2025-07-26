@@ -13,6 +13,7 @@ export const MESSAGES = {
     "/choose - Select a specific type of prompt\n" +
     "/history - View your recent journal entries\n" +
     "/schedule - Manage your prompt schedule\n" +
+    "/streak - View your weekly reflection streak\n" +
     "/miniapp - Open our interactive mini-app\n" +
     "/feedback - Share your thoughts with us\n" +
     "/help - Shows all available commands\n\n" +
@@ -24,6 +25,7 @@ export const MESSAGES = {
     "• /prompt - Get a new reflection prompt\n" +
     "• /choose - Select a specific type of prompt\n" +
     "• /history - View your recent journal entries\n" +
+    "• /streak - View your weekly reflection streak\n" +
     "• /miniapp - Open our interactive mini-app\n" +
     "• /feedback - Share your thoughts with us\n" +
     "• /help - Show this help message\n\n" +

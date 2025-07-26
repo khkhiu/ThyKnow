@@ -1,0 +1,72 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.milestoneCard {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.milestoneCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.milestoneCard.completed {
+  border-color: #22c55e;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+}
+
+.milestoneCard.next {
+  border-color: #2481cc;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
+}
+
+.milestoneWeeks {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.completed .milestoneWeeks {
+  color: #22c55e;
+}
+
+.next .milestoneWeeks {
+  color: #2481cc;
+}
+
+.milestoneTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.milestoneStatus {
+  font-size: 1.2rem;
+}
+
+.completed .milestoneStatus {
+  color: #22c55e;
+}
+
+.next .milestoneStatus {
+  color: #999999;
+}

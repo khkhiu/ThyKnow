@@ -1,6 +1,6 @@
-// src/services/promptService.ts
+// src/services/promptService.ts (Updated with proper typing)
 import { User } from '../models/User';
-import { PROMPTS } from '../constants';
+import { PROMPTS } from '../constants/prompts'; // ✅ Fixed: Import from prompts.ts instead of index.ts
 import { Prompt, PromptType } from '../types';
 import { logger } from '../utils/logger';
 
@@ -53,7 +53,6 @@ export class PromptService {
    */
   async getNextPromptForUser(userId: string, promptType?: PromptType): Promise<Prompt> {
     try {
-      // Ensure userId is a string
       userId = String(userId);
       
       // Get user from database
@@ -62,10 +61,16 @@ export class PromptService {
       
       if (user) {
         // Increment prompt count
-        promptCount = (user.promptCount || 0) + 1;
+        const oldCount = user.promptCount || 0;
+        promptCount = oldCount + 1;
+        
+        // DEBUG: Log the prompt count change
+        logger.info(`🔄 Prompt rotation debug - User ${userId}: ${oldCount} → ${promptCount}`);
+        
         await User.update(userId, { promptCount });
       } else {
         // Create new user with count = 1
+        logger.info(`🔄 New user ${userId}: promptCount = 1`);
         await User.create({
           id: userId,
           createdAt: new Date(),
@@ -77,13 +82,12 @@ export class PromptService {
       let selectedPromptType: PromptType;
       
       if (promptType) {
-        // If a specific type was requested, use that
         selectedPromptType = promptType;
+        logger.info(`🎯 User ${userId}: Using chosen type: ${selectedPromptType}`);
       } else {
         // Otherwise, alternate based on prompt count
-        // Odd numbers (including 1) get self-awareness
-        // Even numbers get connections
         selectedPromptType = promptCount % 2 === 1 ? 'self_awareness' : 'connections';
+        logger.info(`🔄 User ${userId}: Count ${promptCount} → Type: ${selectedPromptType} (${promptCount % 2 === 1 ? 'ODD' : 'EVEN'})`);
       }
       
       // Get prompt of determined type
@@ -102,8 +106,13 @@ export class PromptService {
 
   /**
    * Create a journal entry object
+   * Fixed: Added proper type for prompt parameter
    */
-  createJournalEntry(prompt: string, response: string, promptType: PromptType): {
+  createJournalEntry(
+    prompt: string, 
+    response: string, 
+    promptType: PromptType
+  ): {
     prompt: string;
     response: string;
     promptType: PromptType;
@@ -114,6 +123,41 @@ export class PromptService {
       response,
       promptType,
       timestamp: new Date()
+    };
+  }
+
+  /**
+   * Generate a prompt for a specific user (considering their history)
+   */
+  async generatePrompt(userId: string): Promise<{ text: string; type: PromptType; count: number }> {
+    try {
+      // Get the user's next prompt using existing logic
+      const prompt = await this.getNextPromptForUser(userId);
+      
+      return {
+        text: prompt.text,
+        type: prompt.type,
+        count: prompt.count
+      };
+    } catch (error) {
+      logger.error(`Error generating prompt for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process prompt response (if this is the function causing the typing error)
+   * Fixed: Added proper type for prompt parameter
+   */
+  processPrompt(prompt: { text: string; type: PromptType; response?: string }): {
+    processed: boolean;
+    type: PromptType;
+    hasResponse: boolean;
+  } {
+    return {
+      processed: true,
+      type: prompt.type,
+      hasResponse: Boolean(prompt.response)
     };
   }
 }

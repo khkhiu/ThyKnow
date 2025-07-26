@@ -1,19 +1,24 @@
-// File: src/models/User.ts
-// User Model for PostgreSQL
+// File: src/models/User.ts (Updated for Weekly Streaks)
+// User Model for PostgreSQL with Weekly Streak and Points Support
 
 import { query, transaction } from '../database';
 import { PromptType } from '../types';
 import { logger } from '../utils/logger';
+import { Points, IWeeklyPointsConfig, DEFAULT_WEEKLY_POINTS_CONFIG } from './Points';
 
-// User interface
+// Updated User interface with weekly streak data
 export interface IUser {
   id: string; // Telegram user ID
   createdAt: Date;
   promptCount: number;
   schedulePreference: ISchedulePreference;
+  currentStreak: number;        // Weeks in current streak
+  longestStreak: number;        // Longest weekly streak achieved
+  totalPoints: number;
+  lastEntryWeek: string | null; // Format: YYYY-WXX
 }
 
-// Last prompt interface
+// Last prompt interface (unchanged)
 export interface ILastPrompt {
   userId: string;
   text: string;
@@ -21,14 +26,14 @@ export interface ILastPrompt {
   timestamp: Date;
 }
 
-// Schedule preference interface
+// Schedule preference interface (unchanged)
 export interface ISchedulePreference {
   day: number; // 0-6 (Sunday to Saturday)
   hour: number; // 0-23
   enabled: boolean;
 }
 
-// Internal interface for database row structure
+// Internal interface for database row structure (updated for weekly)
 interface IUserRow {
   id: string;
   createdAt: Date;
@@ -36,6 +41,10 @@ interface IUserRow {
   scheduleDay: number;
   scheduleHour: number;
   scheduleEnabled: boolean;
+  currentStreak: number;
+  longestStreak: number;
+  totalPoints: number;
+  lastEntryWeek: string | null;
   lastPromptText?: string;
   lastPromptType?: string;
   lastPromptTimestamp?: Date;
@@ -43,7 +52,7 @@ interface IUserRow {
 
 export class User {
   /**
-   * Find a user by their Telegram ID
+   * Find a user by their Telegram ID (updated to include weekly streak data)
    */
   static async findOne(id: string): Promise<IUser | null> {
     try {
@@ -54,7 +63,11 @@ export class User {
           u.prompt_count AS "promptCount",
           u.schedule_day AS "scheduleDay",
           u.schedule_hour AS "scheduleHour",
-          u.schedule_enabled AS "scheduleEnabled"
+          u.schedule_enabled AS "scheduleEnabled",
+          u.current_streak AS "currentStreak",
+          u.longest_streak AS "longestStreak",
+          u.total_points AS "totalPoints",
+          u.last_entry_week AS "lastEntryWeek"
         FROM users u
         WHERE u.id = $1
       `, [id]);
@@ -65,7 +78,6 @@ export class User {
 
       const row = users[0];
       
-      // Transform the flat data structure into the expected interface
       return {
         id: row.id,
         createdAt: row.createdAt,
@@ -74,7 +86,11 @@ export class User {
           day: row.scheduleDay,
           hour: row.scheduleHour,
           enabled: row.scheduleEnabled
-        }
+        },
+        currentStreak: row.currentStreak,
+        longestStreak: row.longestStreak,
+        totalPoints: row.totalPoints,
+        lastEntryWeek: row.lastEntryWeek
       };
     } catch (error) {
       logger.error(`Error finding user ${id}:`, error);
@@ -83,18 +99,15 @@ export class User {
   }
 
   /**
-   * Find a user by their Telegram ID along with their last prompt
+   * Find a user with their last prompt (for existing compatibility)
    */
   static async findOneWithLastPrompt(id: string): Promise<IUser & { lastPrompt?: ILastPrompt } | null> {
     try {
-      // Define an extended row type to include last prompt fields
-      interface IUserRowWithPrompt extends IUserRow {
+      const result = await query<IUserRow & {
         lastPromptText?: string;
         lastPromptType?: string;
         lastPromptTimestamp?: Date;
-      }
-      
-      const result = await query<IUserRowWithPrompt>(`
+      }>(`
         SELECT 
           u.id, 
           u.created_at AS "createdAt", 
@@ -102,6 +115,10 @@ export class User {
           u.schedule_day AS "scheduleDay",
           u.schedule_hour AS "scheduleHour",
           u.schedule_enabled AS "scheduleEnabled",
+          u.current_streak AS "currentStreak",
+          u.longest_streak AS "longestStreak",
+          u.total_points AS "totalPoints",
+          u.last_entry_week AS "lastEntryWeek",
           lp.text AS "lastPromptText",
           lp.type AS "lastPromptType",
           lp.timestamp AS "lastPromptTimestamp"
@@ -116,7 +133,6 @@ export class User {
 
       const row = result[0];
       
-      // Transform the flat data structure into the expected interface
       const user: IUser & { lastPrompt?: ILastPrompt } = {
         id: row.id,
         createdAt: row.createdAt,
@@ -125,16 +141,20 @@ export class User {
           day: row.scheduleDay,
           hour: row.scheduleHour,
           enabled: row.scheduleEnabled
-        }
+        },
+        currentStreak: row.currentStreak,
+        longestStreak: row.longestStreak,
+        totalPoints: row.totalPoints,
+        lastEntryWeek: row.lastEntryWeek
       };
 
       // Add last prompt if it exists
-      if (row.lastPromptText) {
+      if (row.lastPromptText && row.lastPromptType && row.lastPromptTimestamp) {
         user.lastPrompt = {
           userId: row.id,
           text: row.lastPromptText,
           type: row.lastPromptType as PromptType,
-          timestamp: row.lastPromptTimestamp as Date
+          timestamp: row.lastPromptTimestamp
         };
       }
 
@@ -146,53 +166,62 @@ export class User {
   }
 
   /**
-   * Create a new user
+   * Create a new user with default weekly streak values
    */
-  static async create(data: {
+  static async create(userData: {
     id: string;
     createdAt?: Date;
     promptCount?: number;
     schedulePreference?: Partial<ISchedulePreference>;
   }): Promise<IUser> {
     try {
-      const schedulePreference = data.schedulePreference || {};
-      
+      const defaultSchedule = {
+        day: 0,      // Sunday
+        hour: 10,    // 10 AM
+        enabled: true,
+        ...userData.schedulePreference
+      };
+
       const result = await query<IUserRow>(`
         INSERT INTO users (
           id, 
           created_at, 
-          prompt_count, 
-          schedule_day, 
-          schedule_hour, 
-          schedule_enabled
+          prompt_count,
+          schedule_day,
+          schedule_hour,
+          schedule_enabled,
+          current_streak,
+          longest_streak,
+          total_points,
+          last_entry_week
         )
-        VALUES (
-          $1, 
-          $2, 
-          $3, 
-          $4, 
-          $5, 
-          $6
-        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING 
           id, 
           created_at AS "createdAt", 
           prompt_count AS "promptCount",
           schedule_day AS "scheduleDay",
           schedule_hour AS "scheduleHour",
-          schedule_enabled AS "scheduleEnabled"
+          schedule_enabled AS "scheduleEnabled",
+          current_streak AS "currentStreak",
+          longest_streak AS "longestStreak",
+          total_points AS "totalPoints",
+          last_entry_week AS "lastEntryWeek"
       `, [
-        data.id,
-        data.createdAt || new Date(),
-        data.promptCount || 0,
-        schedulePreference.day !== undefined ? schedulePreference.day : 1,
-        schedulePreference.hour !== undefined ? schedulePreference.hour : 9,
-        schedulePreference.enabled !== undefined ? schedulePreference.enabled : true
+        userData.id,
+        userData.createdAt || new Date(),
+        userData.promptCount || 0,
+        defaultSchedule.day,
+        defaultSchedule.hour,
+        defaultSchedule.enabled,
+        0, // Initial current streak
+        0, // Initial longest streak
+        0, // Initial total points
+        null // No last entry week initially
       ]);
 
       const row = result[0];
       
-      // Transform the flat data structure into the expected interface
       return {
         id: row.id,
         createdAt: row.createdAt,
@@ -201,66 +230,87 @@ export class User {
           day: row.scheduleDay,
           hour: row.scheduleHour,
           enabled: row.scheduleEnabled
-        }
+        },
+        currentStreak: row.currentStreak,
+        longestStreak: row.longestStreak,
+        totalPoints: row.totalPoints,
+        lastEntryWeek: row.lastEntryWeek
       };
     } catch (error) {
-      logger.error(`Error creating user ${data.id}:`, error);
+      logger.error(`Error creating user ${userData.id}:`, error);
       throw error;
     }
   }
 
   /**
-   * Update an existing user
+   * Update user data including weekly streak and points information
    */
   static async update(
-    id: string,
+    id: string, 
     data: {
       promptCount?: number;
       schedulePreference?: Partial<ISchedulePreference>;
+      currentStreak?: number;
+      longestStreak?: number;
+      totalPoints?: number;
+      lastEntryWeek?: string | null; // <-- Add | null here to match IUser interface
     }
   ): Promise<IUser> {
     try {
-      // Build the update parts dynamically based on what's provided
+      // Build dynamic update query based on provided data
       const updates: string[] = [];
       const values: any[] = [];
       let paramIndex = 1;
-      
+
       if (data.promptCount !== undefined) {
         updates.push(`prompt_count = $${paramIndex++}`);
         values.push(data.promptCount);
       }
-      
+
       if (data.schedulePreference) {
         if (data.schedulePreference.day !== undefined) {
           updates.push(`schedule_day = $${paramIndex++}`);
           values.push(data.schedulePreference.day);
         }
-        
         if (data.schedulePreference.hour !== undefined) {
           updates.push(`schedule_hour = $${paramIndex++}`);
           values.push(data.schedulePreference.hour);
         }
-        
         if (data.schedulePreference.enabled !== undefined) {
           updates.push(`schedule_enabled = $${paramIndex++}`);
           values.push(data.schedulePreference.enabled);
         }
       }
-      
-      // If there's nothing to update, just return the existing user
-      if (updates.length === 0) {
-        const existingUser = await User.findOne(id);
-        if (!existingUser) {
-          throw new Error(`User with ID ${id} not found`);
-        }
-        return existingUser;
+
+      if (data.currentStreak !== undefined) {
+        updates.push(`current_streak = $${paramIndex++}`);
+        values.push(data.currentStreak);
       }
-      
-      // Add the ID as the last parameter - ensure it remains a string
-      values.push(String(id));
-      
+
+      if (data.longestStreak !== undefined) {
+        updates.push(`longest_streak = $${paramIndex++}`);
+        values.push(data.longestStreak);
+      }
+
+      if (data.totalPoints !== undefined) {
+        updates.push(`total_points = $${paramIndex++}`);
+        values.push(data.totalPoints);
+      }
+
+      if (data.lastEntryWeek !== undefined) {
+        updates.push(`last_entry_week = $${paramIndex++}`);
+        values.push(data.lastEntryWeek); // This can now be string or null
+      }
+
+      if (updates.length === 0) {
+        // No updates to make, just return current user
+        return await User.findOne(id) as IUser;
+      }
+
+      values.push(id); // Add user ID for WHERE clause
+
       const result = await query<IUserRow>(`
-        UPDATE users
+        UPDATE users 
         SET ${updates.join(', ')}
         WHERE id = $${paramIndex}
         RETURNING 
@@ -269,16 +319,19 @@ export class User {
           prompt_count AS "promptCount",
           schedule_day AS "scheduleDay",
           schedule_hour AS "scheduleHour",
-          schedule_enabled AS "scheduleEnabled"
+          schedule_enabled AS "scheduleEnabled",
+          current_streak AS "currentStreak",
+          longest_streak AS "longestStreak",
+          total_points AS "totalPoints",
+          last_entry_week AS "lastEntryWeek"
       `, values);
 
       if (result.length === 0) {
-        throw new Error(`User with ID ${id} not found`);
+        throw new Error(`User ${id} not found for update`);
       }
 
       const row = result[0];
       
-      // Transform the flat data structure into the expected interface
       return {
         id: row.id,
         createdAt: row.createdAt,
@@ -287,7 +340,11 @@ export class User {
           day: row.scheduleDay,
           hour: row.scheduleHour,
           enabled: row.scheduleEnabled
-        }
+        },
+        currentStreak: row.currentStreak,
+        longestStreak: row.longestStreak,
+        totalPoints: row.totalPoints,
+        lastEntryWeek: row.lastEntryWeek // This matches IUser interface (string | null)
       };
     } catch (error) {
       logger.error(`Error updating user ${id}:`, error);
@@ -296,44 +353,95 @@ export class User {
   }
 
   /**
-   * Save the last prompt for a user
+   * Process a journal entry and award points/update weekly streak
+   * Main integration point between journal entries and the weekly streak system
    */
-  static async saveLastPrompt(userId: string, prompt: { text: string; type: PromptType }): Promise<void> {
-    try {
-      await transaction(async (client) => {
-        // Check if a last prompt already exists for this user
-        const existingPrompt = await client.query(
-          'SELECT user_id FROM last_prompts WHERE user_id = $1',
-          [String(userId)]  // Ensure userId is a string
-        );
-        
-        if (existingPrompt.rows.length > 0) {
-          // Update existing last prompt
-          await client.query(
-            `UPDATE last_prompts 
-             SET text = $1, type = $2, timestamp = NOW() 
-             WHERE user_id = $3`,
-            [prompt.text, prompt.type, String(userId)]  // Ensure userId is a string
-          );
-        } else {
-          // Insert new last prompt
-          await client.query(
-            `INSERT INTO last_prompts (user_id, text, type, timestamp) 
-             VALUES ($1, $2, $3, NOW())`,
-            [String(userId), prompt.text, prompt.type]  // Ensure userId is a string
-          );
+  static async processWeeklyJournalEntryRewards(
+    userId: string,
+    entryId: number,
+    config: IWeeklyPointsConfig = DEFAULT_WEEKLY_POINTS_CONFIG
+  ): Promise<{
+    pointsAwarded: number;
+    newStreak: number;
+    milestoneReached?: number;
+    streakBroken: boolean;
+    isMultipleEntry: boolean;
+    weekId: string;
+    user: IUser;
+  }> {
+    // Use database transaction for consistency
+    return await transaction(async (_client) => {
+      try {
+        // Get current user data
+        const user = await User.findOne(userId);
+        if (!user) {
+          throw new Error(`User ${userId} not found`);
         }
-      });
+
+        // Award points and calculate new weekly streak
+        const rewardResult = await Points.awardPointsForWeeklyEntry(
+          userId,
+          entryId,
+          user.lastEntryWeek,
+          user.currentStreak,
+          config
+        );
+
+        // Calculate new total points
+        const newTotalPoints = user.totalPoints + rewardResult.pointsAwarded;
+        
+        // Update longest streak if current streak is now longer
+        const newLongestStreak = Math.max(user.longestStreak, rewardResult.newStreak);
+
+        // Update user with new weekly streak and points data
+        const updatedUser = await User.update(userId, {
+          currentStreak: rewardResult.newStreak,
+          longestStreak: newLongestStreak,
+          totalPoints: newTotalPoints,
+          lastEntryWeek: rewardResult.weekId,
+          //promptCount: user.promptCount + 1
+        });
+
+        logger.info(
+          `User ${userId} awarded ${rewardResult.pointsAwarded} points for weekly entry. ` +
+          `Week streak: ${rewardResult.newStreak}, Total points: ${newTotalPoints}` +
+          (rewardResult.isMultipleEntry ? ' (Additional entry this week)' : '') +
+          (rewardResult.milestoneReached ? ` (Milestone: ${rewardResult.milestoneReached} weeks!)` : '')
+        );
+
+        return {
+          ...rewardResult,
+          user: updatedUser
+        };
+      } catch (error) {
+        logger.error(`Error processing weekly journal entry rewards for user ${userId}:`, error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Check if user has made an entry this week
+   */
+  static async hasEntryThisWeek(userId: string): Promise<boolean> {
+    try {
+      const user = await User.findOne(userId);
+      if (!user || !user.lastEntryWeek) {
+        return false;
+      }
+      
+      const currentWeek = Points.getWeekIdentifier();
+      return user.lastEntryWeek === currentWeek;
     } catch (error) {
-      logger.error(`Error saving last prompt for user ${userId}:`, error);
-      throw error;
+      logger.error(`Error checking this week's entry for user ${userId}:`, error);
+      return false;
     }
   }
 
   /**
-   * Get all users
+   * Get all users for scheduler functionality
    */
-  static async find(): Promise<IUser[]> {
+  static async getAllUsers(): Promise<IUser[]> {
     try {
       const users = await query<IUserRow>(`
         SELECT 
@@ -342,11 +450,15 @@ export class User {
           prompt_count AS "promptCount",
           schedule_day AS "scheduleDay",
           schedule_hour AS "scheduleHour",
-          schedule_enabled AS "scheduleEnabled"
+          schedule_enabled AS "scheduleEnabled",
+          current_streak AS "currentStreak",
+          longest_streak AS "longestStreak",
+          total_points AS "totalPoints",
+          last_entry_week AS "lastEntryWeek"
         FROM users
+        ORDER BY created_at DESC
       `);
-      
-      // Transform the flat data structure into the expected interface
+
       return users.map(row => ({
         id: row.id,
         createdAt: row.createdAt,
@@ -355,11 +467,86 @@ export class User {
           day: row.scheduleDay,
           hour: row.scheduleHour,
           enabled: row.scheduleEnabled
-        }
+        },
+        currentStreak: row.currentStreak,
+        longestStreak: row.longestStreak,
+        totalPoints: row.totalPoints,
+        lastEntryWeek: row.lastEntryWeek
       }));
     } catch (error) {
-      logger.error('Error finding all users:', error);
+      logger.error('Error getting all users:', error);
       throw error;
     }
   }
+
+  /**
+   * Save the last prompt for a user
+   * Uses the separate last_prompts table, not a column on users table
+   */
+  static async saveLastPrompt(userId: string, text: string, type: PromptType): Promise<void> {
+    try {
+      await query(`
+        INSERT INTO last_prompts (user_id, text, type, timestamp)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (user_id) 
+        DO UPDATE SET 
+          text = EXCLUDED.text,
+          type = EXCLUDED.type,
+          timestamp = EXCLUDED.timestamp
+      `, [userId, text, type, new Date()]);
+      
+      logger.info(`Last prompt saved for user ${userId}`);
+    } catch (error) {
+      logger.error(`Error saving last prompt for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the last prompt for a user
+   */
+  static async getLastPrompt(userId: string): Promise<ILastPrompt | null> {
+    try {
+      const result = await query<{
+        user_id: string;
+        text: string;
+        type: string;
+        timestamp: Date;
+      }>(`
+        SELECT user_id, text, type, timestamp
+        FROM last_prompts
+        WHERE user_id = $1
+      `, [userId]);
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      const row = result[0];
+      return {
+        userId: row.user_id,
+        text: row.text,
+        type: row.type as PromptType,
+        timestamp: row.timestamp
+      };
+    } catch (error) {
+      logger.error(`Error getting last prompt for user ${userId}:`, error);
+      throw error;
+    }
+  }
+  /**
+   * Get total user count for system stats
+   */
+  static async getTotalUserCount(): Promise<number> {
+    try {
+      const result = await query<{ count: string }>(`
+        SELECT COUNT(*) as count FROM users
+      `);
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      logger.error('Error getting total user count:', error);
+      throw error;
+    }
+  }
+
 }
