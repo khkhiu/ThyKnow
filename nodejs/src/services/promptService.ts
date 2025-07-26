@@ -1,6 +1,6 @@
 // src/services/promptService.ts (Updated with proper typing)
 import { User } from '../models/User';
-import { PROMPTS } from '../constants';
+import { PROMPTS } from '../constants/prompts'; // ✅ Fixed: Import from prompts.ts instead of index.ts
 import { Prompt, PromptType } from '../types';
 import { logger } from '../utils/logger';
 

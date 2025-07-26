@@ -110,7 +110,7 @@ const JournalPrompt: React.FC<JournalPromptProps> = ({
 
       {/* Prompt Text - exactly like index.html */}
       <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 mb-4">
-        <p className="text-gray-800 leading-relaxed text-lg font-medium">
+        <p className="text-gray-800 leading-relaxed text-lg font-medium whitespace-pre-line">
           {prompt.text}
         </p>
       </div>
