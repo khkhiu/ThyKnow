@@ -14,7 +14,7 @@ import {
   formatObjectForDisplay,
   formatNumber,
   formatWeekIdentifier
-} from '../../../../src/utils/textFormatter';
+} from '../../../../backend/src/utils/textFormatter';
 
 interface StatsTabProps {
   userId: string;
