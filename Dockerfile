@@ -1,50 +1,67 @@
-# Clean approach - all dependencies in package.json
-FROM node:22-slim
+# Multi-stage build for optimal production image
+FROM node:22-slim AS builder
 
-# Install system dependencies
+# Install system dependencies needed for building
 RUN apt-get update && apt-get install -y curl build-essential python3 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy everything
-COPY . .
+# Copy package files first for better Docker layer caching
+COPY package*.json ./
+COPY backend/package*.json ./backend/
+COPY frontend/package*.json ./frontend/
 
-# Install backend dependencies (all dependencies now in package.json)
+# Install all dependencies (including dev dependencies for building)
 WORKDIR /app/backend
 RUN npm ci
 
-# Build backend
-RUN npm run build
-
-# Install frontend dependencies and build
 WORKDIR /app/frontend  
 RUN npm ci
+
+# Copy source code
+WORKDIR /app
+COPY . .
+
+# Build backend
+WORKDIR /app/backend
 RUN npm run build
 
-# Return to app root and set up production structure
+# Build frontend
+WORKDIR /app/frontend
+RUN npm run build
+
+# Verify builds completed successfully
+RUN ls -la /app/backend/dist/
+RUN ls -la /app/frontend/dist/
+
+# Production stage
+FROM node:22-slim AS production
+
+# Install only runtime system dependencies
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Create production structure
-RUN mkdir -p production/dist production/public/frontend
+# Copy backend package.json for production dependencies
+COPY backend/package*.json ./
 
-# Copy built files
-RUN cp -r backend/dist/* production/dist/
-RUN cp -r frontend/dist/* production/public/frontend/
-RUN cp backend/package*.json production/
+# Install only production dependencies
+RUN npm ci --only=production
 
-# Install only production dependencies in the production directory
-WORKDIR /app/production
-RUN npm install --omit=dev
+# Create the expected directory structure
+# The server expects files in /app/dist/frontend/
+RUN mkdir -p dist/frontend
 
-# Clean up source files and dev dependencies
-WORKDIR /app
-RUN rm -rf backend frontend node_modules
+# Copy built files from builder stage
+COPY --from=builder /app/backend/dist/ ./dist/
+COPY --from=builder /app/frontend/dist/ ./dist/frontend/
 
-# Move production files to app root
-RUN cp -r production/* .
-RUN rm -rf production
+# Verify the files are in the expected locations
+RUN ls -la /app/dist/
+RUN ls -la /app/dist/frontend/
+RUN test -f /app/dist/frontend/index.html || (echo "ERROR: index.html not found" && exit 1)
 
-# Create non-root user
+# Create non-root user for security
 RUN groupadd -r thyknow && useradd -r -g thyknow thyknow
 RUN chown -R thyknow:thyknow /app
 USER thyknow
