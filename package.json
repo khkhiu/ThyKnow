@@ -1,0 +1,60 @@
+{
+  "name": "thyknow-monorepo",
+  "version": "1.1.0",
+  "description": "ThyKnow Telegram bot with integrated React frontend - Monorepo",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:workspaces",
+    "install:workspaces": "npm install --workspaces",
+    "install:backend": "npm install --workspace=backend",
+    "install:frontend": "npm install --workspace=frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "npm run test --workspace=backend",
+    "test:frontend": "npm run test --workspace=frontend",
+    "clean": "npm run clean:backend && npm run clean:frontend",
+    "clean:backend": "npm run clean --workspace=backend",
+    "clean:frontend": "npm run clean --workspace=frontend",
+    "clean:all": "npm run clean && rm -rf node_modules backend/node_modules frontend/node_modules",
+    "start": "npm run start --workspace=backend",
+    "start:prod": "npm run build && npm run start",
+    "migrate": "npm run migrate --workspace=backend",
+    "migrate:rollback": "npm run migrate:rollback --workspace=backend",
+    "migrate:status": "npm run migrate:status --workspace=backend",
+    "db:setup": "npm run db:setup --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend",
+    "deploy:staging": "npm run test && npm run build && railway deploy --environment staging",
+    "deploy:production": "npm run test && npm run build && railway deploy --environment production",
+    "monitor:bot": "npm run monitor:bot --workspace=backend",
+    "setup:webhook": "npm run setup:webhook --workspace=backend",
+    "setup:complete": "npm run install:all && npm run migrate && npm run setup:webhook",
+    "lint": "npm run lint --workspace=backend && npm run lint --workspace=frontend",
+    "lint:fix": "npm run lint:fix --workspace=backend && npm run lint:fix --workspace=frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "vite": "^7.1.6"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "monorepo",
+    "telegram",
+    "bot",
+    "react",
+    "typescript",
+    "express",
+    "vite"
+  ]
+}

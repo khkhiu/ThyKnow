@@ -1,0 +1,59 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app/backend
+      - /app/backend/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    env_file:
+      - backend/.env
+    depends_on:
+      - database
+    command: npm run dev
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev  
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3000
+    command: npm run dev
+    depends_on:
+      - backend
+
+  database:
+    image: sqlite:latest
+    volumes:
+      - sqlite_data:/data
+    environment:
+      - SQLITE_DATABASE=thyknow.db
+
+volumes:
+  sqlite_data:
+
+# Alternative: If you prefer to run everything in one container for production
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    env_file:
+      - backend/.env
+    profiles:
+      - production
