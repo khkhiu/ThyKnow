@@ -1,61 +1,53 @@
-# Multi-stage build for ThyKnow monorepo
-FROM node:25-slim AS base
+# Simple approach - install missing dependencies
+FROM node:22-slim
 
-# Set working directory
+# Install system dependencies
+RUN apt-get update && apt-get install -y curl build-essential python3 && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy root package files
-COPY package*.json ./
+# Copy everything
+COPY . .
 
-#################################################################
-# Frontend Build Stage
-#################################################################
-FROM base AS frontend-builder
-
-# Copy frontend source
-COPY frontend/ ./frontend/
-
-# Install dependencies and build frontend
-WORKDIR /app/frontend
-RUN npm ci
-RUN npm run build
-
-#################################################################
-# Backend Build Stage  
-#################################################################
-FROM base AS backend-builder
-
-# Copy backend source
-COPY backend/ ./backend/
-
-# Install backend dependencies
+# Install backend dependencies and missing packages
 WORKDIR /app/backend
 RUN npm ci
 
-# Build TypeScript backend
+# Install missing dependencies that TypeScript compiler needs
+RUN npm install --no-save axios sinon moment-timezone pg node-cron winston @types/pg @types/node-cron
+
+# Build backend with all dependencies available
 RUN npm run build
 
-#################################################################
-# Production Stage
-#################################################################
-FROM node:25-slim AS production
+# Install frontend dependencies and build
+WORKDIR /app/frontend  
+RUN npm ci
+RUN npm run build
 
+# Return to app root and set up production structure
 WORKDIR /app
 
-# Copy backend package files and install production dependencies
-COPY backend/package*.json ./
-RUN npm ci --only=production
+# Create production structure
+RUN mkdir -p production/dist production/public/frontend
 
-# Copy built backend from builder stage
-COPY --from=backend-builder /app/backend/dist ./dist
+# Copy built files
+RUN cp -r backend/dist/* production/dist/
+RUN cp -r frontend/dist/* production/public/frontend/
+RUN cp backend/package*.json production/
 
-# Copy built frontend from builder stage
-COPY --from=frontend-builder /app/frontend/dist ./public/frontend
+# Install only production dependencies in the production directory
+WORKDIR /app/production
+RUN npm install --omit=dev
 
-# Copy any additional backend static files if needed
-COPY --from=backend-builder /app/backend/public ./public
+# Clean up source files and dev dependencies
+WORKDIR /app
+RUN rm -rf backend frontend node_modules
 
-# Create a non-root user for security
+# Move production files to app root
+RUN cp -r production/* .
+RUN rm -rf production
+
+# Create non-root user
 RUN groupadd -r thyknow && useradd -r -g thyknow thyknow
 RUN chown -R thyknow:thyknow /app
 USER thyknow

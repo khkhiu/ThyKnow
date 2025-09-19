@@ -41,6 +41,7 @@
     "lint:fix": "npm run lint:fix --workspace=backend && npm run lint:fix --workspace=frontend"
   },
   "devDependencies": {
+    "@types/node": "^24.5.2",
     "concurrently": "^8.2.2",
     "vite": "^7.1.6"
   },
