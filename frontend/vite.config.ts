@@ -1,6 +1,5 @@
-// frontend/vite.config.ts
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react-swc'  // Use the SWC plugin you have installed
 import path from 'path'
 
 export default defineConfig({

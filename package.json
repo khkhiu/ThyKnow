@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
-    "concurrently": "^8.2.2",
+    "concurrently": "^9.2.1",
     "vite": "^7.1.6"
   },
   "engines": {
