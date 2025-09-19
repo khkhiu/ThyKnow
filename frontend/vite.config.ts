@@ -1,9 +1,13 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'  // Use the SWC plugin you have installed
+import react from '@vitejs/plugin-react-swc'
+import tailwindcss from '@tailwindcss/vite'  // Add this import
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    tailwindcss()  // Add the Tailwind Vite plugin
+  ],
   
   // Resolve @ to src directory
   resolve: {
