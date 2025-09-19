@@ -1,67 +1,44 @@
-# Multi-stage build for optimal production image
-FROM node:22-slim AS builder
+# Dockerfile optimized for npm workspaces monorepo
+FROM node:22-slim
 
-# Install system dependencies needed for building
+# Install system dependencies
 RUN apt-get update && apt-get install -y curl build-essential python3 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy package files first for better Docker layer caching
+# Copy package files for dependency resolution
 COPY package*.json ./
 COPY backend/package*.json ./backend/
 COPY frontend/package*.json ./frontend/
 
-# Install all dependencies (including dev dependencies for building)
-WORKDIR /app/backend
-RUN npm ci
+# Install all dependencies using the monorepo root
+# This handles workspace dependencies correctly
+RUN npm install
 
-WORKDIR /app/frontend  
-RUN npm ci
-
-# Copy source code
-WORKDIR /app
+# Copy source code after dependencies are installed
 COPY . .
 
-# Build backend
-WORKDIR /app/backend
-RUN npm run build
+# Build backend using workspace command
+RUN npm run build:backend
 
-# Build frontend
-WORKDIR /app/frontend
-RUN npm run build
+# Build frontend using workspace command  
+RUN npm run build:frontend
 
-# Verify builds completed successfully
-RUN ls -la /app/backend/dist/
-RUN ls -la /app/frontend/dist/
-
-# Production stage
-FROM node:22-slim AS production
-
-# Install only runtime system dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copy backend package.json for production dependencies
-COPY backend/package*.json ./
-
-# Install only production dependencies
-RUN npm ci --only=production
-
-# Create the expected directory structure
-# The server expects files in /app/dist/frontend/
+# Create the expected directory structure for production
 RUN mkdir -p dist/frontend
 
-# Copy built files from builder stage
-COPY --from=builder /app/backend/dist/ ./dist/
-COPY --from=builder /app/frontend/dist/ ./dist/frontend/
+# Copy built files to expected locations
+RUN cp -r backend/dist/* dist/
+RUN cp -r frontend/dist/* dist/frontend/
 
-# Verify the files are in the expected locations
-RUN ls -la /app/dist/
-RUN ls -la /app/dist/frontend/
-RUN test -f /app/dist/frontend/index.html || (echo "ERROR: index.html not found" && exit 1)
+# Verify critical files exist
+RUN test -f dist/src/server.js || (echo "ERROR: Backend server.js missing!" && exit 1)
+RUN test -f dist/frontend/index.html || (echo "ERROR: Frontend index.html missing!" && exit 1)
 
-# Create non-root user for security
+# Clean up source files but keep built output and production dependencies
+RUN rm -rf backend/src frontend/src
+
+# Create non-root user
 RUN groupadd -r thyknow && useradd -r -g thyknow thyknow
 RUN chown -R thyknow:thyknow /app
 USER thyknow
