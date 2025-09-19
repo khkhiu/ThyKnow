@@ -146,7 +146,7 @@ function setupStaticFileServing(): void {
         index: false, // Don't serve index.html automatically
         maxAge: '1h', // Shorter cache for other files
         redirect: false,
-        setHeaders: (res, filePath) => {
+        setHeaders: (res: express.Response, filePath: string) => {
           // Set cache headers based on file type
           const ext = path.extname(filePath);
           if (['.js', '.css'].includes(ext)) {

@@ -2,14 +2,14 @@ import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
-	darkMode: "class", // Changed from ["class"] to "class"
+	darkMode: ["class"],
 	content: [
-		"./index.html",
-		"./src/**/*.{js,ts,jsx,tsx}",
+		"./index.html",                    // Add the HTML file
 		"./pages/**/*.{ts,tsx}",
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
-		"./src/**/*.{ts,tsx}",
+		"./src/**/*.{ts,tsx}",            // This should scan your source files
+		"./src/**/*.{js,jsx}",            // Include JS files too
 	],
 	prefix: "",
 	theme: {
@@ -95,5 +95,5 @@ export default {
 			}
 		}
 	},
-	plugins: [tailwindcssAnimate], // Changed from require() to ES6 import
+	plugins: [tailwindcssAnimate], // Use ES6 import instead of require()
 } satisfies Config;
