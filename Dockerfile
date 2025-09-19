@@ -1,4 +1,4 @@
-# Simple approach - install missing dependencies
+# Clean approach - all dependencies in package.json
 FROM node:22-slim
 
 # Install system dependencies
@@ -9,14 +9,11 @@ WORKDIR /app
 # Copy everything
 COPY . .
 
-# Install backend dependencies and missing packages
+# Install backend dependencies (all dependencies now in package.json)
 WORKDIR /app/backend
 RUN npm ci
 
-# Install missing dependencies that TypeScript compiler needs
-RUN npm install --no-save axios sinon moment-timezone pg node-cron winston @types/pg @types/node-cron
-
-# Build backend with all dependencies available
+# Build backend
 RUN npm run build
 
 # Install frontend dependencies and build
