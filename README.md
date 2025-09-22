@@ -1,151 +1,83 @@
-# ThyKnow Telegram Bot - Railway Deployment Guide
+# ThyKnow
 
-This guide provides comprehensive instructions for deploying the ThyKnow Telegram bot to Railway, a modern platform optimized for full-stack applications with excellent support for long-running processes like Telegram bots.
+**Discover you, Connect us.**
 
-## Architecture Overview
-
-The deployed architecture consists of the following components:
-
-1. **Railway Service**: Hosts the ThyKnow Express application
-2. **Railway PostgreSQL**: Managed PostgreSQL database
-3. **Telegram Bot API**: External service for bot functionality
-
-## Prerequisites
-
-Before starting the deployment, ensure you have:
-
-1. **Railway Account**: Sign up at [railway.app](https://railway.app)
-2. **Railway CLI**: Install with `npm i -g @railway/cli`
-3. **Telegram Bot**: Created via BotFather with its API token
-4. **Node.js**: Version 18.x or higher installed locally
-
-## Step 1: Project Preparation
-
-### 1.1 Clone the Repository
-
-```bash
-git clone https://github.com/your-username/thyknow.git
-cd thyknow
-```
-
-### 1.2 Log in to Railway CLI
-
-```bash
-railway login
-```
-
-## Step 2: Project Setup on Railway
-
-### 2.1 Initialize a New Railway Project
-
-```bash
-railway init
-```
-
-Follow the prompts to create a new project or select an existing one.
-
-### 2.2 Add PostgreSQL to Your Project
-
-```bash
-railway add postgresql
-```
-
-This will provision a PostgreSQL database for your project.
-
-### 2.3 Set Environment Variables
-
-```bash
-railway vars set TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-railway vars set NODE_ENV=production
-railway vars set TIMEZONE=Asia/Singapore
-railway vars set PROMPT_DAY=1
-railway vars set PROMPT_HOUR=9
-railway vars set MAX_HISTORY=5
-```
-
-Railway automatically provides the `DATABASE_URL` environment variable.
-
-## Step 3: Deployment
-
-### 3.1 Deploy to Railway
-
-```bash
-railway up
-```
-
-This command builds and deploys your application to Railway.
-
-### 3.2 Set Up the Webhook
-
-After deployment, set up the Telegram webhook using the provided script:
-
-```bash
-npm run railway:webhook
-```
-
-This script uses your Railway domain to configure the Telegram webhook.
-
-## Step 4: Monitoring and Management
-
-### 4.1 View Logs
-
-```bash
-railway logs
-```
-
-### 4.2 Open the Railway Dashboard
-
-```bash
-railway open
-```
-
-This opens the Railway dashboard for your project, where you can monitor your application and database.
-
-## Database Information
-
-Railway provides a managed PostgreSQL database with the following benefits:
-
-- Automatic backups
-- SSL connection
-- Web-based database administration
-- Scaling options as your user base grows
-
-## Common Issues and Troubleshooting
-
-### 1. Webhook Setup Failure
-
-**Solution**:
-1. Check that your application is running successfully on Railway
-2. Verify that the `RAILWAY_PRIVATE_DOMAIN` environment variable is set correctly
-3. Try setting the webhook manually using the Telegram API
-
-### 2. Database Connection Issues
-
-**Solution**:
-1. Check Railway dashboard for database status
-2. Verify that the application is using the `DATABASE_URL` environment variable
-
-## Performance Optimization
-
-To optimize your application for Railway, consider:
-
-1. Setting up autoscaling for handling traffic spikes
-2. Enabling the "Always On" feature for mission-critical applications
-3. Using Railway's built-in metrics to monitor performance
-
-## Additional Railway Features You Can Use
-
-1. **Cron Jobs**: For scheduling tasks without implementing your own scheduler
-2. **Custom Domains**: For a professional URL for your webhook
-3. **Metrics and Alerts**: For monitoring application health
-4. **Deploy from GitHub**: For automatic deployments on code changes
-
-## Resources
-
-- [Railway Documentation](https://docs.railway.app/)
-- [Telegraf.js Documentation](https://telegraf.js.org/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+Link to Telegram mini-app: https://t.me/ThyKnow_bot
 
 ---
 
-Happy deploying! Your ThyKnow Telegram bot should now be running smoothly on Railway. If you encounter any issues, please refer to the Railway documentation or open an issue in this repository.
+## 🚀 MAJOR OVERHAUL IN PROGRESS
+
+**ThyKnow is undergoing a massive transformation!** We're rebuilding the entire platform from the ground up to deliver an even more powerful and engaging experience for our users. This comprehensive overhaul includes:
+
+- **Enhanced User Interface**: Complete redesign of the user interface
+- **Enhanced Pet Interactions**: Replacing streak feature with algorithmic pet behavior for more natural interactions
+- **Expanded Features**: Adding pet care and accessories feature
+
+---
+
+## Youth Action Challenge (YAC) Project
+
+ThyKnow was a project developed under Singapore's Youth Action Challenge (YAC), a structured six-month programme that empowers youths to champion issues they care deeply about and co-create an inclusive, sustainable and progressive Singapore.
+
+## Project Mission
+
+ThyKnow addresses the growing mental health crisis among Singapore's youth by fostering self-awareness and deeper connections through thought-provoking weekly prompts delivered via a familiar platform - Telegram.
+
+## The Problem We're Solving
+
+- **$16 billion** - The annual cost of depression to Singapore (3% of GDP)
+- **64%** of young adults aged 21-34 report feeling isolated at least some of the time
+- Young people struggle with meaningful connections despite having more digital connections than ever before
+- **64%** of respondents feel isolated by others sometimes/often
+- **53%** feel more comfortable talking to people online than in person
+- **56%** experience anxiety when engaging in face-to-face interactions
+
+*"Increasing isolation contributes to feelings of loneliness and disconnection, correlating with conditions such as depression and anxiety."* - Johann Hari, author of Lost Connections
+
+## Our Solution
+
+### What is ThyKnow?
+
+ThyKnow is a Telegram bot that sends weekly prompts designed to:
+- **Enhance self-awareness** through reflective questions
+- **Build stronger connections** with friends and family
+- **Foster personal growth** in a supportive, gamified environment
+
+### Key Features
+
+- **Weekly Prompts**: Thoughtfully curated questions alternating between self-awareness and connection-building
+- **Digital Journal**: Secure storage of responses with AI-assisted insights
+- **Dino Friend**: Interactive virtual pet that rewards engagement
+- **Familiar Platform**: Built on Telegram - no new app downloads required
+- **Privacy-First**: Users control their data and reflection journey
+
+### Example Prompts
+
+- **Self-Awareness**: "Screen-Free Safari! Spend an hour today without your phone or any screens—just like the good old prehistoric days! What did you do instead? How did it feel to step away from the digital jungle?"
+
+- **Connections**: "Fossilized Friendships Await! Reconnect with someone you haven't spoken to in a while—send them a message and see what happens! Did it feel like unearthing a long-lost dino bond?"
+
+### User Testimonials
+
+*"ThyKnow's prompts pushed me to reflect deeply, stepping out of my comfort zone and finding the motivation to change for the better."*
+
+*"These prompts gave me the push I needed to reconnect with old friends—something I had been putting off for too long."*
+
+*"I never realized how much I needed to reflect until I saw these prompts. They made me pause, think, and gain new insights about myself—things I had never considered before."*
+
+## 💻 Technical Architecture
+
+- **Backend**: Node.js/Express API with PostgreSQL database
+- **Frontend**: React-based web interface
+- **Bot Platform**: Telegram Bot API with Telegraf framework
+- **Deployment**: Cloud-hosted with automatic scaling
+- **Security**: End-to-end encryption for user data and responses
+
+## 🏆 YAC Grant Utilization
+
+**Total Funding**: $5,000
+
+| Initial grant awared | Additional grant awareded through demo day | Total gran awared |
+|----------|------------|---------|
+| $5,000 | $4,200 | $9,200 |
