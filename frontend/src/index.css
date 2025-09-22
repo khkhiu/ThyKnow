@@ -94,10 +94,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border)); /* Use regular CSS instead of @apply temporarily */
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }

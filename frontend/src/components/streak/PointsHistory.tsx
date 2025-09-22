@@ -8,7 +8,7 @@ import {
   formatTimestamp, 
   formatNumber,
   formatStatsLabel 
-} from '../../../../src/utils/textFormatter';
+} from '../../../../backend/src/utils/textFormatter';
 
 interface PointsHistoryProps {
   points: PointsData;
