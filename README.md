@@ -76,7 +76,7 @@ ThyKnow is a Telegram bot that sends weekly prompts designed to:
 
 ## 🏆 YAC Grant Utilization
 
-**Total Funding**: $5,000
+**Total Funding**: $9,200
 
 | Initial grant awared | Additional grant awareded through demo day | Total gran awared |
 |----------|------------|---------|
