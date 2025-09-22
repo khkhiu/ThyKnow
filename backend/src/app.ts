@@ -81,7 +81,7 @@ app.use(express.static(frontendPath, {
   index: false, // Don't serve index.html automatically
   maxAge: '1d',
   redirect: false,
-  setHeaders: (res, filePath) => {
+  setHeaders: (res: express.Response, filePath: string) => {
     if (path.extname(filePath) === '.html') {
       res.set('Cache-Control', 'no-cache');
     }
